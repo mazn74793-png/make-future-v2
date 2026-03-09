@@ -752,7 +752,7 @@ async function playVideo(video){
   if(video.video_type==='youtube' && video.youtube_url){
     const ytId = extractYTId(video.youtube_url);
     const startParam = resumeAt>10?`&start=${resumeAt}`:'';
-    container.querySelector(':not(#watermark)') && container.innerHTML = `<div id="watermark"></div>`;
+    if(!container.querySelector('#watermark')){ container.innerHTML = '<div id="watermark"></div>'; }
     container.innerHTML = `<iframe id="ytFrame" src="https://www.youtube.com/embed/${ytId}?enablejsapi=1&rel=0&modestbranding=1${startParam}" allowfullscreen allow="autoplay"></iframe><div id="watermark"></div>`;
     startWatermark();
     // Track YouTube via interval (approximate)
