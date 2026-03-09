@@ -1107,11 +1107,24 @@ async function uploadToR2(file, courseId, title){
   for(let i=0;i<totalParts;i++){
     const chunk=file.slice(i*PART,(i+1)*PART);
     const pn=i+1;
-    const signRes=await mfFetch('r2-multipart',{method:'POST',body:JSON.stringify({action:'sign_part',upload_id,key,part_number:pn})});
-    if(!signRes.ok){ toast('فشل توقيع الجزء','error'); throw new Error(); }
-    const uploadRes=await fetch(signRes.url,{method:'PUT',body:chunk,headers:{'Content-Type':file.type||'video/mp4'}});
-    if(!uploadRes.ok){ toast('فشل رفع الجزء '+pn,'error'); throw new Error(); }
-    const etag=uploadRes.headers.get('etag')||'"'+pn+'"';
+    // بنبعت الـ chunk لـ Supabase function بدل R2 مباشرة (حل مشكلة CORS)
+    const token=localStorage.getItem('mf_access_token');
+    const chunkRes=await fetch(`${MF_CONFIG.FN}/r2-multipart`,{
+      method:'PUT',
+      headers:{
+        'Content-Type':file.type||'video/mp4',
+        'apikey':MF_CONFIG.ANON_KEY,
+        'Authorization':`Bearer ${token&&token!=='null'?token:MF_CONFIG.ANON_KEY}`,
+        'x-upload-id':upload_id,
+        'x-r2-key':key,
+        'x-part-number':String(pn)
+      },
+      body:chunk
+    });
+    let chunkData={};
+    try{chunkData=await chunkRes.json();}catch(e){}
+    if(!chunkRes.ok||!chunkData.ok){ toast('فشل رفع الجزء '+pn+': '+(chunkData.error||chunkRes.status),'error'); throw new Error(chunkData.error||'chunk failed'); }
+    const etag=chunkData.etag||'"'+pn+'"';
     parts.push({PartNumber:pn,ETag:etag});
     const pct=Math.round(pn/totalParts*100);
     pb.style.width=pct+'%'; pp.textContent=pct+'%';
