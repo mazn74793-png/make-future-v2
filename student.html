@@ -600,24 +600,29 @@ function debounce(fn, ms = 300) {
 
 </script>
 <script>
+function updateThemeBtn(){ 
+  const btn = document.getElementById('themeBtn');
+  if(btn) btn.textContent = document.documentElement.getAttribute('data-theme')==='dark'?'☀️':'🌙'; 
+}
+function onToggleTheme(){ toggleTheme(); updateThemeBtn(); }
+
 initTheme();
 updateThemeBtn();
+
 const user = requireAuth(['student','admin','superadmin','course_admin']);
 if(!user) throw new Error('no user');
 
 document.getElementById('heroName').textContent = '👋 أهلاً، ' + (user.full_name || user.name || '');
-document.getElementById('heroGrade').textContent = '🎓 ' + gradeLabel(user.grade);
-
-function updateThemeBtn(){ document.getElementById('themeBtn').textContent = document.documentElement.getAttribute('data-theme')==='dark'?'☀️':'🌙'; }
-function onToggleTheme(){ toggleTheme(); updateThemeBtn(); }
+document.getElementById('heroGrade').textContent = gradeLabel(user.grade) || user.grade || '';
 
 let allCourses = [], enrolledCourses = [], paymentsData = [];
 let notifOpen = false;
 
 // ─── Load All Data ────────────────────
 async function loadAll(){
+  const gradeParam = user.grade && user.grade !== 'admin' ? `&grade=${user.grade}` : '';
   const [coursesRes, certsRes, paymentsRes, notifsRes] = await Promise.all([
-    mfFetch(`student-courses?grade=${user.grade}&user_id=${user.id}`),
+    mfFetch(`student-courses?user_id=${user.id}${gradeParam}`),
     mfFetch(`certificates?user_id=${user.id}`),
     mfFetch(`create-payment?user_id=${user.id}`),
     mfFetch(`user-notifications?user_id=${user.id}`)
