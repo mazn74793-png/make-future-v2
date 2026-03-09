@@ -847,15 +847,16 @@ function debounce(fn, ms = 300) {
 
 </script>
 <script>
+function updateThemeBtn(){ 
+  const btn = document.getElementById('themeBtn');
+  if(btn) btn.textContent = document.documentElement.getAttribute('data-theme')==='dark'?'☀️':'🌙'; 
+}
+function onToggleTheme(){ toggleTheme(); updateThemeBtn(); }
+
 initTheme();
 updateThemeBtn();
 const user = requireAuth(['admin','superadmin','course_admin']);
 if(!user) throw new Error('no user');
-
-
-
-function updateThemeBtn(){ document.getElementById('themeBtn').textContent = document.documentElement.getAttribute('data-theme')==='dark'?'☀️':'🌙'; }
-function onToggleTheme(){ toggleTheme(); updateThemeBtn(); }
 
 document.getElementById('adminRoleBadge').textContent = user.role==='superadmin'?'👑 سوبر أدمن':user.role==='admin'?'⚙️ أدمن':'📋 مسؤول كورس';
 
