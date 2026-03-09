@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Make Future Center — مشاهدة الكورس</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="styles.css">
+<style>
+body { background: #0a0f1e; }
+.course-layout { display: grid; grid-template-columns: 1fr 320px; gap: 0; min-height: calc(100vh - 64px); }
+@media(max-width:900px){ .course-layout { grid-template-columns:1fr; } .sidebar { order: -1; } }
+
+/* Video Player */
+.video-container { position: relative; background: #000; border-radius: 0; overflow: hidden; }
+.video-container iframe, .video-container video { width: 100%; aspect-ratio: 16/9; display: block; border: none; }
+
+/* Watermark */
+#watermark {
+  position: absolute; pointer-events: none; z-index: 50;
+  color: rgba(255,80,80,0.18); font-size: 13px; font-weight: 800;
+  font-family: 'Cairo',sans-serif; white-space: nowrap;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+  user-select: none; transition: top 0.5s ease, left 0.5s ease;
+}
+
+/* Sidebar */
+.sidebar { background: var(--bg2); border-right: 1px solid var(--border2); overflow-y: auto; max-height: calc(100vh - 64px); position: sticky; top: 64px; }
+@media(max-width:900px){ .sidebar { max-height: 300px; position: relative; top: auto; } }
+.video-list-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; transition: background 0.2s; border-bottom: 1px solid var(--border2); }
+.video-list-item:hover { background: rgba(124,58,237,0.08); }
+.video-list-item.active { background: rgba(124,58,237,0.15); border-right: 3px solid var(--primary); }
+.video-list-item .vi-num { width: 28px; height: 28px; border-radius: 50%; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.video-list-item.completed .vi-num { background: rgba(16,185,129,0.2); color: #10b981; }
+.video-list-item.active .vi-num { background: var(--grad); color: #fff; }
+.vi-title { font-size: 13px; font-weight: 600; }
+.vi-duration { font-size: 11px; color: var(--text2); }
+
+/* Main Content Area */
+.main-area { overflow-y: auto; }
+.video-info { padding: 20px; border-bottom: 1px solid var(--border2); }
+.video-info h2 { font-size: 18px; font-weight: 700; }
+
+/* Tabs under video */
+.video-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border2); background: var(--bg2); }
+.video-tab { padding: 12px 20px; font-family:'Cairo',sans-serif; font-size:13px; font-weight:700; color:var(--text2); cursor:pointer; border:none; background:none; border-bottom:3px solid transparent; transition:all 0.2s; }
+.video-tab.active { color:var(--primary-light); border-bottom-color:var(--primary); }
+
+/* Comments */
+.comment-item { padding: 14px; border-radius: 14px; background: var(--bg3); margin-bottom: 12px; }
+.comment-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.comment-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--grad); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
+.comment-name { font-size: 13px; font-weight: 700; }
+.comment-time { font-size: 11px; color: var(--text2); }
+.comment-text { font-size: 13px; }
+.comment-reply { margin-top: 10px; padding: 10px; border-radius: 10px; background: rgba(124,58,237,0.1); border-right: 3px solid var(--primary); font-size: 12px; }
+.comment-reply strong { color: var(--primary-light); font-size: 11px; }
+.pin-badge { font-size: 10px; background: rgba(245,158,11,0.2); color: #f59e0b; padding: 2px 6px; border-radius: 4px; }
+
+/* Quiz */
+.quiz-card { padding: 24px; border-radius: 20px; background: var(--grad-soft); border: 1px solid var(--border); margin: 20px; }
+.quiz-question { padding: 20px; border-radius: 16px; background: var(--surface); margin-bottom: 16px; }
+.quiz-question h4 { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
+.quiz-option { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border2); background: var(--bg3); cursor: pointer; transition: all 0.2s; margin-bottom: 8px; font-size: 13px; }
+.quiz-option:hover { border-color: var(--primary); background: rgba(124,58,237,0.08); }
+.quiz-option.selected { border-color: var(--primary); background: rgba(124,58,237,0.15); }
+.quiz-option.correct { border-color: #10b981; background: rgba(16,185,129,0.15); }
+.quiz-option.wrong { border-color: #ef4444; background: rgba(239,68,68,0.15); }
+.quiz-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border2); flex-shrink: 0; transition: all 0.2s; }
+.quiz-option.selected .quiz-radio { background: var(--primary); border-color: var(--primary); }
+
+/* Progress Ring */
+.ring-container { position: relative; display: inline-flex; }
+.ring-container svg { transform: rotate(-90deg); }
+.ring-container .ring-pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; }
+</style>
+</head>
+<body>
+<div class="bg-mesh"></div>
+
+<nav class="navbar">
+  <button class="btn btn-sm btn-secondary" onclick="history.back()">← رجوع</button>
+  <span class="nav-logo" id="navTitle">📹 الكورس</span>
+  <div class="flex items-center gap-2">
+    <div class="ring-container" title="تقدمك في الكورس">
+      <svg width="40" height="40" viewBox="0 0 40 40">
+        <circle cx="20" cy="20" r="16" fill="none" stroke="var(--bg3)" stroke-width="3"/>
+        <circle cx="20" cy="20" r="16" fill="none" stroke="url(#rg)" stroke-width="3" stroke-linecap="round" id="progressRing" stroke-dasharray="100.5" stroke-dashoffset="100.5"/>
+        <defs><linearGradient id="rg"><stop stop-color="#7c3aed"/><stop offset="1" stop-color="#06b6d4"/></linearGradient></defs>
+      </svg>
+      <div class="ring-pct" id="progressPct" style="font-size:9px;font-weight:900">0%</div>
+    </div>
+    <button class="theme-toggle" onclick="onToggleTheme()" id="themeBtn">🌙</button>
+  </div>
+</nav>
+
+<div class="course-layout">
+
+  <!-- Sidebar: Video List -->
+  <div class="sidebar" id="sidebar">
+    <div style="padding:16px;border-bottom:1px solid var(--border2);font-size:13px;font-weight:700;color:var(--text2)">قائمة الفيديوهات</div>
+    <div id="videoList"><div class="text-center p-6 text-muted text-sm">جاري التحميل...</div></div>
+  </div>
+
+  <!-- Main Area -->
+  <div class="main-area">
+
+    <!-- Video Player -->
+    <div class="video-container" id="videoContainer">
+      <div style="aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;background:#000;color:var(--text2)">
+        <div class="text-center"><div style="font-size:48px;margin-bottom:12px">▶️</div><div>اختر فيديو للبدء</div></div>
+      </div>
+      <div id="watermark">01XXXXXXXXX — Make Future</div>
+    </div>
+
+    <!-- Video Info -->
+    <div class="video-info">
+      <h2 id="currentVideoTitle">اختر فيديو من القائمة</h2>
+      <div class="flex items-center gap-3 mt-2">
+        <span class="text-sm text-muted" id="currentVideoDesc"></span>
+        <span class="badge badge-primary" id="courseSubject"></span>
+      </div>
+      <div class="flex items-center gap-3 mt-3">
+        <div class="progress-wrap" style="flex:1"><div class="progress-bar" id="videoProgressBar" style="width:0%"></div></div>
+        <span class="text-xs text-muted" id="videoProgressPct">0%</span>
+      </div>
+    </div>
+
+    <!-- Sub-tabs -->
+    <div class="video-tabs">
+      <button class="video-tab active" onclick="switchVTab('comments',this)">💬 تعليقات</button>
+      <button class="video-tab" onclick="switchVTab('quiz',this)">📝 كويز</button>
+      <button class="video-tab" onclick="switchVTab('schedule',this)">📅 المواعيد</button>
+    </div>
+
+    <!-- Comments Tab -->
+    <div id="vtab-comments" style="padding:20px">
+      <div id="commentsList"><div class="empty-state"><div class="empty-icon">💬</div><p>لا توجد تعليقات بعد</p></div></div>
+      <div class="mt-4">
+        <label class="form-label">💬 اكتب تعليقاً أو سؤالاً</label>
+        <div class="flex gap-2">
+          <textarea class="form-textarea" id="commentInput" placeholder="اكتب هنا..." style="flex:1;min-height:60px"></textarea>
+          <button class="btn btn-primary" onclick="submitComment()">إرسال</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quiz Tab -->
+    <div id="vtab-quiz" class="hidden">
+      <div id="quizArea" style="padding:20px">
+        <div class="empty-state"><div class="empty-icon">📝</div><p>لا يوجد كويز لهذا الفيديو</p></div>
+      </div>
+    </div>
+
+    <!-- Schedule Tab -->
+    <div id="vtab-schedule" class="hidden" style="padding:20px">
+      <div id="scheduleArea"><div class="text-muted text-sm">جاري التحميل...</div></div>
+    </div>
+
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+initTheme();
+updateThemeBtn();
+const user = requireAuth(['student','admin','superadmin','course_admin']);
+if(!user) throw new Error('no user');
+
+function updateThemeBtn(){ document.getElementById('themeBtn').textContent = document.documentElement.getAttribute('data-theme')==='dark'?'☀️':'🌙'; }
+function onToggleTheme(){ toggleTheme(); updateThemeBtn(); }
+
+const course = JSON.parse(localStorage.getItem('mf_selected_course')||'null');
+if(!course){ toast('لم يتم اختيار كورس','error'); setTimeout(()=>history.back(),1500); }
+
+document.getElementById('navTitle').textContent = '📹 ' + (course?.title||'');
+document.getElementById('courseSubject').textContent = course?.subject||'';
+
+let videos = [], progress = {}, currentVideo = null, currentQuiz = null;
+let progressTimer = null, watchedSec = 0, totalSec = 0;
+let answers = {};
+let wmInterval = null;
+
+// ─── Watermark ────────────────────────
+function startWatermark(){
+  const wm = document.getElementById('watermark');
+  wm.textContent = (user.phone_student||user.phone||'') + ' — Make Future';
+  function move(){
+    const container = document.getElementById('videoContainer');
+    if(!container) return;
+    const maxX = container.offsetWidth - wm.offsetWidth - 20;
+    const maxY = container.offsetHeight - wm.offsetHeight - 20;
+    const x = Math.max(10, Math.random()*maxX);
+    const y = Math.max(10, Math.random()*maxY);
+    wm.style.left = x+'px';
+    wm.style.top = y+'px';
+  }
+  move();
+  if(wmInterval) clearInterval(wmInterval);
+  wmInterval = setInterval(move, 5000);
+}
+
+// ─── Load Data ────────────────────────
+async function loadCourse(){
+  const [vidRes, progRes, schedRes] = await Promise.all([
+    mfFetch(`course-videos?course_id=${course.id}`),
+    mfFetch(`video-progress?user_id=${user.id}&course_id=${course.id}`),
+    mfFetch(`admin-schedules?course_id=${course.id}`)
+  ]);
+  videos = vidRes.videos || [];
+  (progRes.progress||[]).forEach(p=>{ progress[p.video_id]=p; });
+  updateCourseProgress(progRes);
+  renderVideoList(videos);
+  renderSchedule(schedRes.schedules||[]);
+  if(videos.length) playVideo(videos[0]);
+}
+
+function updateCourseProgress(progRes){
+  const pct = progRes?.percent || 0;
+  document.getElementById('progressPct').textContent = pct+'%';
+  const circ = Math.PI*2*16;
+  const offset = circ*(1-pct/100);
+  document.getElementById('progressRing').style.strokeDashoffset = offset;
+  document.getElementById('progressRing').style.strokeDasharray = circ;
+}
+
+function renderVideoList(vids){
+  const list = document.getElementById('videoList');
+  if(!vids.length){ list.innerHTML='<div class="empty-state"><p>لا توجد فيديوهات</p></div>'; return; }
+  list.innerHTML = vids.map((v,i)=>{
+    const p = progress[v.id];
+    const completed = p?.completed;
+    const pct = p?.watched_pct||0;
+    return `<div class="video-list-item ${completed?'completed':''}" id="vitem-${v.id}" onclick="playVideo(${JSON.stringify(v).replace(/"/g,'&quot;')})">
+      <div class="vi-num">${completed?'✅':(i+1)}</div>
+      <div style="flex:1;min-width:0">
+        <div class="vi-title truncate">${v.title}</div>
+        <div class="vi-duration">${completed?'مكتمل':pct?pct+'%':v.video_type==='upload'?'🎬 مرفوع':'📺 يوتيوب'}</div>
+        ${pct&&!completed?`<div class="progress-wrap mt-1" style="height:2px"><div class="progress-bar" style="width:${pct}%"></div></div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── Play Video ───────────────────────
+async function playVideo(video){
+  if(typeof video === 'string') video = JSON.parse(video);
+  currentVideo = video;
+
+  // Update active state
+  document.querySelectorAll('.video-list-item').forEach(el=>el.classList.remove('active'));
+  const item = document.getElementById('vitem-'+video.id);
+  if(item){ item.classList.add('active'); item.scrollIntoView({block:'nearest',behavior:'smooth'}); }
+
+  document.getElementById('currentVideoTitle').textContent = video.title;
+  document.getElementById('currentVideoDesc').textContent = video.description||'';
+
+  // Restore progress
+  const prev = progress[video.id];
+  const resumeAt = prev?.watched_sec||0;
+  totalSec = video.duration_sec||0;
+  watchedSec = resumeAt;
+
+  // Update progress bar
+  updateVideoProgressBar(prev?.watched_pct||0);
+
+  // Load player
+  const container = document.getElementById('videoContainer');
+  clearProgressTimer();
+
+  if(video.video_type==='youtube' && video.youtube_url){
+    const ytId = extractYTId(video.youtube_url);
+    const startParam = resumeAt>10?`&start=${resumeAt}`:'';
+    container.querySelector(':not(#watermark)') && container.innerHTML = `<div id="watermark"></div>`;
+    container.innerHTML = `<iframe id="ytFrame" src="https://www.youtube.com/embed/${ytId}?enablejsapi=1&rel=0&modestbranding=1${startParam}" allowfullscreen allow="autoplay"></iframe><div id="watermark"></div>`;
+    startWatermark();
+    // Track YouTube via interval (approximate)
+    startYTProgressTracking(resumeAt, totalSec, video);
+  } else if(video.video_type==='upload' && video.r2_key){
+    // Get presigned URL
+    const urlRes = await mfFetch(`get-video-url?video_id=${video.id}&user_id=${user.id}`);
+    if(!urlRes.ok){ toast('فشل تحميل الفيديو: '+urlRes.error,'error'); return; }
+    container.innerHTML = `<video id="nativeVideo" src="${urlRes.url}" controls controlsList="nodownload" oncontextmenu="return false" style="width:100%;aspect-ratio:16/9"></video><div id="watermark"></div>`;
+    startWatermark();
+    const vid = document.getElementById('nativeVideo');
+    if(resumeAt>5) vid.currentTime = resumeAt;
+    vid.addEventListener('timeupdate', ()=>{ watchedSec=Math.floor(vid.currentTime); totalSec=Math.floor(vid.duration)||totalSec; updateVideoProgressBar(totalSec?Math.min(100,Math.round(watchedSec/totalSec*100)):0); });
+    vid.addEventListener('pause', ()=>saveProgress(video));
+    startProgressTimer(video);
+  }
+
+  // Load comments & quiz
+  loadComments(video.id);
+  loadQuiz(video.id);
+}
+
+function extractYTId(url){
+  const m = url.match(/(?:v=|youtu\.be\/|embed\/)([^&\n?#]+)/);
+  return m?m[1]:'';
+}
+
+// ─── Progress Tracking ────────────────
+function startProgressTimer(video){
+  clearProgressTimer();
+  progressTimer = setInterval(()=>saveProgress(video), 5000);
+}
+function clearProgressTimer(){ if(progressTimer){ clearInterval(progressTimer); progressTimer=null; } }
+
+// YouTube: estimate progress by time
+function startYTProgressTracking(startSec, dur, video){
+  let elapsed = startSec;
+  clearProgressTimer();
+  const t = Date.now();
+  progressTimer = setInterval(()=>{
+    elapsed = startSec + Math.floor((Date.now()-t)/1000);
+    watchedSec = elapsed;
+    if(dur>0){ const pct=Math.min(100,Math.round(elapsed/dur*100)); updateVideoProgressBar(pct); }
+    if(elapsed>0 && elapsed%10===0) saveProgress(video);
+  },1000);
+}
+
+function updateVideoProgressBar(pct){
+  document.getElementById('videoProgressBar').style.width = pct+'%';
+  document.getElementById('videoProgressPct').textContent = pct+'%';
+}
+
+async function saveProgress(video){
+  if(!currentVideo||watchedSec<2) return;
+  const res = await mfFetch('video-progress',{method:'POST',body:JSON.stringify({user_id:user.id,video_id:video.id,course_id:course.id,watched_sec:watchedSec,duration_sec:totalSec||1})});
+  if(res.ok){
+    progress[video.id] = res.progress;
+    // Update sidebar checkmark
+    renderVideoList(videos);
+    // Reload course progress
+    const pr = await mfFetch(`video-progress?user_id=${user.id}&course_id=${course.id}`);
+    updateCourseProgress(pr);
+  }
+}
+
+// Save on page leave
+window.addEventListener('beforeunload',()=>{ if(currentVideo) saveProgress(currentVideo); });
+
+// ─── Comments ─────────────────────────
+async function loadComments(videoId){
+  const res = await mfFetch(`video-comments?video_id=${videoId}`);
+  const comments = res.comments||[];
+  const list = document.getElementById('commentsList');
+  if(!comments.length){ list.innerHTML='<div class="empty-state"><div class="empty-icon">💬</div><p>لا توجد تعليقات بعد، كن الأول!</p></div>'; return; }
+  list.innerHTML = comments.map(c=>`
+    <div class="comment-item ${c.is_pinned?'':''}">
+      <div class="comment-header">
+        <div class="comment-avatar">${(c.user_name||'؟').charAt(0)}</div>
+        <div><div class="comment-name">${c.user_name||'مجهول'} ${c.is_pinned?'<span class="pin-badge">📌 مثبت</span>':''}</div><div class="comment-time">${fmtDateTime(c.created_at)}</div></div>
+      </div>
+      <div class="comment-text">${c.message}</div>
+      ${c.reply?`<div class="comment-reply"><strong>👨‍🏫 رد الأستاذ:</strong><br>${c.reply}</div>`:''}
+    </div>`).join('');
+}
+
+async function submitComment(){
+  const msg = document.getElementById('commentInput').value.trim();
+  if(!msg){ toast('اكتب تعليقاً أولاً','warn'); return; }
+  if(!currentVideo){ toast('اختر فيديو أولاً','warn'); return; }
+  const res = await mfFetch('video-comments',{method:'POST',body:JSON.stringify({user_id:user.id,video_id:currentVideo.id,course_id:course.id,message:msg})});
+  if(!res.ok){ toast(res.error||'فشل الإرسال','error'); return; }
+  document.getElementById('commentInput').value='';
+  toast('تم إرسال تعليقك ✅','success');
+  loadComments(currentVideo.id);
+}
+
+// ─── Quiz ─────────────────────────────
+async function loadQuiz(videoId){
+  const res = await mfFetch(`quizzes?course_id=${course.id}`);
+  const quizzes = (res.quizzes||[]).filter(q=>q.video_id==videoId||q.video_id===null);
+  const area = document.getElementById('quizArea');
+  if(!quizzes.length){ area.innerHTML='<div class="empty-state"><div class="empty-icon">📝</div><p>لا يوجد كويز لهذا الفيديو</p></div>'; return; }
+  const quiz = quizzes[0];
+  currentQuiz = quiz;
+  // Check previous attempt
+  const attemptRes = await mfFetch(`quiz-attempts?quiz_id=${quiz.id}&user_id=${user.id}`);
+  const prev = attemptRes.attempt;
+  if(prev){
+    area.innerHTML=`<div class="quiz-card"><div class="text-center"><div style="font-size:48px">${prev.passed?'🏆':'😔'}</div><h3 class="mt-3">${prev.passed?'أحسنت! اجتزت الكويز':'لم تجتز الكويز'}</h3><div class="text-muted mt-2">نتيجتك: <strong style="font-size:24px;color:${prev.passed?'var(--success)':'var(--danger)'}">${prev.score}%</strong></div><button class="btn btn-secondary mt-4" onclick="startQuiz(${quiz.id})">إعادة المحاولة</button></div></div>`;
+    return;
+  }
+  startQuiz(quiz.id);
+}
+
+async function startQuiz(quizId){
+  const res = await mfFetch(`quizzes?quiz_id=${quizId}`);
+  const area = document.getElementById('quizArea');
+  if(!res.quiz||!res.questions?.length){ area.innerHTML='<div class="empty-state"><p>لا توجد أسئلة في هذا الكويز</p></div>'; return; }
+  answers={};
+  area.innerHTML=`
+    <div class="quiz-card">
+      <h3 class="mb-1">${res.quiz.title}</h3>
+      <p class="text-sm text-muted mb-4">${res.quiz.description||''} | درجة النجاح: ${res.quiz.pass_score}%</p>
+      ${res.questions.map((q,i)=>`
+        <div class="quiz-question">
+          <h4>${i+1}. ${q.question}</h4>
+          ${['a','b','c','d'].map(opt=>`
+            <div class="quiz-option" id="qopt-${q.id}-${opt}" onclick="selectAnswer(${q.id},'${opt}',this)">
+              <div class="quiz-radio" id="qrad-${q.id}-${opt}"></div>
+              <span>${q['option_'+opt]}</span>
+            </div>`).join('')}
+        </div>`).join('')}
+      <button class="btn btn-primary btn-block" onclick="submitQuiz(${quizId},${JSON.stringify(res.questions).replace(/</g,'\\u003c')})">
+        📤 تسليم الإجابات
+      </button>
+    </div>`;
+}
+
+function selectAnswer(qId, opt, el){
+  // Deselect others for same question
+  ['a','b','c','d'].forEach(o=>{
+    document.getElementById('qopt-'+qId+'-'+o)?.classList.remove('selected');
+  });
+  el.classList.add('selected');
+  answers[qId] = opt;
+}
+
+async function submitQuiz(quizId, questions){
+  if(Object.keys(answers).length < questions.length){ toast('أجب على كل الأسئلة أولاً','warn'); return; }
+  const res = await mfFetch('quiz-attempts',{method:'POST',body:JSON.stringify({quiz_id:quizId,user_id:user.id,answers})});
+  if(!res.ok){ toast(res.error||'فشل التسليم','error'); return; }
+  // Show results
+  questions.forEach(q=>{
+    const correct = q.correct_answer;
+    const given = answers[q.id];
+    ['a','b','c','d'].forEach(o=>{
+      const el = document.getElementById('qopt-'+q.id+'-'+o);
+      if(!el) return;
+      if(o===correct) el.classList.add('correct');
+      else if(o===given && given!==correct) el.classList.add('wrong');
+    });
+  });
+  document.querySelector('.quiz-card button')?.remove();
+  const msg = document.createElement('div');
+  msg.style='text-align:center;padding:20px;margin-top:16px;border-radius:16px;background:var(--bg2)';
+  msg.innerHTML = `<div style="font-size:48px">${res.passed?'🏆':'😔'}</div><h3 style="margin-top:8px">${res.passed?'ممتاز! اجتزت الكويز':'لم تجتز الكويز'}</h3><p style="color:var(--text2);margin-top:8px">نتيجتك: <strong style="font-size:24px;color:${res.passed?'var(--success)':'var(--danger)'}">${res.score}%</strong> (${res.correct_count}/${res.total} صح)</p>`;
+  document.querySelector('.quiz-card').appendChild(msg);
+  toast(res.passed?`أحسنت! نتيجتك ${res.score}% 🏆`:`نتيجتك ${res.score}% — حاول مرة أخرى`,'success');
+}
+
+// ─── Schedule ─────────────────────────
+function renderSchedule(schedules){
+  const area = document.getElementById('scheduleArea');
+  if(!schedules.length){ area.innerHTML='<div class="empty-state"><div class="empty-icon">📅</div><p>لا توجد مواعيد محددة</p></div>'; return; }
+  area.innerHTML = schedules.map(s=>`
+    <div class="sched-item">
+      <div class="sched-day">${s.day_of_week}</div>
+      <div><div class="sched-time">⏰ ${s.start_time} → ${s.end_time}</div>${s.notes?`<div class="text-xs text-muted">${s.notes}</div>`:''}</div>
+    </div>`).join('');
+}
+
+// ─── Sub-tabs ─────────────────────────
+function switchVTab(tab, btn){
+  document.querySelectorAll('[id^=vtab-]').forEach(el=>el.classList.add('hidden'));
+  document.querySelectorAll('.video-tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('vtab-'+tab).classList.remove('hidden');
+  btn.classList.add('active');
+}
+
+loadCourse();
+</script>
+</body>
+</html>
