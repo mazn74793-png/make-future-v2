@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Make Future Center — الدفع</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="styles.css">
+<style>
+.payment-wrap { min-height: 100vh; padding: 80px 16px 40px; display: flex; align-items: flex-start; justify-content: center; }
+.payment-card { width: 100%; max-width: 500px; }
+.course-summary { padding: 20px; border-radius: 16px; background: var(--grad-soft); border: 1px solid var(--border); margin-bottom: 24px; }
+.price-display { font-size: 36px; font-weight: 900; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.method-card { padding: 16px; border-radius: 14px; border: 2px solid var(--border2); background: var(--bg3); cursor: pointer; transition: all 0.2s; }
+.method-card:hover { border-color: var(--primary); background: rgba(124,58,237,0.08); }
+.method-card.selected { border-color: var(--primary); background: rgba(124,58,237,0.12); }
+.method-card .method-icon { font-size: 28px; margin-bottom: 8px; }
+.method-card .method-name { font-size: 14px; font-weight: 700; }
+.method-card .method-num { font-size: 18px; font-weight: 900; color: var(--primary-light); direction: ltr; margin-top: 4px; }
+.coupon-row { display: flex; gap: 8px; }
+.coupon-row .form-input { flex: 1; }
+.coupon-result { padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-top: 8px; }
+.coupon-ok { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
+.coupon-err { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+.total-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-top: 1px solid var(--border2); }
+</style>
+</head>
+<body>
+<div class="bg-mesh"></div>
+
+<nav class="navbar">
+  <button class="btn btn-sm btn-secondary" onclick="history.back()">← رجوع</button>
+  <span class="nav-logo">💳 الدفع</span>
+  <button class="theme-toggle" onclick="onToggleTheme()" id="themeBtn">🌙</button>
+</nav>
+
+<div class="payment-wrap">
+  <div class="payment-card fade-up">
+
+    <!-- Course Summary -->
+    <div class="course-summary">
+      <div class="text-sm text-muted mb-1">الكورس المختار</div>
+      <div class="font-bold" style="font-size:18px" id="courseTitle">—</div>
+      <div class="text-sm text-muted mt-1" id="courseInfo">—</div>
+      <div class="mt-3 flex items-center justify-between">
+        <span class="text-sm text-muted">السعر الأصلي</span>
+        <span class="price-display" id="coursePriceDisplay">0</span>
+      </div>
+    </div>
+
+    <div class="glass p-6">
+
+      <!-- Coupon -->
+      <div class="form-group">
+        <label class="form-label">🎫 كوبون الخصم (اختياري)</label>
+        <div class="coupon-row">
+          <input type="text" class="form-input" id="couponInput" placeholder="أدخل الكود" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+          <button class="btn btn-secondary" onclick="validateCoupon()" id="couponBtn">تحقق</button>
+        </div>
+        <div id="couponResult" class="hidden"></div>
+      </div>
+
+      <!-- Price After Discount -->
+      <div id="finalPriceRow" class="total-row hidden">
+        <span class="text-sm font-bold">السعر بعد الخصم</span>
+        <span class="font-black" style="font-size:24px;color:var(--success)" id="finalPriceDisplay">0</span>
+      </div>
+
+      <!-- Payment Method -->
+      <div class="form-group">
+        <label class="form-label">طريقة الدفع</label>
+        <div class="grid-2 gap-3">
+          <div class="method-card" id="methodVF" onclick="selectMethod('Vodafone Cash','methodVF')">
+            <div class="method-icon">📱</div>
+            <div class="method-name">Vodafone Cash</div>
+            <div class="method-num" id="vcNum">01210575530</div>
+          </div>
+          <div class="method-card" id="methodIP" onclick="selectMethod('InstaPay','methodIP')">
+            <div class="method-icon">💸</div>
+            <div class="method-name">InstaPay</div>
+            <div class="method-num" id="ipNum">01210575530</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transaction ID -->
+      <div class="form-group">
+        <label class="form-label">رقم العملية / كود التحويل <span style="color:var(--danger)">*</span></label>
+        <input type="text" class="form-input" id="txnId" placeholder="مثال: 1234567890" inputmode="numeric">
+      </div>
+
+      <!-- Note -->
+      <div class="form-group">
+        <label class="form-label">ملاحظة (اختياري)</label>
+        <textarea class="form-textarea" id="txnNote" placeholder="أي ملاحظة إضافية..."></textarea>
+      </div>
+
+      <!-- Submit -->
+      <button class="btn btn-primary btn-block btn-lg" id="btnPay" onclick="doPayment()">
+        📤 إرسال طلب الاشتراك
+      </button>
+
+      <p class="text-center text-xs text-muted mt-3">
+        سيتم مراجعة طلبك خلال 24 ساعة وإرسال إشعار عند القبول
+      </p>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+initTheme();
+updateThemeBtn();
+const user = requireAuth(['student']);
+if(!user) throw new Error('no user');
+
+function updateThemeBtn(){ document.getElementById('themeBtn').textContent = document.documentElement.getAttribute('data-theme')==='dark'?'☀️':'🌙'; }
+function onToggleTheme(){ toggleTheme(); updateThemeBtn(); }
+
+// Load selected course
+const course = JSON.parse(localStorage.getItem('mf_selected_course')||'null');
+if(!course){ toast('لم يتم اختيار كورس', 'error'); setTimeout(()=>history.back(),1500); }
+else {
+  document.getElementById('courseTitle').textContent = course.title;
+  document.getElementById('courseInfo').textContent = (course.subject||'') + ' — ' + (course.teacher_name||'');
+  document.getElementById('coursePriceDisplay').textContent = fmtNum(course.price) + ' جنيه';
+}
+
+let selectedMethod = '';
+let appliedCoupon = null;
+let originalPrice = course?.price || 0;
+let finalPrice = originalPrice;
+
+function selectMethod(name, id){
+  document.querySelectorAll('.method-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById(id).classList.add('selected');
+  selectedMethod = name;
+}
+
+// Auto-select Vodafone Cash
+selectMethod('Vodafone Cash','methodVF');
+
+async function validateCoupon(){
+  const code = document.getElementById('couponInput').value.trim();
+  if(!code){ toast('أدخل كود الكوبون','warn'); return; }
+  const btn = document.getElementById('couponBtn');
+  btn.disabled=true; btn.textContent='⏳';
+  const res = await mfFetch('coupons', { method:'POST', body:JSON.stringify({action:'validate',code,user_id:user.id}) });
+  btn.disabled=false; btn.textContent='تحقق';
+  const resEl = document.getElementById('couponResult');
+  resEl.classList.remove('hidden','coupon-ok','coupon-err');
+  if(!res.ok){
+    resEl.className='coupon-result coupon-err'; resEl.textContent='❌ '+res.error;
+    appliedCoupon=null; finalPrice=originalPrice; updateFinalPrice();
+  } else {
+    const c = res.coupon;
+    appliedCoupon = c;
+    if(c.discount_type==='percent') finalPrice = Math.round(originalPrice*(1-c.discount_value/100));
+    else finalPrice = Math.max(0, originalPrice-c.discount_value);
+    resEl.className='coupon-result coupon-ok';
+    const saving = originalPrice-finalPrice;
+    resEl.textContent=`✅ خصم ${c.discount_value}${c.discount_type==='percent'?'%':' جنيه'} — وفرت ${fmtNum(saving)} جنيه`;
+    updateFinalPrice();
+  }
+}
+
+function updateFinalPrice(){
+  const row = document.getElementById('finalPriceRow');
+  if(appliedCoupon){
+    row.classList.remove('hidden');
+    document.getElementById('finalPriceDisplay').textContent = fmtNum(finalPrice)+' جنيه';
+  } else {
+    row.classList.add('hidden');
+  }
+}
+
+async function doPayment(){
+  if(!selectedMethod){ toast('اختر طريقة الدفع','warn'); return; }
+  const txnId = document.getElementById('txnId').value.trim();
+  if(!txnId){ toast('أدخل رقم العملية','warn'); return; }
+  const note = document.getElementById('txnNote').value.trim();
+
+  const btn = document.getElementById('btnPay');
+  btn.disabled=true; btn.textContent='⏳ جاري الإرسال...';
+
+  const body = {
+    user_id: user.id,
+    course_id: course.id,
+    method: selectedMethod,
+    amount: originalPrice,
+    final_amount: finalPrice,
+    transaction_id: txnId,
+    receipt_note: note||null
+  };
+  if(appliedCoupon) body.coupon_id = appliedCoupon.id;
+
+  const res = await mfFetch('create-payment', { method:'POST', body:JSON.stringify(body) });
+  btn.disabled=false; btn.innerHTML='📤 إرسال طلب الاشتراك';
+
+  if(!res.ok){ toast(res.error||'فشل الإرسال','error'); return; }
+  toast('تم إرسال طلبك بنجاح! ✅ سيتم مراجعته قريباً','success',5000);
+  setTimeout(()=>window.location.href='student.html', 2000);
+}
+</script>
+</body>
+</html>
