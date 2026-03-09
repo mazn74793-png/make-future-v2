@@ -345,10 +345,9 @@ let gone=false;
 const enter=()=>{
   if(gone)return;gone=true;
   clearTimeout(metTimer);
-  let dest='login.html';
-  try{const u=JSON.parse(localStorage.getItem('mf_user')||'null');if(u)dest=u.role==='student'?'student.html':'admin.html';}catch(e){}
+  // Always go to login — let login handle redirect if already logged in
   document.body.classList.add('out');
-  setTimeout(()=>location.href=dest,680);
+  setTimeout(()=>location.href='login.html',680);
 };
 
 document.getElementById('btn').addEventListener('click',e=>{e.stopPropagation();enter();});
