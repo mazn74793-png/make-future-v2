@@ -699,6 +699,19 @@ function courseCardHTML(c, enrolled){
 
   const priceHTML = !enrolled && c.price > 0 ? `<span class="badge badge-warn">${fmtNum(c.price)} جنيه</span>` : (c.price===0?'<span class="badge badge-success">مجاني</span>':'');
 
+  const safeTitle = encodeURIComponent(c.title||'');
+  const safeTeacher = encodeURIComponent(c.teacher_name||'');
+  const safeSubject = encodeURIComponent(c.subject||'');
+  
+  let actionBtn = '';
+  if(enrolled) {
+    actionBtn = '<button class="btn btn-primary btn-sm" onclick="openCourse(' + c.id + ')">▶️ فتح</button>';
+  } else if(status === 'available') {
+    actionBtn = '<button class="btn btn-primary btn-sm" onclick="goPay(' + c.id + ')">💳 اشتراك</button>';
+  } else {
+    actionBtn = '<span class="text-xs text-muted">جاري المراجعة</span>';
+  }
+
   return `<div class="course-card">
     <div class="course-card-body">
       <div class="flex items-center justify-between mb-2">
@@ -707,27 +720,24 @@ function courseCardHTML(c, enrolled){
       </div>
       <div class="course-card-title">${c.title}</div>
       <div class="course-card-teacher">👨‍🏫 ${c.teacher_name}</div>
-      ${sched?`<div class="text-xs text-muted mt-2">📅 ${sched}</div>`:''}
+      ${sched ? '<div class="text-xs text-muted mt-2">📅 ' + sched + '</div>' : ''}
       ${progressHTML}
     </div>
     <div class="course-card-footer">
       <span class="course-status ${statusClass}">${statusLabel}</span>
-      ${enrolled
-        ? `<button class="btn btn-primary btn-sm" onclick="openCourse(${c.id},'${c.title.replace(/'/g,'\\'')}','${c.subject||''}','${c.teacher_name.replace(/'/g,'\\'')}',${c.price||0})">▶️ فتح</button>`
-        : status==='available'
-          ? `<button class="btn btn-primary btn-sm" onclick="goPay(${c.id},'${c.title.replace(/'/g,'\\'')}','${c.subject||''}','${c.teacher_name.replace(/'/g,'\\'')}',${c.price||0})">💳 اشتراك</button>`
-          : '<span class="text-xs text-muted">جاري المراجعة</span>'
-      }
+      ${actionBtn}
     </div>
   </div>`;
 }
 
-function openCourse(id, title, subject, teacher, price){
-  localStorage.setItem('mf_selected_course', JSON.stringify({id,title,subject,teacher_name:teacher,price}));
+function openCourse(id){
+  const c = allCourses.find(x=>x.id===id);
+  if(c) localStorage.setItem('mf_selected_course', JSON.stringify({id:c.id,title:c.title,subject:c.subject,teacher_name:c.teacher_name,price:c.price||0}));
   window.location.href = 'course.html';
 }
-function goPay(id, title, subject, teacher, price){
-  localStorage.setItem('mf_selected_course', JSON.stringify({id,title,subject,teacher_name:teacher,price}));
+function goPay(id){
+  const c = allCourses.find(x=>x.id===id);
+  if(c) localStorage.setItem('mf_selected_course', JSON.stringify({id:c.id,title:c.title,subject:c.subject,teacher_name:c.teacher_name,price:c.price||0}));
   window.location.href = 'payment.html';
 }
 
