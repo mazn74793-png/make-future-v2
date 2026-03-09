@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>Debug</title>
+<style>
+body{font-family:monospace;background:#111;color:#eee;padding:20px;direction:ltr}
+.ok{color:#4ade80}.err{color:#f87171}.warn{color:#fbbf24}
+pre{background:#1e1e1e;padding:12px;border-radius:8px;overflow-x:auto;font-size:12px;margin:8px 0}
+button{background:#7c3aed;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;margin:4px}
+h3{color:#a78bfa;margin-top:20px}
+</style>
+</head>
+<body>
+<h2>🔍 API Debug Tool</h2>
+<div id="info"></div>
+<button onclick="runAll()">▶ Test All</button>
+<button onclick="clearLog()">🗑 Clear</button>
+<div id="log"></div>
+
+<script>
+const URL = 'https://pjskzfyjzvibqglhdykc.supabase.co/functions/v1';
+const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqc2t6ZnlqenZpYnFnbGhkeWtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNjU4NTcsImV4cCI6MjA4ODY0MTg1N30.AqdIBX-6tP9nMRVao4X7A1aV5L4J7mTiNC1RWeWf7LI';
+
+function log(msg, cls='') {
+  document.getElementById('log').innerHTML += `<pre class="${cls}">${msg}</pre>`;
+}
+function clearLog(){ document.getElementById('log').innerHTML=''; }
+
+async function apiCall(fn, opts={}) {
+  const token = localStorage.getItem('mf_access_token');
+  const headers = {
+    'Content-Type': 'application/json',
+    'apikey': ANON,
+    'Authorization': `Bearer ${token && token!='null' ? token : ANON}`
+  };
+  try {
+    const r = await fetch(`${URL}/${fn}`, {...opts, headers});
+    const text = await r.text();
+    let json;
+    try { json = JSON.parse(text); } catch{ json = text; }
+    return { status: r.status, ok: r.ok, data: json };
+  } catch(e) {
+    return { status: 0, ok: false, data: e.message };
+  }
+}
+
+async function runAll() {
+  clearLog();
+  
+  // Show stored data
+  const token = localStorage.getItem('mf_access_token');
+  const user = localStorage.getItem('mf_user');
+  log(`🔑 Token: ${token ? token.substring(0,40)+'...' : 'NULL'}`, token?'ok':'err');
+  log(`👤 User: ${user}`, user?'ok':'warn');
+
+  // Test admin-stats
+  log('\n📊 Testing admin-stats...');
+  const s = await apiCall('admin-stats');
+  log(`Status: ${s.status} | ok: ${s.ok}`, s.ok?'ok':'err');
+  log(JSON.stringify(s.data, null, 2), s.ok?'ok':'err');
+
+  // Test auth-login
+  log('\n🔐 Testing auth-login with momomo...');
+  const l = await apiCall('auth-login', {
+    method: 'POST',
+    body: JSON.stringify({login:'01210575530', password:'momomo'})
+  });
+  log(`Status: ${l.status} | ok: ${l.ok}`, l.ok?'ok':'err');
+  log(JSON.stringify(l.data, null, 2), l.ok?'ok':'err');
+  
+  if(l.data?.ok && l.data?.access_token) {
+    log('\n✅ Login works! Saving token and retesting admin-stats...', 'ok');
+    localStorage.setItem('mf_access_token', l.data.access_token);
+    localStorage.setItem('mf_user', JSON.stringify(l.data.user));
+    
+    // Retry admin-stats with real token
+    const s2 = await apiCall('admin-stats');
+    log(`admin-stats with token - Status: ${s2.status}`, s2.ok?'ok':'err');
+    log(JSON.stringify(s2.data, null, 2), s2.ok?'ok':'err');
+  }
+}
+
+// Show current state
+document.getElementById('info').innerHTML = `
+  <p>Token: <span class="${localStorage.getItem('mf_access_token')?'ok':'err'}">${localStorage.getItem('mf_access_token')?'EXISTS':'MISSING'}</span></p>
+  <p>User: <span class="${localStorage.getItem('mf_user')?'ok':'warn'}">${localStorage.getItem('mf_user')||'MISSING'}</span></p>
+`;
+</script>
+</body>
+</html>
