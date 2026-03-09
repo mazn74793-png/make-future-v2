@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Make Future Center — لوحة الإدارة</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="styles.css">
+<style>
+.admin-layout { display: grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 64px); }
+@media(max-width:800px){ .admin-layout { grid-template-columns: 1fr; } .admin-sidebar { display: none; } .admin-sidebar.open { display: flex; position: fixed; inset: 0; top: 64px; z-index: 200; background: var(--bg2); flex-direction: column; overflow-y: auto; } }
+.admin-sidebar { background: var(--bg2); border-left: 1px solid var(--border2); padding: 16px 0; display: flex; flex-direction: column; }
+.side-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text2); transition: all 0.2s; border-right: 3px solid transparent; }
+.side-item:hover { color: var(--text); background: rgba(124,58,237,0.06); }
+.side-item.active { color: var(--primary-light); background: rgba(124,58,237,0.1); border-right-color: var(--primary); }
+.side-item .side-icon { font-size: 18px; }
+.admin-content { overflow-y: auto; padding: 24px; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: fadeIn 0.3s ease; }
+.hamburger { display: none; }
+@media(max-width:800px){ .hamburger { display: flex; } }
+
+/* Upload area */
+.upload-drop { border: 2px dashed var(--border); border-radius: 16px; padding: 32px; text-align: center; cursor: pointer; transition: all 0.2s; }
+.upload-drop:hover, .upload-drop.drag-over { border-color: var(--primary); background: rgba(124,58,237,0.06); }
+.upload-progress-wrap { margin-top: 12px; display: none; }
+.upload-progress-bar { height: 8px; background: var(--grad); border-radius: 999px; transition: width 0.3s; width: 0%; }
+
+/* Payment row */
+.payment-row { padding: 14px 16px; border-bottom: 1px solid var(--border2); display: flex; align-items: flex-start; gap: 12px; }
+.payment-row:hover { background: rgba(124,58,237,0.04); }
+.payment-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+
+/* Drag handle */
+.drag-handle { cursor: grab; color: var(--text3); padding: 4px; }
+.sortable-ghost { opacity: 0.4; background: rgba(124,58,237,0.1) !important; }
+
+/* quiz builder */
+.question-builder { padding: 16px; border-radius: 14px; background: var(--bg3); border: 1px solid var(--border2); margin-bottom: 12px; position: relative; }
+</style>
+</head>
+<body>
+<div class="bg-mesh"></div>
+
+<nav class="navbar">
+  <div class="flex items-center gap-2">
+    <button class="hamburger btn btn-sm btn-secondary" onclick="toggleSidebar()">☰</button>
+    <span class="nav-logo">⚙️ Make Future Admin</span>
+  </div>
+  <div class="nav-actions">
+    <span class="text-sm text-muted hidden" id="adminRoleBadge" style="display:inline-block"></span>
+    <button class="theme-toggle" onclick="onToggleTheme()" id="themeBtn">🌙</button>
+    <a href="student.html" class="btn btn-sm btn-secondary">👨‍🎓 طالب</a>
+    <button class="btn btn-sm btn-danger" onclick="logout()">خروج</button>
+  </div>
+</nav>
+
+<div class="admin-layout">
+  <!-- Sidebar -->
+  <aside class="admin-sidebar" id="adminSidebar">
+    <div id="sideItems"></div>
+  </aside>
+
+  <!-- Content -->
+  <main class="admin-content">
+    <!-- DASHBOARD -->
+    <div class="tab-panel active" id="panel-dashboard">
+      <h2 class="section-title mb-4">📊 لوحة التحكم</h2>
+      <div class="grid-4" id="dashStats">
+        <div class="stat-card skeleton" style="height:120px"></div>
+        <div class="stat-card skeleton" style="height:120px"></div>
+        <div class="stat-card skeleton" style="height:120px"></div>
+        <div class="stat-card skeleton" style="height:120px"></div>
+      </div>
+      <div class="grid-2 mt-4">
+        <div>
+          <h3 class="section-title mb-3">💳 آخر المدفوعات</h3>
+          <div id="dashPayments"><div class="skeleton" style="height:200px;border-radius:16px"></div></div>
+        </div>
+        <div>
+          <h3 class="section-title mb-3">👥 آخر المستخدمين</h3>
+          <div id="dashUsers"><div class="skeleton" style="height:200px;border-radius:16px"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COURSES -->
+    <div class="tab-panel" id="panel-courses">
+      <div class="section-header">
+        <h2 class="section-title">📚 الكورسات</h2>
+        <button class="btn btn-primary btn-sm" onclick="openModal('modalCourse')">+ إضافة كورس</button>
+      </div>
+      <div class="flex gap-2 mb-4 flex-wrap">
+        <select class="form-select" style="width:auto" id="filterGrade" onchange="loadCourses()"><option value="">كل الصفوف</option><option value="3prep">الإعدادي</option><option value="1sec">أول ثانوي</option><option value="2sec">ثاني ثانوي</option><option value="3sec">ثالث ثانوي</option></select>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>الكورس</th><th>المدرس</th><th>الصف</th><th>السعر</th><th>المشتركين</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+        <tbody id="coursesTable"><tr><td colspan="7" class="text-center text-muted p-4">جاري التحميل...</td></tr></tbody>
+      </table></div>
+    </div>
+
+    <!-- SCHEDULES -->
+    <div class="tab-panel" id="panel-schedules">
+      <div class="section-header">
+        <h2 class="section-title">📅 المواعيد</h2>
+        <button class="btn btn-primary btn-sm" onclick="openModal('modalSchedule')">+ إضافة موعد</button>
+      </div>
+      <div class="flex gap-2 mb-4">
+        <select class="form-select" style="width:auto" id="schedCourseFilter" onchange="loadSchedules()"><option value="">اختر كورس</option></select>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>اليوم</th><th>من</th><th>إلى</th><th>ملاحظة</th><th>إجراءات</th></tr></thead>
+        <tbody id="schedulesTable"><tr><td colspan="5" class="text-center text-muted p-4">اختر كورس أولاً</td></tr></tbody>
+      </table></div>
+    </div>
+
+    <!-- VIDEOS -->
+    <div class="tab-panel" id="panel-videos">
+      <div class="section-header">
+        <h2 class="section-title">🎬 الفيديوهات</h2>
+        <button class="btn btn-primary btn-sm" onclick="openModal('modalVideo')">+ إضافة فيديو</button>
+      </div>
+      <div class="flex gap-2 mb-4">
+        <select class="form-select" style="width:auto" id="vidCourseFilter" onchange="loadVideos()"><option value="">اختر كورس</option></select>
+      </div>
+      <div id="videosList"><div class="empty-state"><div class="empty-icon">🎬</div><p>اختر كورس لعرض فيديوهاته</p></div></div>
+    </div>
+
+    <!-- PAYMENTS -->
+    <div class="tab-panel" id="panel-payments">
+      <div class="section-header">
+        <h2 class="section-title">💳 المدفوعات</h2>
+        <div class="flex gap-2">
+          <button class="btn btn-sm btn-success" onclick="bulkApprove()" id="bulkApproveBtn">✅ قبول المحددين</button>
+        </div>
+      </div>
+      <div class="tabs mb-4">
+        <button class="tab-btn active" onclick="loadPayments('pending',this)">⏳ قيد المراجعة</button>
+        <button class="tab-btn" onclick="loadPayments('approved',this)">✅ مقبول</button>
+        <button class="tab-btn" onclick="loadPayments('rejected',this)">❌ مرفوض</button>
+      </div>
+      <div id="paymentsList"><div class="text-center text-muted p-6">جاري التحميل...</div></div>
+    </div>
+
+    <!-- COUPONS -->
+    <div class="tab-panel" id="panel-coupons">
+      <div class="section-header">
+        <h2 class="section-title">🎫 الكوبونات</h2>
+        <button class="btn btn-primary btn-sm" onclick="openModal('modalCoupon')">+ إنشاء كوبون</button>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>الكود</th><th>الخصم</th><th>الاستخدام</th><th>تنتهي</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+        <tbody id="couponsTable"><tr><td colspan="6" class="text-center text-muted p-4">جاري التحميل...</td></tr></tbody>
+      </table></div>
+    </div>
+
+    <!-- COMMENTS -->
+    <div class="tab-panel" id="panel-comments">
+      <div class="section-header">
+        <h2 class="section-title">💬 التعليقات</h2>
+      </div>
+      <div class="flex gap-2 mb-4">
+        <select class="form-select" style="width:auto" id="commentCourseFilter" onchange="loadAdminComments()"><option value="">اختر كورس</option></select>
+      </div>
+      <div id="adminCommentsList"><div class="empty-state"><div class="empty-icon">💬</div><p>اختر كورس لعرض تعليقاته</p></div></div>
+    </div>
+
+    <!-- USERS -->
+    <div class="tab-panel" id="panel-users">
+      <div class="section-header">
+        <h2 class="section-title">👥 المستخدمين</h2>
+      </div>
+      <div class="flex gap-2 mb-4">
+        <input type="text" class="form-input" style="max-width:300px" id="userSearch" placeholder="🔍 بحث باسم أو موبايل..." oninput="filterUsers()">
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>الاسم</th><th>الموبايل</th><th>الصف</th><th>الدور</th><th>إجراءات</th></tr></thead>
+        <tbody id="usersTable"><tr><td colspan="5" class="text-center text-muted p-4">جاري التحميل...</td></tr></tbody>
+      </table></div>
+    </div>
+
+    <!-- QUIZZES -->
+    <div class="tab-panel" id="panel-quizzes">
+      <div class="section-header">
+        <h2 class="section-title">📝 الكويزات</h2>
+        <button class="btn btn-primary btn-sm" onclick="openModal('modalQuiz')">+ إنشاء كويز</button>
+      </div>
+      <div class="flex gap-2 mb-4">
+        <select class="form-select" style="width:auto" id="quizCourseFilter" onchange="loadQuizzes()"><option value="">اختر كورس</option></select>
+      </div>
+      <div id="quizzesList"><div class="empty-state"><div class="empty-icon">📝</div><p>اختر كورس لعرض كويزاته</p></div></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ═══ MODALS ═══ -->
+
+<!-- Course Modal -->
+<div class="modal-overlay" id="modalCourse">
+  <div class="modal-box">
+    <div class="modal-header"><h3 class="modal-title" id="courseModalTitle">إضافة كورس</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalCourse')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editCourseId">
+      <div class="form-group"><label class="form-label">اسم الكورس</label><input type="text" class="form-input" id="courseTitle"></div>
+      <div class="form-group"><label class="form-label">اسم المدرس</label><input type="text" class="form-input" id="courseTeacher"></div>
+      <div class="grid-2 gap-3">
+        <div class="form-group"><label class="form-label">الصف</label><select class="form-select" id="courseGrade"><option value="3prep">الإعدادي</option><option value="1sec">أول ثانوي</option><option value="2sec">ثاني ثانوي</option><option value="3sec">ثالث ثانوي</option></select></div>
+        <div class="form-group"><label class="form-label">المادة</label><input type="text" class="form-input" id="courseSubject" placeholder="رياضيات، فيزياء..."></div>
+      </div>
+      <div class="grid-2 gap-3">
+        <div class="form-group"><label class="form-label">السعر (جنيه)</label><input type="number" class="form-input" id="coursePrice" value="0" min="0"></div>
+        <div class="form-group"><label class="form-label">الحالة</label><select class="form-select" id="courseActive"><option value="true">نشط</option><option value="false">غير نشط</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">معلومات الدفع للمدرس</label><input type="text" class="form-input" id="coursePayInfo" placeholder="رقم محفظة أو بيانات الدفع"></div>
+      <button class="btn btn-primary btn-block" onclick="saveCourse()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Schedule Modal -->
+<div class="modal-overlay" id="modalSchedule">
+  <div class="modal-box">
+    <div class="modal-header"><h3 class="modal-title">إضافة موعد</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalSchedule')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editSchedId">
+      <div class="form-group"><label class="form-label">الكورس</label><select class="form-select" id="schedCourseId"></select></div>
+      <div class="form-group"><label class="form-label">اليوم</label><select class="form-select" id="schedDay"><option>السبت</option><option>الأحد</option><option>الاثنين</option><option>الثلاثاء</option><option>الأربعاء</option><option>الخميس</option><option>الجمعة</option></select></div>
+      <div class="grid-2 gap-3">
+        <div class="form-group"><label class="form-label">من</label><input type="time" class="form-input" id="schedStart"></div>
+        <div class="form-group"><label class="form-label">إلى</label><input type="time" class="form-input" id="schedEnd"></div>
+      </div>
+      <div class="form-group"><label class="form-label">ملاحظة</label><input type="text" class="form-input" id="schedNote" placeholder="اختياري"></div>
+      <button class="btn btn-primary btn-block" onclick="saveSchedule()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Video Modal -->
+<div class="modal-overlay" id="modalVideo">
+  <div class="modal-box">
+    <div class="modal-header"><h3 class="modal-title">إضافة فيديو</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalVideo')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editVideoId">
+      <div class="form-group"><label class="form-label">الكورس</label><select class="form-select" id="vidCourseId"></select></div>
+      <div class="form-group"><label class="form-label">عنوان الفيديو</label><input type="text" class="form-input" id="vidTitle"></div>
+      <div class="form-group"><label class="form-label">النوع</label>
+        <div class="flex gap-3">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="vidType" value="youtube" checked onchange="toggleVidType('youtube')"> YouTube</label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="vidType" value="upload" onchange="toggleVidType('upload')"> رفع فيديو</label>
+        </div>
+      </div>
+      <div id="ytSection" class="form-group"><label class="form-label">رابط YouTube</label><input type="url" class="form-input" id="vidYtUrl" placeholder="https://youtu.be/..."></div>
+      <div id="uploadSection" class="hidden">
+        <div class="upload-drop" id="uploadDrop" onclick="document.getElementById('vidFile').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event)">
+          <div style="font-size:40px">📁</div>
+          <div class="mt-2 font-bold">اسحب الفيديو هنا أو اضغط للاختيار</div>
+          <div class="text-sm text-muted mt-1">MP4, MOV, AVI — بدون حد للحجم</div>
+          <input type="file" id="vidFile" accept="video/*" class="hidden" onchange="handleFileSelect(event)">
+        </div>
+        <div class="upload-progress-wrap" id="uploadProgressWrap">
+          <div class="flex items-center justify-between mb-1"><span class="text-sm" id="uploadFileName">—</span><span class="text-sm" id="uploadPct">0%</span></div>
+          <div class="progress-wrap"><div class="upload-progress-bar" id="uploadProgressBar"></div></div>
+          <div class="text-xs text-muted mt-1" id="uploadSpeed"></div>
+        </div>
+      </div>
+      <div class="form-group mt-3"><label class="form-label">وصف (اختياري)</label><textarea class="form-textarea" id="vidDesc"></textarea></div>
+      <div class="form-group"><label class="form-label">الترتيب</label><input type="number" class="form-input" id="vidOrder" value="0" min="0"></div>
+      <button class="btn btn-primary btn-block" id="btnSaveVideo" onclick="saveVideo()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Coupon Modal -->
+<div class="modal-overlay" id="modalCoupon">
+  <div class="modal-box">
+    <div class="modal-header"><h3 class="modal-title">إنشاء كوبون</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalCoupon')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">الكود</label><input type="text" class="form-input" id="couponCode" placeholder="SUMMER20" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
+      <div class="grid-2 gap-3">
+        <div class="form-group"><label class="form-label">نوع الخصم</label><select class="form-select" id="couponType"><option value="percent">نسبة مئوية %</option><option value="fixed">مبلغ ثابت</option></select></div>
+        <div class="form-group"><label class="form-label">قيمة الخصم</label><input type="number" class="form-input" id="couponVal" min="1" placeholder="20"></div>
+      </div>
+      <div class="grid-2 gap-3">
+        <div class="form-group"><label class="form-label">أقصى استخدام</label><input type="number" class="form-input" id="couponMax" value="100" min="1"></div>
+        <div class="form-group"><label class="form-label">تاريخ الانتهاء</label><input type="date" class="form-input" id="couponExpiry"></div>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="saveCoupon()">💾 إنشاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reply Modal -->
+<div class="modal-overlay" id="modalReply">
+  <div class="modal-box">
+    <div class="modal-header"><h3 class="modal-title">الرد على التعليق</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalReply')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="replyCommentId">
+      <div class="glass-sm p-3 mb-3" id="replyOriginal" style="font-size:13px"></div>
+      <div class="form-group"><label class="form-label">ردك</label><textarea class="form-textarea" id="replyText" rows="4"></textarea></div>
+      <button class="btn btn-primary btn-block" onclick="submitReply()">📤 إرسال الرد</button>
+    </div>
+  </div>
+</div>
+
+<!-- User Role Modal -->
+<div class="modal-overlay" id="modalUserRole">
+  <div class="modal-box">
+    <div class="modal-header"><h3 class="modal-title">تعديل صلاحيات المستخدم</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalUserRole')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editUserId">
+      <div class="glass-sm p-3 mb-4"><strong id="editUserName"></strong><div class="text-sm text-muted" id="editUserPhone"></div></div>
+      <div class="form-group"><label class="form-label">الدور</label>
+        <select class="form-select" id="editUserRole" onchange="toggleManagedCourses()">
+          <option value="student">طالب</option>
+          <option value="course_admin">مسؤول كورس</option>
+          <option value="admin">أدمن</option>
+          <option value="superadmin">سوبر أدمن</option>
+        </select>
+      </div>
+      <div class="form-group hidden" id="managedCoursesGroup">
+        <label class="form-label">الكورسات المُدارة</label>
+        <div id="managedCoursesList" style="max-height:200px;overflow-y:auto;border:1px solid var(--border2);border-radius:10px;padding:8px"></div>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="saveUserRole()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Quiz Modal -->
+<div class="modal-overlay" id="modalQuiz">
+  <div class="modal-box" style="max-width:600px">
+    <div class="modal-header"><h3 class="modal-title">إنشاء كويز</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalQuiz')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editQuizId">
+      <div class="form-group"><label class="form-label">الكورس</label><select class="form-select" id="quizCourseId"></select></div>
+      <div class="form-group"><label class="form-label">عنوان الكويز</label><input type="text" class="form-input" id="quizTitle"></div>
+      <div class="form-group"><label class="form-label">وصف (اختياري)</label><input type="text" class="form-input" id="quizDesc"></div>
+      <div class="form-group"><label class="form-label">درجة النجاح %</label><input type="number" class="form-input" id="quizPassScore" value="60" min="0" max="100"></div>
+      <button class="btn btn-primary btn-block" onclick="saveQuiz()">💾 حفظ الكويز</button>
+    </div>
+  </div>
+</div>
+
+<!-- Question Modal -->
+<div class="modal-overlay" id="modalQuestion">
+  <div class="modal-box" style="max-width:580px">
+    <div class="modal-header"><h3 class="modal-title">إضافة سؤال</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalQuestion')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editQId">
+      <input type="hidden" id="qQuizId">
+      <div class="form-group"><label class="form-label">السؤال</label><textarea class="form-textarea" id="qText" rows="2"></textarea></div>
+      <div class="form-group"><label class="form-label">الخيار أ</label><input type="text" class="form-input" id="qOptA"></div>
+      <div class="form-group"><label class="form-label">الخيار ب</label><input type="text" class="form-input" id="qOptB"></div>
+      <div class="form-group"><label class="form-label">الخيار ج</label><input type="text" class="form-input" id="qOptC"></div>
+      <div class="form-group"><label class="form-label">الخيار د</label><input type="text" class="form-input" id="qOptD"></div>
+      <div class="form-group"><label class="form-label">الإجابة الصحيحة</label>
+        <select class="form-select" id="qCorrect"><option value="a">أ</option><option value="b">ب</option><option value="c">ج</option><option value="d">د</option></select>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="saveQuestion()">💾 حفظ السؤال</button>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+initTheme();
+updateThemeBtn();
+const user = requireAuth(['admin','superadmin','course_admin']);
+if(!user) throw new Error('no user');
+
+function updateThemeBtn(){ document.getElementById('themeBtn').textContent = document.documentElement.getAttribute('data-theme')==='dark'?'☀️':'🌙'; }
+function onToggleTheme(){ toggleTheme(); updateThemeBtn(); }
+
+document.getElementById('adminRoleBadge').textContent = user.role==='superadmin'?'👑 سوبر أدمن':user.role==='admin'?'⚙️ أدمن':'📋 مسؤول كورس';
+
+// ─── Sidebar ──────────────────────────
+const ALL_TABS = [
+  {id:'dashboard',label:'لوحة التحكم',icon:'📊'},
+  {id:'courses',label:'الكورسات',icon:'📚'},
+  {id:'schedules',label:'المواعيد',icon:'📅'},
+  {id:'videos',label:'الفيديوهات',icon:'🎬'},
+  {id:'payments',label:'المدفوعات',icon:'💳'},
+  {id:'coupons',label:'الكوبونات',icon:'🎫'},
+  {id:'comments',label:'التعليقات',icon:'💬'},
+  {id:'users',label:'المستخدمين',icon:'👥',superOnly:false},
+  {id:'quizzes',label:'الكويزات',icon:'📝'},
+];
+
+function buildSidebar(){
+  const items = document.getElementById('sideItems');
+  items.innerHTML = ALL_TABS.map(t=>`
+    <div class="side-item" id="side-${t.id}" onclick="switchTab('${t.id}')">
+      <span class="side-icon">${t.icon}</span>
+      <span>${t.label}</span>
+    </div>`).join('');
+}
+
+let currentTab = 'dashboard';
+function switchTab(tab){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.side-item').forEach(s=>s.classList.remove('active'));
+  document.getElementById('panel-'+tab)?.classList.add('active');
+  document.getElementById('side-'+tab)?.classList.add('active');
+  currentTab = tab;
+  // Close sidebar on mobile
+  document.getElementById('adminSidebar').classList.remove('open');
+  // Load data
+  const loaders={dashboard:loadDashboard,courses:loadCourses,schedules:loadSchedules,videos:()=>{},payments:()=>loadPayments('pending',document.querySelector('.tabs .tab-btn')),coupons:loadCoupons,comments:()=>{},users:loadUsers,quizzes:()=>{}};
+  loaders[tab]?.();
+}
+
+function toggleSidebar(){ document.getElementById('adminSidebar').classList.toggle('open'); }
+
+// ─── Modals ───────────────────────────
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{ if(e.target===m) closeModal(m.id); }));
+
+// ─── DASHBOARD ────────────────────────
+async function loadDashboard(){
+  const res = await mfFetch('admin-stats');
+  if(!res.ok) return;
+  const c = res.counts||{};
+  document.getElementById('dashStats').innerHTML = `
+    <div class="stat-card fade-up"><div class="stat-icon">👥</div><div class="stat-value">${fmtNum(c.users)}</div><div class="stat-label">المستخدمين</div></div>
+    <div class="stat-card fade-up fade-up-1"><div class="stat-icon">📚</div><div class="stat-value">${fmtNum(c.courses)}</div><div class="stat-label">الكورسات</div></div>
+    <div class="stat-card fade-up fade-up-2"><div class="stat-icon">⏳</div><div class="stat-value">${fmtNum(c.pending)}</div><div class="stat-label">طلبات معلقة</div></div>
+    <div class="stat-card fade-up fade-up-3"><div class="stat-icon">✅</div><div class="stat-value">${fmtNum(c.approved)}</div><div class="stat-label">طلبات مقبولة</div></div>`;
+  // Latest payments
+  const payments = res.latestPayments||[];
+  document.getElementById('dashPayments').innerHTML = payments.length?`
+    <div class="glass-sm">${payments.map(p=>`
+      <div class="payment-row">
+        <div style="flex:1">
+          <div class="font-bold text-sm">${p.full_name||'—'}</div>
+          <div class="text-xs text-muted">${p.course_title||''} — ${p.method||''}</div>
+          <div class="text-xs text-muted">${fmtNum(p.final_amount||p.amount)} جنيه — ${fmtDate(p.created_at)}</div>
+        </div>
+        <span class="badge ${p.status==='approved'?'badge-success':p.status==='rejected'?'badge-danger':'badge-warn'}">${p.status==='approved'?'مقبول':p.status==='rejected'?'مرفوض':'معلق'}</span>
+      </div>`).join('')}</div>`:'<div class="empty-state"><div class="empty-icon">💳</div><p>لا توجد مدفوعات</p></div>';
+  // Latest users
+  const users2 = res.latestUsers||[];
+  document.getElementById('dashUsers').innerHTML = users2.length?`
+    <div class="glass-sm">${users2.map(u=>`
+      <div class="payment-row">
+        <div><div class="font-bold text-sm">${u.full_name}</div><div class="text-xs text-muted">${u.phone_student||''} — ${gradeLabel(u.grade)}</div></div>
+        <span class="badge badge-primary">${u.role}</span>
+      </div>`).join('')}</div>`:'<div class="empty-state"><p>لا يوجد</p></div>';
+}
+
+// ─── COURSES ──────────────────────────
+let allCourses = [];
+async function loadCourses(){
+  const grade = document.getElementById('filterGrade')?.value||'';
+  const res = await mfFetch('admin-courses?grade='+grade);
+  allCourses = res.courses||[];
+  populateCourseSelects(allCourses);
+  const tbody = document.getElementById('coursesTable');
+  if(!allCourses.length){ tbody.innerHTML='<tr><td colspan="7" class="text-center text-muted p-4">لا توجد كورسات</td></tr>'; return; }
+  tbody.innerHTML = allCourses.map(c=>`
+    <tr>
+      <td><div class="font-bold">${c.title}</div><div class="text-xs text-muted">${c.subject||''}</div></td>
+      <td>${c.teacher_name}</td>
+      <td>${gradeLabel(c.grade)}</td>
+      <td>${fmtNum(c.price)} جنيه</td>
+      <td><span class="badge badge-info">${c.enrolled_count||0}</span></td>
+      <td><span class="badge ${c.is_active?'badge-success':'badge-danger'}">${c.is_active?'نشط':'متوقف'}</span></td>
+      <td>
+        <div class="flex gap-2">
+          <button class="btn btn-sm btn-secondary" onclick="editCourse(${JSON.stringify(c).replace(/"/g,'&quot;')})">✏️</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteCourse(${c.id},'${c.title.replace(/'/g,'\\'')}')">🗑️</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function populateCourseSelects(courses){
+  const selects = ['schedCourseFilter','schedCourseId','vidCourseFilter','vidCourseId','commentCourseFilter','quizCourseFilter','quizCourseId'];
+  selects.forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    const val = el.value;
+    const first = id.endsWith('Filter')?'<option value="">اختر كورس</option>':'<option value="">اختر كورس</option>';
+    el.innerHTML = first + courses.map(c=>`<option value="${c.id}">${c.title}</option>`).join('');
+    if(val) el.value=val;
+  });
+}
+
+function editCourse(c){
+  document.getElementById('editCourseId').value=c.id;
+  document.getElementById('courseTitle').value=c.title;
+  document.getElementById('courseTeacher').value=c.teacher_name;
+  document.getElementById('courseGrade').value=c.grade;
+  document.getElementById('courseSubject').value=c.subject||'';
+  document.getElementById('coursePrice').value=c.price||0;
+  document.getElementById('courseActive').value=String(c.is_active);
+  document.getElementById('coursePayInfo').value=c.teacher_payment_info||'';
+  document.getElementById('courseModalTitle').textContent='تعديل الكورس';
+  openModal('modalCourse');
+}
+
+async function saveCourse(){
+  const id=document.getElementById('editCourseId').value;
+  const body={title:document.getElementById('courseTitle').value.trim(),teacher_name:document.getElementById('courseTeacher').value.trim(),grade:document.getElementById('courseGrade').value,subject:document.getElementById('courseSubject').value.trim(),price:parseInt(document.getElementById('coursePrice').value)||0,is_active:document.getElementById('courseActive').value==='true',teacher_payment_info:document.getElementById('coursePayInfo').value.trim()||null};
+  if(id) body.id=parseInt(id);
+  if(!body.title||!body.teacher_name){ toast('أدخل اسم الكورس والمدرس','warn'); return; }
+  const res=await mfFetch('admin-courses',{method:'POST',body:JSON.stringify(body)});
+  if(!res.ok){ toast(res.error||'فشل الحفظ','error'); return; }
+  toast('تم الحفظ ✅','success'); closeModal('modalCourse'); loadCourses();
+  document.getElementById('editCourseId').value='';
+  document.getElementById('courseModalTitle').textContent='إضافة كورس';
+}
+
+async function deleteCourse(id,name){
+  if(!confirm('حذف كورس "'+name+'"؟ سيتم حذف كل البيانات المرتبطة به.')) return;
+  const res=await mfFetch('admin-courses',{method:'DELETE',body:JSON.stringify({id})});
+  if(!res.ok){ toast(res.error,'error'); return; }
+  toast('تم الحذف','success'); loadCourses();
+}
+
+// ─── SCHEDULES ────────────────────────
+async function loadSchedules(){
+  const cid=document.getElementById('schedCourseFilter')?.value;
+  if(!cid) return;
+  const res=await mfFetch('admin-schedules?course_id='+cid);
+  const scheds=res.schedules||[];
+  const tbody=document.getElementById('schedulesTable');
+  if(!scheds.length){ tbody.innerHTML='<tr><td colspan="5" class="text-center text-muted p-4">لا توجد مواعيد</td></tr>'; return; }
+  tbody.innerHTML=scheds.map(s=>`<tr>
+    <td>${s.day_of_week}</td><td>${s.start_time}</td><td>${s.end_time}</td><td>${s.notes||'—'}</td>
+    <td><div class="flex gap-2"><button class="btn btn-sm btn-secondary" onclick="editSched(${JSON.stringify(s).replace(/"/g,'&quot;')})">✏️</button><button class="btn btn-sm btn-danger" onclick="deleteSched(${s.id})">🗑️</button></div></td>
+  </tr>`).join('');
+}
+
+function editSched(s){ document.getElementById('editSchedId').value=s.id; document.getElementById('schedCourseId').value=s.course_id; document.getElementById('schedDay').value=s.day_of_week; document.getElementById('schedStart').value=s.start_time; document.getElementById('schedEnd').value=s.end_time; document.getElementById('schedNote').value=s.notes||''; openModal('modalSchedule'); }
+
+async function saveSchedule(){
+  const id=document.getElementById('editSchedId').value;
+  const body={course_id:parseInt(document.getElementById('schedCourseId').value),day_of_week:document.getElementById('schedDay').value,start_time:document.getElementById('schedStart').value,end_time:document.getElementById('schedEnd').value,notes:document.getElementById('schedNote').value||null};
+  if(id)body.id=parseInt(id);
+  const res=await mfFetch('admin-schedules',{method:'POST',body:JSON.stringify(body)});
+  if(!res.ok){ toast(res.error,'error'); return; }
+  toast('تم الحفظ ✅','success'); closeModal('modalSchedule'); document.getElementById('editSchedId').value=''; loadSchedules();
+}
+async function deleteSched(id){ if(!confirm('حذف الموعد؟')) return; await mfFetch('admin-schedules',{method:'DELETE',body:JSON.stringify({id})}); toast('تم الحذف','success'); loadSchedules(); }
+
+// ─── VIDEOS ───────────────────────────
+function toggleVidType(type){ document.getElementById('ytSection').classList.toggle('hidden',type!=='youtube'); document.getElementById('uploadSection').classList.toggle('hidden',type!=='upload'); }
+
+async function loadVideos(){
+  const cid=document.getElementById('vidCourseFilter')?.value;
+  if(!cid){ document.getElementById('videosList').innerHTML='<div class="empty-state"><div class="empty-icon">🎬</div><p>اختر كورس</p></div>'; return; }
+  const res=await mfFetch('course-videos?course_id='+cid);
+  const videos=res.videos||[];
+  if(!videos.length){ document.getElementById('videosList').innerHTML='<div class="empty-state"><div class="empty-icon">🎬</div><p>لا توجد فيديوهات</p></div>'; return; }
+  document.getElementById('videosList').innerHTML=`<div class="table-wrap"><table>
+    <thead><tr><th>#</th><th>العنوان</th><th>النوع</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+    <tbody>${videos.map((v,i)=>`<tr>
+      <td class="text-muted">${v.order_index||i+1}</td>
+      <td><div class="font-bold">${v.title}</div>${v.description?`<div class="text-xs text-muted">${v.description}</div>`:''}</td>
+      <td><span class="badge ${v.video_type==='youtube'?'badge-danger':'badge-primary'}">${v.video_type==='youtube'?'📺 يوتيوب':'🎬 مرفوع'}</span></td>
+      <td><span class="badge ${v.is_active?'badge-success':'badge-danger'}">${v.is_active?'نشط':'متوقف'}</span></td>
+      <td><div class="flex gap-2"><button class="btn btn-sm btn-secondary" onclick="editVideo(${JSON.stringify(v).replace(/"/g,'&quot;')})">✏️</button><button class="btn btn-sm btn-danger" onclick="deleteVideo(${v.id})">🗑️</button></div></td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+function editVideo(v){ document.getElementById('editVideoId').value=v.id; document.getElementById('vidCourseId').value=v.course_id; document.getElementById('vidTitle').value=v.title; document.getElementById('vidDesc').value=v.description||''; document.getElementById('vidOrder').value=v.order_index||0; document.getElementById('vidYtUrl').value=v.youtube_url||''; document.querySelector(`input[name="vidType"][value="${v.video_type||'youtube'}"]`).checked=true; toggleVidType(v.video_type||'youtube'); openModal('modalVideo'); }
+
+let uploadFile=null;
+function handleFileSelect(e){ uploadFile=e.target.files[0]; if(uploadFile) document.getElementById('uploadDrop').innerHTML=`<div style="font-size:32px">🎬</div><div class="mt-2 font-bold">${uploadFile.name}</div><div class="text-sm text-muted mt-1">${(uploadFile.size/1024/1024).toFixed(1)} MB</div>`; }
+function handleDrop(e){ e.preventDefault(); document.getElementById('uploadDrop').classList.remove('drag-over'); const files=e.dataTransfer.files; if(files[0]) { uploadFile=files[0]; handleFileSelect({target:{files}}); } }
+
+async function saveVideo(){
+  const id=document.getElementById('editVideoId').value;
+  const type=document.querySelector('input[name="vidType"]:checked').value;
+  const cid=document.getElementById('vidCourseId').value;
+  if(!cid){ toast('اختر كورس','warn'); return; }
+  const title=document.getElementById('vidTitle').value.trim();
+  if(!title){ toast('أدخل عنوان الفيديو','warn'); return; }
+  if(type==='upload' && !id && !uploadFile){ toast('اختر ملف فيديو','warn'); return; }
+
+  const btn=document.getElementById('btnSaveVideo');
+  btn.disabled=true; btn.textContent='⏳ جاري الحفظ...';
+
+  if(type==='youtube'||id){
+    const body={course_id:parseInt(cid),title,description:document.getElementById('vidDesc').value||null,order_index:parseInt(document.getElementById('vidOrder').value)||0,video_type:type,is_active:true};
+    if(type==='youtube') body.youtube_url=document.getElementById('vidYtUrl').value.trim();
+    if(id) body.id=parseInt(id);
+    const res=await mfFetch('course-videos',{method:'POST',body:JSON.stringify(body)});
+    btn.disabled=false; btn.textContent='💾 حفظ';
+    if(!res.ok){ toast(res.error,'error'); return; }
+  } else {
+    // Multipart R2 upload
+    await uploadToR2(uploadFile, cid, title);
+    btn.disabled=false; btn.textContent='💾 حفظ';
+    uploadFile=null;
+  }
+  toast('تم الحفظ ✅','success'); closeModal('modalVideo'); document.getElementById('editVideoId').value=''; loadVideos();
+}
+
+async function uploadToR2(file, courseId, title){
+  const pw=document.getElementById('uploadProgressWrap'); pw.style.display='block';
+  const pb=document.getElementById('uploadProgressBar'); const pp=document.getElementById('uploadPct');
+  document.getElementById('uploadFileName').textContent=file.name;
+
+  // Init
+  const initRes=await mfFetch('r2-multipart',{method:'POST',body:JSON.stringify({action:'init',course_id:courseId,filename:file.name,content_type:file.type||'video/mp4'})});
+  if(!initRes.ok){ toast('فشل بدء الرفع: '+initRes.error,'error'); throw new Error(initRes.error); }
+  const {upload_id,key}=initRes;
+
+  const PART=10*1024*1024; // 10MB chunks
+  const parts=[];
+  const totalParts=Math.ceil(file.size/PART);
+  const startTime=Date.now();
+
+  for(let i=0;i<totalParts;i++){
+    const chunk=file.slice(i*PART,(i+1)*PART);
+    const pn=i+1;
+    const signRes=await mfFetch('r2-multipart',{method:'POST',body:JSON.stringify({action:'sign_part',upload_id,key,part_number:pn})});
+    if(!signRes.ok){ toast('فشل توقيع الجزء','error'); throw new Error(); }
+    const uploadRes=await fetch(signRes.url,{method:'PUT',body:chunk,headers:{'Content-Type':file.type||'video/mp4'}});
+    if(!uploadRes.ok){ toast('فشل رفع الجزء '+pn,'error'); throw new Error(); }
+    const etag=uploadRes.headers.get('etag')||'"'+pn+'"';
+    parts.push({PartNumber:pn,ETag:etag});
+    const pct=Math.round(pn/totalParts*100);
+    pb.style.width=pct+'%'; pp.textContent=pct+'%';
+    const elapsed=(Date.now()-startTime)/1000;
+    const speed=(PART*pn/1024/1024/elapsed).toFixed(1);
+    document.getElementById('uploadSpeed').textContent=`سرعة الرفع: ${speed} MB/s`;
+  }
+
+  // Complete
+  const completeRes=await mfFetch('r2-multipart',{method:'POST',body:JSON.stringify({action:'complete',upload_id,key,parts,course_id:parseInt(courseId),title,description:document.getElementById('vidDesc').value||null,order_index:parseInt(document.getElementById('vidOrder').value)||0})});
+  if(!completeRes.ok){ toast('فشل إكمال الرفع','error'); throw new Error(); }
+  pw.style.display='none';
+}
+
+async function deleteVideo(id){ if(!confirm('حذف الفيديو؟')) return; await mfFetch('course-videos',{method:'DELETE',body:JSON.stringify({id})}); toast('تم الحذف','success'); loadVideos(); }
+
+// ─── PAYMENTS ─────────────────────────
+let selectedPayments=new Set();
+async function loadPayments(status, btn){
+  document.querySelectorAll('.tabs .tab-btn').forEach(b=>b.classList.remove('active'));
+  btn?.classList.add('active');
+  selectedPayments.clear();
+  const res=await mfFetch('admin-payments?status='+status);
+  const payments=res.payments||[];
+  const list=document.getElementById('paymentsList');
+  if(!payments.length){ list.innerHTML='<div class="empty-state"><div class="empty-icon">💳</div><p>لا توجد طلبات</p></div>'; return; }
+  list.innerHTML=`<div class="glass-sm">${payments.map(p=>`
+    <div class="payment-row" id="prow-${p.id}">
+      ${status==='pending'?`<input type="checkbox" onchange="toggleSelect(${p.id},this)" style="margin-top:4px">`:''} 
+      <div style="flex:1">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="font-bold">${p.full_name||'—'}</span>
+          <span class="text-xs text-muted">${p.phone_student||''}</span>
+          <span class="badge badge-primary">${gradeLabel(p.grade||'')}</span>
+        </div>
+        <div class="text-sm mt-1">📚 ${p.course_title||''} — 👨‍🏫 ${p.teacher_name||''}</div>
+        <div class="text-sm mt-1">💰 ${fmtNum(p.final_amount||p.amount)} جنيه — 📱 ${p.method||''}</div>
+        ${p.transaction_id?`<div class="text-xs text-muted mt-1">🔢 رقم العملية: ${p.transaction_id}</div>`:''}
+        ${p.receipt_note?`<div class="text-xs text-muted">📝 ${p.receipt_note}</div>`:''}
+        ${p.teacher_payment_info?`<div class="text-xs" style="color:var(--accent);margin-top:4px">🏦 دفع المدرس: ${p.teacher_payment_info}</div>`:''}
+        <div class="text-xs text-muted mt-1">${fmtDateTime(p.created_at)}</div>
+        ${status==='pending'?`<div class="payment-actions">
+          <button class="btn btn-sm btn-success" onclick="approvePayment(${p.id},this)">✅ قبول</button>
+          <button class="btn btn-sm btn-danger" onclick="rejectPayment(${p.id},this)">❌ رفض</button>
+        </div>`:''}
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+function toggleSelect(id,cb){ if(cb.checked)selectedPayments.add(id); else selectedPayments.delete(id); }
+
+async function approvePayment(id,btn){
+  btn.disabled=true; btn.textContent='⏳';
+  const res=await mfFetch('admin-payments',{method:'POST',body:JSON.stringify({id,action:'approve'})});
+  if(!res.ok){ toast(res.error,'error'); btn.disabled=false; btn.textContent='✅ قبول'; return; }
+  toast('تم القبول ✅','success');
+  if(res.wa_url){ if(confirm('فتح WhatsApp لإبلاغ الطالب؟')) window.open(res.wa_url,'_blank'); }
+  document.getElementById('prow-'+id)?.remove();
+}
+
+async function rejectPayment(id,btn){
+  if(!confirm('رفض هذا الطلب؟')) return;
+  btn.disabled=true; btn.textContent='⏳';
+  const res=await mfFetch('admin-payments',{method:'POST',body:JSON.stringify({id,action:'reject'})});
+  if(!res.ok){ toast(res.error,'error'); btn.disabled=false; return; }
+  toast('تم الرفض','success'); document.getElementById('prow-'+id)?.remove();
+}
+
+async function bulkApprove(){
+  if(!selectedPayments.size){ toast('لم يتم تحديد طلبات','warn'); return; }
+  if(!confirm(`قبول ${selectedPayments.size} طلبات؟`)) return;
+  showLoading(true);
+  for(const id of selectedPayments){
+    await mfFetch('admin-payments',{method:'POST',body:JSON.stringify({id,action:'approve'})});
+    document.getElementById('prow-'+id)?.remove();
+  }
+  showLoading(false); selectedPayments.clear();
+  toast(`تم قبول ${selectedPayments.size} طلبات ✅`,'success');
+}
+
+// ─── COUPONS ──────────────────────────
+async function loadCoupons(){
+  const res=await mfFetch('coupons');
+  const coupons=res.coupons||[];
+  const tbody=document.getElementById('couponsTable');
+  if(!coupons.length){ tbody.innerHTML='<tr><td colspan="6" class="text-center text-muted p-4">لا توجد كوبونات</td></tr>'; return; }
+  tbody.innerHTML=coupons.map(c=>`<tr>
+    <td><strong style="font-family:monospace;font-size:15px;color:var(--primary-light)">${c.code}</strong></td>
+    <td>${c.discount_value}${c.discount_type==='percent'?'%':' جنيه'}</td>
+    <td>${c.used_count}/${c.max_uses}</td>
+    <td>${c.expires_at?fmtDate(c.expires_at):'بلا حد'}</td>
+    <td><span class="badge ${c.is_active?'badge-success':'badge-danger'}">${c.is_active?'نشط':'متوقف'}</span></td>
+    <td><div class="flex gap-2">
+      <button class="btn btn-sm btn-secondary" onclick="toggleCoupon(${c.id},${!c.is_active})">${c.is_active?'إيقاف':'تفعيل'}</button>
+      <button class="btn btn-sm btn-danger" onclick="deleteCoupon(${c.id})">🗑️</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+async function saveCoupon(){
+  const code=document.getElementById('couponCode').value.trim();
+  const val=parseInt(document.getElementById('couponVal').value)||0;
+  if(!code||!val){ toast('أدخل الكود والقيمة','warn'); return; }
+  const body={code,discount_type:document.getElementById('couponType').value,discount_value:val,max_uses:parseInt(document.getElementById('couponMax').value)||100,expires_at:document.getElementById('couponExpiry').value||null};
+  const res=await mfFetch('coupons',{method:'POST',body:JSON.stringify(body)});
+  if(!res.ok){ toast(res.error,'error'); return; }
+  toast('تم الإنشاء ✅','success'); closeModal('modalCoupon'); loadCoupons();
+}
+async function toggleCoupon(id,active){ await mfFetch('coupons',{method:'POST',body:JSON.stringify({action:'toggle',id,is_active:active})}); loadCoupons(); }
+async function deleteCoupon(id){ if(!confirm('حذف الكوبون؟')) return; await mfFetch('coupons',{method:'POST',body:JSON.stringify({action:'delete',id})}); toast('تم الحذف','success'); loadCoupons(); }
+
+// ─── COMMENTS ─────────────────────────
+async function loadAdminComments(){
+  const cid=document.getElementById('commentCourseFilter').value;
+  if(!cid) return;
+  const vids=(await mfFetch('course-videos?course_id='+cid)).videos||[];
+  const list=document.getElementById('adminCommentsList');
+  if(!vids.length){ list.innerHTML='<div class="empty-state"><p>لا توجد فيديوهات</p></div>'; return; }
+  let allComments=[];
+  for(const v of vids){
+    const r=await mfFetch('video-comments?video_id='+v.id);
+    (r.comments||[]).forEach(c=>allComments.push({...c,video_title:v.title}));
+  }
+  if(!allComments.length){ list.innerHTML='<div class="empty-state"><div class="empty-icon">💬</div><p>لا توجد تعليقات</p></div>'; return; }
+  list.innerHTML=allComments.map(c=>`
+    <div class="glass-sm p-4 mb-3">
+      <div class="flex items-center justify-between mb-2">
+        <div><span class="font-bold">${c.user_name||'—'}</span> <span class="text-xs text-muted">في "${c.video_title}"</span></div>
+        <div class="flex gap-2">
+          <button class="btn btn-sm btn-secondary" onclick="pinComment(${c.id},${!c.is_pinned})">${c.is_pinned?'📌 إلغاء التثبيت':'📌 تثبيت'}</button>
+          <button class="btn btn-sm btn-primary" onclick="openReply(${c.id},'${c.message.replace(/'/g,'\\'')}')">↩️ رد</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteComment(${c.id})">🗑️</button>
+        </div>
+      </div>
+      <div class="text-sm">${c.message}</div>
+      ${c.reply?`<div class="comment-reply mt-2"><strong>ردك:</strong> ${c.reply}</div>`:''}
+      <div class="text-xs text-muted mt-2">${fmtDateTime(c.created_at)}</div>
+    </div>`).join('');
+}
+
+function openReply(id,msg){ document.getElementById('replyCommentId').value=id; document.getElementById('replyOriginal').textContent=msg; document.getElementById('replyText').value=''; openModal('modalReply'); }
+async function submitReply(){ const id=document.getElementById('replyCommentId').value; const reply=document.getElementById('replyText').value.trim(); if(!reply){ toast('اكتب الرد','warn'); return; } const res=await mfFetch('video-comments',{method:'POST',body:JSON.stringify({action:'reply',id:parseInt(id),reply})}); if(!res.ok){ toast(res.error,'error'); return; } toast('تم إرسال الرد ✅','success'); closeModal('modalReply'); loadAdminComments(); }
+async function pinComment(id,pinned){ await mfFetch('video-comments',{method:'POST',body:JSON.stringify({action:'pin',id,pinned})}); loadAdminComments(); }
+async function deleteComment(id){ if(!confirm('حذف التعليق؟')) return; await mfFetch('video-comments',{method:'POST',body:JSON.stringify({action:'delete',id})}); toast('تم الحذف','success'); loadAdminComments(); }
+
+// ─── USERS ────────────────────────────
+let allUsers=[];
+async function loadUsers(){
+  const res=await mfFetch('admin-users');
+  allUsers=res.users||[];
+  renderUsers(allUsers);
+}
+function filterUsers(){ const q=document.getElementById('userSearch').value.toLowerCase(); renderUsers(allUsers.filter(u=>(u.full_name||'').toLowerCase().includes(q)||(u.phone_student||'').includes(q))); }
+function renderUsers(users){
+  const tbody=document.getElementById('usersTable');
+  if(!users.length){ tbody.innerHTML='<tr><td colspan="5" class="text-center text-muted p-4">لا يوجد مستخدمين</td></tr>'; return; }
+  tbody.innerHTML=users.map(u=>`<tr>
+    <td><div class="font-bold">${u.full_name}</div></td>
+    <td class="text-sm" style="direction:ltr;text-align:right">${u.phone_student||'—'}</td>
+    <td>${gradeLabel(u.grade)}</td>
+    <td><span class="badge ${u.role==='superadmin'?'badge-danger':u.role==='admin'?'badge-warn':u.role==='course_admin'?'badge-info':'badge-primary'}">${u.role}</span></td>
+    <td><div class="flex gap-2">
+      ${user.role==='superadmin'||user.role==='admin'?`<button class="btn btn-sm btn-secondary" onclick="openUserRole(${JSON.stringify(u).replace(/"/g,'&quot;')})">🔐 صلاحيات</button>`:''}
+      <button class="btn btn-sm btn-secondary" onclick="resetPass('${u.id}','${u.full_name.replace(/'/g,'\\'')}')">🔑 باسورد</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function openUserRole(u){ document.getElementById('editUserId').value=u.id; document.getElementById('editUserName').textContent=u.full_name; document.getElementById('editUserPhone').textContent=u.phone_student||''; document.getElementById('editUserRole').value=u.role; toggleManagedCourses(); renderManagedCoursesList(u.managed_courses||[]); openModal('modalUserRole'); }
+
+function toggleManagedCourses(){ const role=document.getElementById('editUserRole').value; document.getElementById('managedCoursesGroup').classList.toggle('hidden',role!=='course_admin'); }
+
+function renderManagedCoursesList(selected=[]){
+  const wrap=document.getElementById('managedCoursesList');
+  wrap.innerHTML=allCourses.map(c=>`<label style="display:flex;align-items:center;gap:8px;padding:6px;cursor:pointer;border-radius:6px" class="pointer">
+    <input type="checkbox" value="${c.id}" ${selected.includes(c.id)?'checked':''}>
+    <span class="text-sm">${c.title}</span>
+  </label>`).join('');
+}
+
+async function saveUserRole(){
+  const id=document.getElementById('editUserId').value;
+  const role=document.getElementById('editUserRole').value;
+  const managed_courses=role==='course_admin'?[...document.querySelectorAll('#managedCoursesList input:checked')].map(i=>parseInt(i.value)):[];
+  const res=await mfFetch('admin-users',{method:'POST',body:JSON.stringify({user_id:id,role,managed_courses})});
+  if(!res.ok){ toast(res.error,'error'); return; }
+  toast('تم التحديث ✅','success'); closeModal('modalUserRole'); loadUsers();
+}
+
+async function resetPass(userId,name){ const np=prompt('كلمة مرور جديدة لـ '+name+':'); if(!np||np.length<6){ toast('كلمة مرور قصيرة جداً','warn'); return; } const res=await mfFetch('admin-reset-password',{method:'POST',body:JSON.stringify({user_id:userId,new_password:np})}); if(!res.ok){ toast(res.error,'error'); return; } toast('تم تغيير الباسورد ✅','success'); }
+
+// ─── QUIZZES ──────────────────────────
+async function loadQuizzes(){
+  const cid=document.getElementById('quizCourseFilter').value;
+  if(!cid){ document.getElementById('quizzesList').innerHTML='<div class="empty-state"><p>اختر كورس</p></div>'; return; }
+  const res=await mfFetch('quizzes?course_id='+cid);
+  const quizzes=res.quizzes||[];
+  if(!quizzes.length){ document.getElementById('quizzesList').innerHTML='<div class="empty-state"><div class="empty-icon">📝</div><p>لا توجد كويزات</p></div>'; return; }
+  document.getElementById('quizzesList').innerHTML=quizzes.map(q=>`
+    <div class="glass-sm p-4 mb-3">
+      <div class="flex items-center justify-between">
+        <div><div class="font-bold">${q.title}</div><div class="text-sm text-muted mt-1">${q.description||''} | نجاح: ${q.pass_score}%</div></div>
+        <div class="flex gap-2">
+          <button class="btn btn-sm btn-primary" onclick="openAddQuestion(${q.id})">+ سؤال</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteQuiz(${q.id})">🗑️</button>
+        </div>
+      </div>
+      <div class="mt-3" id="qlist-${q.id}"><button class="btn btn-sm btn-secondary" onclick="loadQuizQuestions(${q.id})">📋 عرض الأسئلة</button></div>
+    </div>`).join('');
+}
+
+async function loadQuizQuestions(quizId){
+  const res=await mfFetch('quizzes?quiz_id='+quizId);
+  const qs=res.questions||[];
+  const wrap=document.getElementById('qlist-'+quizId);
+  if(!qs.length){ wrap.innerHTML='<p class="text-sm text-muted">لا توجد أسئلة بعد</p>'; return; }
+  wrap.innerHTML=qs.map((q,i)=>`<div class="question-builder"><div class="text-sm font-bold mb-1">${i+1}. ${q.question}</div><div class="text-xs text-muted">أ: ${q.option_a} | ب: ${q.option_b} | ج: ${q.option_c} | د: ${q.option_d}</div><div class="text-xs mt-1" style="color:var(--success)">✅ الصح: ${q['option_'+q.correct_answer]}</div><button class="btn btn-xs btn-danger" style="position:absolute;top:8px;left:8px;padding:2px 8px;font-size:11px" onclick="deleteQuestion(${q.id},${quizId})">✕</button></div>`).join('');
+}
+
+async function saveQuiz(){
+  const id=document.getElementById('editQuizId').value;
+  const body={course_id:parseInt(document.getElementById('quizCourseId').value),title:document.getElementById('quizTitle').value.trim(),description:document.getElementById('quizDesc').value||null,pass_score:parseInt(document.getElementById('quizPassScore').value)||60,is_active:true};
+  if(id)body.id=parseInt(id);
+  const res=await mfFetch('quizzes',{method:'POST',body:JSON.stringify(body)});
+  if(!res.ok){ toast(res.error,'error'); return; }
+  toast('تم إنشاء الكويز ✅','success'); closeModal('modalQuiz'); document.getElementById('editQuizId').value=''; loadQuizzes();
+}
+
+function openAddQuestion(quizId){ document.getElementById('qQuizId').value=quizId; document.getElementById('editQId').value=''; ['qText','qOptA','qOptB','qOptC','qOptD'].forEach(id=>document.getElementById(id).value=''); openModal('modalQuestion'); }
+
+async function saveQuestion(){
+  const quizId=parseInt(document.getElementById('qQuizId').value);
+  const id=document.getElementById('editQId').value;
+  const body={quiz_id:quizId,type:'question',question:document.getElementById('qText').value.trim(),option_a:document.getElementById('qOptA').value.trim(),option_b:document.getElementById('qOptB').value.trim(),option_c:document.getElementById('qOptC').value.trim(),option_d:document.getElementById('qOptD').value.trim(),correct_answer:document.getElementById('qCorrect').value,order_index:0};
+  if(id)body.id=parseInt(id);
+  if(!body.question||!body.option_a){ toast('أدخل السؤال والخيارات','warn'); return; }
+  const res=await mfFetch('quizzes',{method:'POST',body:JSON.stringify(body)});
+  if(!res.ok){ toast(res.error,'error'); return; }
+  toast('تم إضافة السؤال ✅','success'); closeModal('modalQuestion'); loadQuizQuestions(quizId);
+}
+
+async function deleteQuestion(id,quizId){ if(!confirm('حذف السؤال؟')) return; await mfFetch('quizzes',{method:'DELETE',body:JSON.stringify({id,type:'question'})}); toast('تم الحذف','success'); loadQuizQuestions(quizId); }
+async function deleteQuiz(id){ if(!confirm('حذف الكويز وكل أسئلته؟')) return; await mfFetch('quizzes',{method:'DELETE',body:JSON.stringify({id})}); toast('تم الحذف','success'); loadQuizzes(); }
+
+// ─── INIT ─────────────────────────────
+buildSidebar();
+loadCourses();
+loadDashboard();
+</script>
+</body>
+</html>
