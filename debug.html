@@ -2,90 +2,268 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>Debug</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MF Debug Tool</title>
 <style>
-body{font-family:monospace;background:#111;color:#eee;padding:20px;direction:ltr}
-.ok{color:#4ade80}.err{color:#f87171}.warn{color:#fbbf24}
-pre{background:#1e1e1e;padding:12px;border-radius:8px;overflow-x:auto;font-size:12px;margin:8px 0}
-button{background:#7c3aed;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;margin:4px}
-h3{color:#a78bfa;margin-top:20px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0f1e;color:#e2e8f0;font-family:monospace;font-size:13px;padding:16px;direction:ltr}
+h1{color:#a78bfa;margin-bottom:16px;font-size:18px;text-align:center}
+.section{background:#0f172a;border:1px solid #1e293b;border-radius:10px;margin-bottom:10px;overflow:hidden}
+.section-title{background:#1e293b;padding:10px 16px;font-size:13px;font-weight:bold;display:flex;align-items:center;gap:8px}
+.section-body{padding:12px 16px}
+.row{display:flex;align-items:flex-start;gap:10px;padding:5px 0;border-bottom:1px solid #0f172a}
+.row:last-child{border-bottom:none}
+.label{color:#94a3b8;min-width:200px;flex-shrink:0}
+.val{flex:1;word-break:break-all}
+.ok{color:#4ade80} .err{color:#f87171} .warn{color:#fbbf24} .info{color:#67e8f9}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:bold}
+.bok{background:rgba(74,222,128,.15);color:#4ade80;border:1px solid #4ade8040}
+.berr{background:rgba(248,113,113,.15);color:#f87171;border:1px solid #f8717140}
+.bwarn{background:rgba(251,191,36,.15);color:#fbbf24;border:1px solid #fbbf2440}
+.binfo{background:rgba(103,232,249,.15);color:#67e8f9;border:1px solid #67e8f940}
+pre{background:#020617;padding:8px;border-radius:6px;overflow-x:auto;font-size:11px;max-height:180px;overflow-y:auto;margin-top:4px;border:1px solid #1e293b}
+button{background:linear-gradient(135deg,#7c3aed,#06b6d4);color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:bold;margin:4px}
+button.sec{background:#1e293b;border:1px solid #334155;color:#94a3b8}
+#progress{background:#1e293b;border-radius:8px;height:6px;margin:12px 0;overflow:hidden}
+#progressBar{height:100%;background:linear-gradient(90deg,#7c3aed,#06b6d4);width:0%;transition:width .3s;border-radius:8px}
+#summary{padding:14px;border-radius:10px;margin-bottom:12px;border:2px solid transparent;display:none}
+.spinner{display:inline-block;width:11px;height:11px;border:2px solid rgba(167,139,250,.3);border-top-color:#a78bfa;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.controls{text-align:center;margin-bottom:12px}
 </style>
 </head>
 <body>
-<h2>🔍 API Debug Tool</h2>
-<div id="info"></div>
-<button onclick="runAll()">▶ Test All</button>
-<button onclick="clearLog()">🗑 Clear</button>
-<div id="log"></div>
+<h1>🔍 Make Future Center — Debug Tool</h1>
+<div class="controls">
+  <button onclick="runAll()">▶ فحص شامل</button>
+  <button class="sec" onclick="fixSession()">🔧 إصلاح الجلسة</button>
+  <button class="sec" onclick="clearSession()">🚪 مسح الجلسة</button>
+  <button class="sec" onclick="clearAll()">🗑 مسح النتائج</button>
+</div>
+<div id="progress"><div id="progressBar"></div></div>
+<div id="summary"></div>
+<div id="results"></div>
 
 <script>
-const URL = 'https://pjskzfyjzvibqglhdykc.supabase.co/functions/v1';
-const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqc2t6ZnlqenZpYnFnbGhkeWtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNjU4NTcsImV4cCI6MjA4ODY0MTg1N30.AqdIBX-6tP9nMRVao4X7A1aV5L4J7mTiNC1RWeWf7LI';
+const API='https://pjskzfyjzvibqglhdykc.supabase.co/functions/v1';
+const ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqc2t6ZnlqenZpYnFnbGhkeWtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNjU4NTcsImV4cCI6MjA4ODY0MTg1N30.AqdIBX-6tP9nMRVao4X7A1aV5L4J7mTiNC1RWeWf7LI';
+const SB='https://pjskzfyjzvibqglhdykc.supabase.co';
+let results=[];
 
-function log(msg, cls='') {
-  document.getElementById('log').innerHTML += `<pre class="${cls}">${msg}</pre>`;
+const gT=()=>localStorage.getItem('mf_access_token');
+const gU=()=>{try{return JSON.parse(localStorage.getItem('mf_user')||'null')}catch{return null}};
+const gR=()=>localStorage.getItem('mf_refresh_token');
+const setP=p=>document.getElementById('progressBar').style.width=p+'%';
+
+async function callAPI(ep,opts={},forceAnon=false){
+  const token=gT(); const valid=token&&token!='null'&&token.length>20;
+  const headers={'Content-Type':'application/json','apikey':ANON,'Authorization':`Bearer ${!forceAnon&&valid?token:ANON}`};
+  const t0=Date.now();
+  try{
+    const r=await fetch(`${API}/${ep}`,{...opts,headers});
+    const ms=Date.now()-t0;
+    let data; try{data=await r.json()}catch{data={raw:'non-json'}}
+    return{status:r.status,ok:r.ok,data,ms};
+  }catch(e){return{status:0,ok:false,data:{error:e.message},ms:Date.now()-t0}}
 }
-function clearLog(){ document.getElementById('log').innerHTML=''; }
 
-async function apiCall(fn, opts={}) {
-  const token = localStorage.getItem('mf_access_token');
-  const headers = {
-    'Content-Type': 'application/json',
-    'apikey': ANON,
-    'Authorization': `Bearer ${token && token!='null' ? token : ANON}`
-  };
-  try {
-    const r = await fetch(`${URL}/${fn}`, {...opts, headers});
-    const text = await r.text();
-    let json;
-    try { json = JSON.parse(text); } catch{ json = text; }
-    return { status: r.status, ok: r.ok, data: json };
-  } catch(e) {
-    return { status: 0, ok: false, data: e.message };
+function decodeJWT(t){try{return JSON.parse(atob(t.split('.')[1]))}catch{return null}}
+
+function sec(id,title,icon){
+  const d=document.createElement('div');d.className='section';d.id='sec-'+id;
+  d.innerHTML=`<div class="section-title">${icon} ${title} <span id="sb-${id}" style="margin-right:auto"><span class="spinner"></span></span></div><div class="section-body" id="sb-body-${id}"><span class="info">جاري...</span></div>`;
+  document.getElementById('results').appendChild(d);
+}
+function badge(id,s,t){const c=s=='ok'?'bok':s=='err'?'berr':s=='warn'?'bwarn':'binfo';document.getElementById('sb-'+id).innerHTML=`<span class="badge ${c}">${t}</span>`}
+function body(id,h){document.getElementById('sb-body-'+id).innerHTML=h}
+function row(l,v,s=''){const c=s=='ok'?'ok':s=='err'?'err':s=='warn'?'warn':s=='info'?'info':'';return`<div class="row"><span class="label">${l}</span><span class="val ${c}">${v}</span></div>`}
+
+function clearAll(){document.getElementById('results').innerHTML='';document.getElementById('summary').style.display='none';setP(0);results=[];}
+function clearSession(){['mf_user','mf_access_token','mf_refresh_token','mf_selected_course'].forEach(k=>localStorage.removeItem(k));alert('✅ تم مسح الجلسة')}
+
+async function fixSession(){
+  const r=await callAPI('auth-login',{method:'POST',body:JSON.stringify({login:'01210575530',password:'momomo'})},true);
+  if(r.data?.ok){
+    localStorage.setItem('mf_access_token',r.data.access_token);
+    localStorage.setItem('mf_refresh_token',r.data.refresh_token);
+    localStorage.setItem('mf_user',JSON.stringify(r.data.user));
+    alert('✅ تم تجديد الجلسة!');
+  }else{alert('❌ فشل: '+JSON.stringify(r.data))}
+}
+
+async function runAll(){
+  clearAll();
+  const checks=[chkStorage,chkJWT,chkConnect,chkLogin,chkStats,chkCourses,chkPayments,chkUsers,chkNotifs,chkPageFiles];
+  for(let i=0;i<checks.length;i++){setP(Math.round(i/checks.length*100));await checks[i]();await new Promise(r=>setTimeout(r,80))}
+  setP(100);showSummary();
+}
+
+// 1. localStorage
+async function chkStorage(){
+  sec('ls','الجلسة & localStorage','💾');
+  const token=gT(),user=gU(),refresh=gR();
+  let h='',s='ok';
+  if(user){h+=row('المستخدم',`${user.full_name} (${user.role})`,'ok');h+=row('ID',user.id,'info')}
+  else{h+=row('المستخدم','❌ مفيش user في localStorage','err');s='err'}
+  if(token&&token!='null'&&token.length>20){
+    const p=decodeJWT(token);
+    if(p){
+      const rem=p.exp-Math.floor(Date.now()/1000);
+      if(rem>0){h+=row('Token',`✅ صالح — ينتهي بعد ${Math.floor(rem/60)} دقيقة`,'ok')}
+      else{h+=row('Token',`❌ منتهي منذ ${Math.floor(-rem/60)} دقيقة`,'err');s='err'}
+    }else{h+=row('Token','❌ JWT تالف','err');s='err'}
+  }else{h+=row('Token','❌ مفيش توكن','err');s='err'}
+  h+=row('Refresh Token',refresh&&refresh!='null'?`✅ ${refresh}`:'❌ مفيش',refresh&&refresh!='null'?'ok':'warn');
+  body('ls',h);badge('ls',s,s=='ok'?'✅ OK':s=='err'?'❌ خطأ':'⚠️ تحذير');results.push({n:'localStorage',s});
+}
+
+// 2. JWT validity
+async function chkJWT(){
+  sec('jwt','صلاحية الـ Token على Supabase','🔑');
+  const token=gT();
+  if(!token||token=='null'){body('jwt',row('Token','❌ مفيش','err'));badge('jwt','err','❌ مفيش');results.push({n:'JWT',s:'err'});return}
+  const r=await fetch(`${SB}/auth/v1/user`,{headers:{'Authorization':`Bearer ${token}`,'apikey':ANON}});
+  const d=await r.json().catch(()=>({}));
+  let h='',s='ok';
+  if(r.ok&&d.id){h+=row('الحالة','✅ التوكن صالح','ok');h+=row('Email',d.email,'info')}
+  else{h+=row('الحالة',`❌ مرفوض (${r.status})`,'err');h+=row('السبب',JSON.stringify(d),'err');s='err'}
+  body('jwt',h);badge('jwt',s,s=='ok'?'✅ صالح':'❌ منتهي');results.push({n:'JWT',s});
+}
+
+// 3. Connectivity
+async function chkConnect(){
+  sec('con','الاتصال بـ Supabase','🌐');
+  const t0=Date.now();let h='',s='ok';
+  try{
+    const r=await fetch(`${SB}/rest/v1/`,{headers:{'apikey':ANON}});
+    h+=row('الاتصال',`✅ متصل (${Date.now()-t0}ms)`,'ok');
+    h+=row('HTTP Status',r.status,r.ok?'ok':'warn');
+  }catch(e){h+=row('الاتصال',`❌ ${e.message}`,'err');s='err'}
+  body('con',h);badge('con',s,s=='ok'?'✅ متصل':'❌ فشل');results.push({n:'Connectivity',s});
+}
+
+// 4. auth-login — auto refresh session
+async function chkLogin(){
+  sec('login','auth-login','🔐');
+  let h='',s='ok';
+  const r=await callAPI('auth-login',{method:'POST',body:JSON.stringify({login:'01210575530',password:'momomo'})},true);
+  h+=row('HTTP',r.status,r.status==200?'ok':'err');h+=row('Time',r.ms+'ms','info');
+  if(r.data?.ok){
+    h+=row('Login','✅ يشتغل صح','ok');
+    h+=row('Token رجع',r.data.access_token?'✅':'❌',r.data.access_token?'ok':'err');
+    // Auto-refresh
+    localStorage.setItem('mf_access_token',r.data.access_token);
+    localStorage.setItem('mf_refresh_token',r.data.refresh_token);
+    localStorage.setItem('mf_user',JSON.stringify(r.data.user));
+    h+=row('🔧 تجديد تلقائي','✅ تم تجديد الجلسة في localStorage','ok');
+  }else{h+=row('Login',`❌ ${r.data?.error||JSON.stringify(r.data)}`,'err');s='err'}
+  const r2=await callAPI('auth-login',{method:'POST',body:JSON.stringify({login:'01210575530',password:'WRONG'})},true);
+  h+=row('باسورد غلط',r2.status==401?'✅ يرفض صح (401)':`⚠️ ${r2.status}`,r2.status==401?'ok':'warn');
+  body('login',h);badge('login',s,s=='ok'?'✅ شغال':'❌ مكسور');results.push({n:'auth-login',s});
+}
+
+// 5. admin-stats
+async function chkStats(){
+  sec('stats','admin-stats','📊');
+  const r=await callAPI('admin-stats');
+  let h='',s='ok';
+  h+=row('HTTP',r.status,r.status==200?'ok':'err');h+=row('Time',r.ms+'ms','info');
+  if(r.data?.ok){
+    const c=r.data.counts||{};
+    h+=row('Users',c.users,'info');h+=row('Courses',c.courses,'info');
+    h+=row('Pending',c.pending,c.pending>0?'warn':'info');
+    h+=row('Function','✅ شغالة','ok');
+  }else{h+=row('Error',JSON.stringify(r.data),'err');s='err'}
+  body('stats',h);badge('stats',s,s=='ok'?'✅ شغال':'❌ مكسور');results.push({n:'admin-stats',s});
+}
+
+// 6. admin-courses
+async function chkCourses(){
+  sec('courses','admin-courses','📚');
+  const r=await callAPI('admin-courses');
+  let h='',s='ok';
+  h+=row('HTTP',r.status,r.status==200?'ok':'err');
+  if(r.data?.ok){h+=row('Courses',r.data.courses?.length||0,'info');h+=row('Function','✅ شغالة','ok')}
+  else{h+=row('Error',JSON.stringify(r.data),'err');s='err'}
+  body('courses',h);badge('courses',s,s=='ok'?'✅ شغال':'❌ مكسور');results.push({n:'admin-courses',s});
+}
+
+// 7. admin-payments
+async function chkPayments(){
+  sec('pay','admin-payments','💳');
+  const r=await callAPI('admin-payments?status=pending');
+  let h='',s='ok';
+  h+=row('HTTP',r.status,r.status==200?'ok':'err');
+  if(r.data?.ok){h+=row('Pending',r.data.payments?.length||0,'info');h+=row('Function','✅ شغالة','ok')}
+  else{h+=row('Error',JSON.stringify(r.data),'err');s='err'}
+  body('pay',h);badge('pay',s,s=='ok'?'✅ شغال':'❌ مكسور');results.push({n:'admin-payments',s});
+}
+
+// 8. admin-users
+async function chkUsers(){
+  sec('users','admin-users','👥');
+  const r=await callAPI('admin-users');
+  let h='',s='ok';
+  h+=row('HTTP',r.status,r.status==200?'ok':'err');
+  if(r.data?.ok){
+    (r.data.users||[]).forEach(u=>h+=row(u.full_name,`${u.role} | ${u.phone_student}`,'info'));
+    h+=row('Function','✅ شغالة','ok');
+  }else{h+=row('Error',JSON.stringify(r.data),'err');s='err'}
+  body('users',h);badge('users',s,s=='ok'?'✅ شغال':'❌ مكسور');results.push({n:'admin-users',s});
+}
+
+// 9. notifications
+async function chkNotifs(){
+  sec('notif','notifications','🔔');
+  const u=gU();
+  const r=await callAPI(`user-notifications?user_id=${u?.id||''}`);
+  let h='',s='ok';
+  h+=row('HTTP',r.status,r.status==200?'ok':'err');
+  if(r.data?.ok){h+=row('Notifs',r.data.notifications?.length||0,'info');h+=row('Function','✅ شغالة','ok')}
+  else{h+=row('Error',JSON.stringify(r.data),'err');s='err'}
+  body('notif',h);badge('notif',s,s=='ok'?'✅ شغال':'❌ مكسور');results.push({n:'notifications',s});
+}
+
+// 10. page files
+async function chkPageFiles(){
+  sec('pages','ملفات الصفحات على GitHub','📄');
+  const base=window.location.href.replace(/\/[^\/]*$/,'');
+  const files=['index.html','login.html','admin.html','student.html','course.html','payment.html','change-password.html'];
+  let h='',s='ok';
+  for(const f of files){
+    try{
+      const r=await fetch(`${base}/${f}`,{method:'HEAD',cache:'no-cache'});
+      if(r.ok){
+        const kb=Math.round((parseInt(r.headers.get('content-length')||0)/1024));
+        h+=row(f,`✅ موجود ${kb?'('+kb+'KB)':''}`,kb>5?'ok':'warn');
+        if(kb<5)h+=row('⚠️ '+f,'الملف صغير جداً — ممكن مش اتحمل صح','warn');
+      }else{h+=row(f,`❌ مش موجود (${r.status})`,'err');s='err'}
+    }catch(e){h+=row(f,`❌ ${e.message}`,'err');s='err'}
   }
+  body('pages',h);badge('pages',s,s=='ok'?'✅ كلها موجودة':'❌ في ناقص');results.push({n:'Pages',s});
 }
 
-async function runAll() {
-  clearLog();
-  
-  // Show stored data
-  const token = localStorage.getItem('mf_access_token');
-  const user = localStorage.getItem('mf_user');
-  log(`🔑 Token: ${token ? token.substring(0,40)+'...' : 'NULL'}`, token?'ok':'err');
-  log(`👤 User: ${user}`, user?'ok':'warn');
-
-  // Test admin-stats
-  log('\n📊 Testing admin-stats...');
-  const s = await apiCall('admin-stats');
-  log(`Status: ${s.status} | ok: ${s.ok}`, s.ok?'ok':'err');
-  log(JSON.stringify(s.data, null, 2), s.ok?'ok':'err');
-
-  // Test auth-login
-  log('\n🔐 Testing auth-login with momomo...');
-  const l = await apiCall('auth-login', {
-    method: 'POST',
-    body: JSON.stringify({login:'01210575530', password:'momomo'})
-  });
-  log(`Status: ${l.status} | ok: ${l.ok}`, l.ok?'ok':'err');
-  log(JSON.stringify(l.data, null, 2), l.ok?'ok':'err');
-  
-  if(l.data?.ok && l.data?.access_token) {
-    log('\n✅ Login works! Saving token and retesting admin-stats...', 'ok');
-    localStorage.setItem('mf_access_token', l.data.access_token);
-    localStorage.setItem('mf_user', JSON.stringify(l.data.user));
-    
-    // Retry admin-stats with real token
-    const s2 = await apiCall('admin-stats');
-    log(`admin-stats with token - Status: ${s2.status}`, s2.ok?'ok':'err');
-    log(JSON.stringify(s2.data, null, 2), s2.ok?'ok':'err');
-  }
+function showSummary(){
+  const ok=results.filter(r=>r.s=='ok').length;
+  const err=results.filter(r=>r.s=='err').length;
+  const warn=results.filter(r=>r.s=='warn').length;
+  const total=results.length;
+  const pct=Math.round(ok/total*100);
+  const color=err==0?'#4ade80':err<=2?'#fbbf24':'#f87171';
+  const icon=err==0?'🎉':err<=2?'⚠️':'❌';
+  const el=document.getElementById('summary');
+  el.style.display='block';el.style.borderColor=color;
+  el.style.background=`rgba(${err==0?'74,222,128':err<=2?'251,191,36':'248,113,113'},.05)`;
+  const failNames=results.filter(r=>r.s=='err').map(r=>'• '+r.n).join('<br>');
+  el.innerHTML=`
+    <div style="font-size:18px;font-weight:bold;color:${color};margin-bottom:6px">${icon} ${pct}% — ${ok}/${total} اختبار نجح</div>
+    <div style="font-size:12px;color:#94a3b8"><span class="ok">✅ ${ok}</span> &nbsp; <span class="err">❌ ${err}</span> &nbsp; <span class="warn">⚠️ ${warn}</span></div>
+    ${failNames?`<div style="margin-top:8px;font-size:12px;color:#f87171">الفاشل:<br>${failNames}</div>`:''}
+    <div style="margin-top:8px;font-size:12px;color:#64748b">
+      ${err==0?'✅ الـ Backend شغال 100% — المشكلة في الـ HTML files فقط':''}
+      ${err>0?'🔧 استخدم زر "إصلاح الجلسة" ثم أعد الفحص':''}
+    </div>`;
 }
-
-// Show current state
-document.getElementById('info').innerHTML = `
-  <p>Token: <span class="${localStorage.getItem('mf_access_token')?'ok':'err'}">${localStorage.getItem('mf_access_token')?'EXISTS':'MISSING'}</span></p>
-  <p>User: <span class="${localStorage.getItem('mf_user')?'ok':'warn'}">${localStorage.getItem('mf_user')||'MISSING'}</span></p>
-`;
 </script>
 </body>
 </html>
