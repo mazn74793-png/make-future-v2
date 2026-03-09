@@ -512,12 +512,45 @@ const MF_CONFIG = {
 };
 
 // ─── API Helper ───────────────────────
-async function mfFetch(endpoint, options = {}) {
+async function refreshToken() {
+  const refresh = localStorage.getItem('mf_refresh_token');
+  if(!refresh || refresh === 'null') return false;
+  try {
+    const res = await fetch('https://pjskzfyjzvibqglhdykc.supabase.co/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': MF_CONFIG.ANON_KEY },
+      body: JSON.stringify({ refresh_token: refresh })
+    });
+    const data = await res.json();
+    if (data.access_token) {
+      localStorage.setItem('mf_access_token', data.access_token);
+      localStorage.setItem('mf_refresh_token', data.refresh_token);
+      return true;
+    }
+  } catch(e) {}
+  return false;
+}
+
+async function mfFetch(endpoint, options = {}, _retry = false) {
   const token = localStorage.getItem('mf_access_token');
-  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const validToken = token && token !== 'null' && token !== 'undefined' && token.length > 20;
+  const headers = {
+    'Content-Type': 'application/json',
+    'apikey': MF_CONFIG.ANON_KEY,
+    'Authorization': `Bearer ${validToken ? token : MF_CONFIG.ANON_KEY}`,
+    ...(options.headers || {})
+  };
   try {
     const res = await fetch(`${MF_CONFIG.FN}/${endpoint}`, { ...options, headers });
+    if (res.status === 401 && !_retry) {
+      const refreshed = await refreshToken();
+      if (refreshed) return mfFetch(endpoint, options, true);
+      localStorage.removeItem('mf_access_token');
+      localStorage.removeItem('mf_refresh_token');
+      localStorage.removeItem('mf_user');
+      window.location.href = 'login.html';
+      return { ok: false, error: 'انتهت الجلسة' };
+    }
     const data = await res.json();
     return data;
   } catch (e) {
