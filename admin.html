@@ -1356,9 +1356,43 @@ async function deleteQuestion(id,quizId){ if(!confirm('حذف السؤال؟')) 
 async function deleteQuiz(id){ if(!confirm('حذف الكويز وكل أسئلته؟')) return; await mfFetch('quizzes',{method:'DELETE',body:JSON.stringify({id})}); toast('تم الحذف','success'); loadQuizzes(); }
 
 // ─── INIT ─────────────────────────────
+console.log('🟢 Admin init started');
+console.log('🔑 Token:', localStorage.getItem('mf_access_token')?.substring(0,30));
+console.log('👤 User:', localStorage.getItem('mf_user'));
+
 buildSidebar();
-loadCourses();
-loadDashboard();
+
+// Set first sidebar item active
+document.getElementById('side-dashboard')?.classList.add('active');
+
+// Load dashboard with explicit error display
+(async function init() {
+  console.log('📊 Loading dashboard...');
+  try {
+    const res = await mfFetch('admin-stats');
+    console.log('📊 admin-stats response:', res);
+    if (res.ok) {
+      const c = res.counts || {};
+      document.getElementById('dashStats').innerHTML = `
+        <div class="stat-card fade-up"><div class="stat-icon">👥</div><div class="stat-value">${fmtNum(c.users)}</div><div class="stat-label">المستخدمين</div></div>
+        <div class="stat-card fade-up"><div class="stat-icon">📚</div><div class="stat-value">${fmtNum(c.courses)}</div><div class="stat-label">الكورسات</div></div>
+        <div class="stat-card fade-up"><div class="stat-icon">⏳</div><div class="stat-value">${fmtNum(c.pending)}</div><div class="stat-label">طلبات معلقة</div></div>
+        <div class="stat-card fade-up"><div class="stat-icon">✅</div><div class="stat-value">${fmtNum(c.approved)}</div><div class="stat-label">طلبات مقبولة</div></div>`;
+      document.getElementById('dashPayments').innerHTML = (res.latestPayments||[]).length
+        ? `<div class="glass-sm">${(res.latestPayments||[]).map(p=>`<div class="payment-row"><div style="flex:1"><div class="font-bold text-sm">${p.full_name||'—'}</div><div class="text-xs text-muted">${p.course_title||''} — ${p.method||''}</div></div><span class="badge ${p.status==='approved'?'badge-success':p.status==='rejected'?'badge-danger':'badge-warn'}">${p.status==='approved'?'مقبول':p.status==='rejected'?'مرفوض':'معلق'}</span></div>`).join('')}</div>`
+        : '<div class="empty-state"><div class="empty-icon">💳</div><p>لا توجد مدفوعات بعد</p></div>';
+      document.getElementById('dashUsers').innerHTML = (res.latestUsers||[]).length
+        ? `<div class="glass-sm">${(res.latestUsers||[]).map(u=>`<div class="payment-row"><div><div class="font-bold text-sm">${u.full_name}</div><div class="text-xs text-muted">${u.phone_student||''} — ${gradeLabel(u.grade)}</div></div><span class="badge badge-primary">${u.role}</span></div>`).join('')}</div>`
+        : '<div class="empty-state"><p>لا يوجد مستخدمين</p></div>';
+    } else {
+      document.getElementById('dashStats').innerHTML = `<div style="grid-column:1/-1" class="glass p-4 text-center"><div style="font-size:32px">⚠️</div><p class="mt-2 text-sm text-muted">${res.error||'فشل تحميل البيانات'}</p><button class="btn btn-primary btn-sm mt-3" onclick="init()">🔄 إعادة المحاولة</button></div>`;
+    }
+  } catch(e) {
+    console.error('❌ init error:', e);
+    document.getElementById('dashStats').innerHTML = `<div style="grid-column:1/-1" class="glass p-4 text-center"><p class="text-sm text-muted">خطأ: ${e.message}</p></div>`;
+  }
+  loadCourses();
+})();
 </script>
 </body>
 </html>
