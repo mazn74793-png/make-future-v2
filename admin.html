@@ -958,7 +958,7 @@ async function loadCourses(){
       <td>
         <div class="flex gap-2">
           <button class="btn btn-sm btn-secondary" onclick="editCourse(${JSON.stringify(c).replace(/"/g,'&quot;')})">✏️</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteCourse(${c.id},'${c.title.replace(/'/g,'\\'')}')">🗑️</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteCourse(${c.id}, this)">🗑️</button>
         </div>
       </td>
     </tr>`).join('');
@@ -1242,7 +1242,7 @@ async function loadAdminComments(){
         <div><span class="font-bold">${c.user_name||'—'}</span> <span class="text-xs text-muted">في "${c.video_title}"</span></div>
         <div class="flex gap-2">
           <button class="btn btn-sm btn-secondary" onclick="pinComment(${c.id},${!c.is_pinned})">${c.is_pinned?'📌 إلغاء التثبيت':'📌 تثبيت'}</button>
-          <button class="btn btn-sm btn-primary" onclick="openReply(${c.id},'${c.message.replace(/'/g,'\\'')}')">↩️ رد</button>
+          <button class="btn btn-sm btn-primary" data-cid="${c.id}" data-msg="${(c.message||'').replace(/"/g,'&quot;')}" onclick="openReplyBtn(this)">↩️ رد</button>
           <button class="btn btn-sm btn-danger" onclick="deleteComment(${c.id})">🗑️</button>
         </div>
       </div>
@@ -1275,7 +1275,7 @@ function renderUsers(users){
     <td><span class="badge ${u.role==='superadmin'?'badge-danger':u.role==='admin'?'badge-warn':u.role==='course_admin'?'badge-info':'badge-primary'}">${u.role}</span></td>
     <td><div class="flex gap-2">
       ${user.role==='superadmin'||user.role==='admin'?`<button class="btn btn-sm btn-secondary" onclick="openUserRole(${JSON.stringify(u).replace(/"/g,'&quot;')})">🔐 صلاحيات</button>`:''}
-      <button class="btn btn-sm btn-secondary" onclick="resetPass('${u.id}','${u.full_name.replace(/'/g,'\\'')}')">🔑 باسورد</button>
+      <button class="btn btn-sm btn-secondary" data-uid="${u.id}" data-name="${u.full_name}" onclick="resetPassBtn(this)">🔑 باسورد</button>
     </div></td>
   </tr>`).join('');
 }
@@ -1302,6 +1302,7 @@ async function saveUserRole(){
 }
 
 async function resetPass(userId,name){ const np=prompt('كلمة مرور جديدة لـ '+name+':'); if(!np||np.length<6){ toast('كلمة مرور قصيرة جداً','warn'); return; } const res=await mfFetch('admin-reset-password',{method:'POST',body:JSON.stringify({user_id:userId,new_password:np})}); if(!res.ok){ toast(res.error,'error'); return; } toast('تم تغيير الباسورد ✅','success'); }
+function resetPassBtn(el){ resetPass(el.dataset.uid, el.dataset.name); }
 
 // ─── QUIZZES ──────────────────────────
 async function loadQuizzes(){
