@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Make Future Center — لوحة الطالب</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="styles.css">
+<style>
+.hero-card { padding: 28px; border-radius: 24px; background: var(--grad); position: relative; overflow: hidden; margin-bottom: 24px; }
+.hero-card::before { content: ''; position: absolute; top: -40px; left: -40px; width: 200px; height: 200px; background: rgba(255,255,255,0.08); border-radius: 50%; }
+.hero-card::after { content: ''; position: absolute; bottom: -60px; right: -20px; width: 160px; height: 160px; background: rgba(255,255,255,0.06); border-radius: 50%; }
+.hero-card * { position: relative; z-index: 1; color: #fff !important; }
+.hero-name { font-size: 24px; font-weight: 900; }
+.hero-grade { font-size: 14px; opacity: 0.85; }
+.course-card { border-radius: 20px; overflow: hidden; border: 1px solid var(--border); background: var(--surface); transition: all 0.3s; }
+.course-card:hover { transform: translateY(-4px); box-shadow: var(--glow); border-color: var(--primary); }
+.course-card-body { padding: 16px; }
+.course-card-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.course-card-teacher { font-size: 12px; color: var(--text2); }
+.course-card-footer { padding: 12px 16px; border-top: 1px solid var(--border2); display: flex; align-items: center; justify-content: space-between; }
+.course-status { font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; }
+.status-enrolled { background: rgba(16,185,129,0.15); color: #10b981; }
+.status-pending { background: rgba(245,158,11,0.15); color: #f59e0b; }
+.status-available { background: rgba(124,58,237,0.15); color: var(--primary-light); }
+.notif-panel { position: fixed; top: 64px; left: 16px; right: 16px; max-width: 380px; margin-right: auto; z-index: 200; }
+@media(min-width:600px){ .notif-panel { left: auto; right: 24px; width: 380px; } }
+.notif-item { display: flex; gap: 12px; padding: 12px; border-radius: 12px; margin-bottom: 8px; background: var(--bg3); border: 1px solid var(--border2); animation: slideDown 0.3s ease; cursor: pointer; }
+.notif-item:hover { background: var(--bg4); }
+.notif-item.unread { border-color: var(--primary); background: rgba(124,58,237,0.08); }
+.notif-dot-item { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
+.sched-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; background: var(--bg3); margin-bottom: 8px; }
+.sched-day { font-size: 12px; font-weight: 700; color: var(--primary-light); min-width: 80px; }
+.sched-time { font-size: 12px; color: var(--text2); }
+.cert-card { padding: 16px; border-radius: 16px; background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(6,182,212,0.1)); border: 1px solid rgba(16,185,129,0.2); }
+.filter-wrap { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+.filter-chip { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border2); background: var(--bg3); color: var(--text2); font-family: 'Cairo',sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.filter-chip.active { background: rgba(124,58,237,0.2); border-color: var(--primary); color: var(--primary-light); }
+</style>
+</head>
+<body>
+<div class="bg-mesh"></div>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <span class="nav-logo">🎓 Make Future</span>
+  <div class="nav-actions">
+    <button class="theme-toggle" onclick="onToggleTheme()" id="themeBtn">🌙</button>
+    <button class="btn btn-sm glass-sm" style="position:relative" onclick="toggleNotifs()" id="notifBtn">
+      🔔
+      <span class="notif-dot hidden" id="notifDot"></span>
+    </button>
+    <button class="btn btn-sm btn-danger" onclick="logout()">خروج</button>
+  </div>
+</nav>
+
+<!-- Notification Panel -->
+<div class="notif-panel hidden" id="notifPanel">
+  <div class="glass p-4">
+    <div class="flex items-center justify-between mb-3">
+      <span class="font-bold">الإشعارات</span>
+      <button class="btn btn-sm btn-secondary" onclick="markAllRead()">قراءة الكل</button>
+    </div>
+    <div id="notifList"><div class="text-center text-muted p-4">لا توجد إشعارات</div></div>
+  </div>
+</div>
+
+<div class="container page-content">
+
+  <!-- Hero -->
+  <div class="hero-card fade-up" id="heroCard">
+    <div class="hero-name" id="heroName">👋 أهلاً!</div>
+    <div class="hero-grade" id="heroGrade"></div>
+    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+      <a href="change-password.html" style="background:rgba(255,255,255,0.2);padding:6px 14px;border-radius:8px;font-size:12px;color:#fff">🔒 تغيير كلمة المرور</a>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid-4 fade-up fade-up-1" id="statsGrid">
+    <div class="stat-card"><div class="stat-icon">📚</div><div class="stat-value" id="sMyCourses">0</div><div class="stat-label">كورساتي</div></div>
+    <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value" id="sCompleted">0</div><div class="stat-label">فيديوهات مكتملة</div></div>
+    <div class="stat-card"><div class="stat-icon">🏆</div><div class="stat-value" id="sCerts">0</div><div class="stat-label">شهاداتي</div></div>
+    <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-value" id="sPending">0</div><div class="stat-label">قيد المراجعة</div></div>
+  </div>
+
+  <!-- My Enrolled Courses -->
+  <div id="enrolledSection" class="mt-4 hidden">
+    <div class="section-header fade-up fade-up-2">
+      <h2 class="section-title">📖 كورساتي</h2>
+    </div>
+    <div class="grid-3" id="enrolledGrid"></div>
+  </div>
+
+  <!-- Available Courses -->
+  <div class="mt-4">
+    <div class="section-header fade-up fade-up-2">
+      <h2 class="section-title">🌟 الكورسات المتاحة</h2>
+    </div>
+    <div class="filter-wrap fade-up fade-up-3" id="subjectFilters">
+      <button class="filter-chip active" data-subject="" onclick="filterCourses(this,'')">الكل</button>
+    </div>
+    <div class="grid-3" id="coursesGrid">
+      <div class="skeleton" style="height:200px;border-radius:20px"></div>
+      <div class="skeleton" style="height:200px;border-radius:20px"></div>
+      <div class="skeleton" style="height:200px;border-radius:20px"></div>
+    </div>
+  </div>
+
+  <!-- Certificates -->
+  <div id="certsSection" class="mt-4 hidden">
+    <div class="section-header fade-up">
+      <h2 class="section-title">🏅 شهاداتي</h2>
+    </div>
+    <div class="grid-3" id="certsGrid"></div>
+  </div>
+
+</div>
+
+<script src="config.js"></script>
+<script>
+initTheme();
+updateThemeBtn();
+const user = requireAuth(['student','admin','superadmin','course_admin']);
+if(!user) throw new Error('no user');
+
+document.getElementById('heroName').textContent = '👋 أهلاً، ' + (user.full_name || user.name || '');
+document.getElementById('heroGrade').textContent = '🎓 ' + gradeLabel(user.grade);
+
+function updateThemeBtn(){ document.getElementById('themeBtn').textContent = document.documentElement.getAttribute('data-theme')==='dark'?'☀️':'🌙'; }
+function onToggleTheme(){ toggleTheme(); updateThemeBtn(); }
+
+let allCourses = [], enrolledCourses = [], paymentsData = [];
+let notifOpen = false;
+
+// ─── Load All Data ────────────────────
+async function loadAll(){
+  const [coursesRes, certsRes, paymentsRes, notifsRes] = await Promise.all([
+    mfFetch(`student-courses?grade=${user.grade}&user_id=${user.id}`),
+    mfFetch(`certificates?user_id=${user.id}`),
+    mfFetch(`create-payment?user_id=${user.id}`),
+    mfFetch(`user-notifications?user_id=${user.id}`)
+  ]);
+
+  allCourses = coursesRes.courses || [];
+  paymentsData = paymentsRes.payments || [];
+  renderCourses(allCourses);
+  renderCerts(certsRes.certificates || []);
+  renderNotifs(notifsRes.notifications || []);
+  renderStats();
+  buildSubjectFilters(allCourses);
+}
+
+function renderStats(){
+  const enrolled = allCourses.filter(c=>c.enrolled).length;
+  const pending = paymentsData.filter(p=>p.status==='pending').length;
+  document.getElementById('sMyCourses').textContent = enrolled;
+  document.getElementById('sPending').textContent = pending;
+}
+
+function buildSubjectFilters(courses){
+  const subjects = [...new Set(courses.map(c=>c.subject).filter(Boolean))];
+  const wrap = document.getElementById('subjectFilters');
+  subjects.forEach(s=>{
+    const btn = document.createElement('button');
+    btn.className = 'filter-chip';
+    btn.dataset.subject = s;
+    btn.textContent = s;
+    btn.onclick = ()=>filterCourses(btn,s);
+    wrap.appendChild(btn);
+  });
+}
+
+function filterCourses(btn, subject){
+  document.querySelectorAll('.filter-chip').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const filtered = subject ? allCourses.filter(c=>c.subject===subject) : allCourses;
+  renderCourses(filtered);
+}
+
+function renderCourses(courses){
+  const grid = document.getElementById('coursesGrid');
+  const enrolledGrid = document.getElementById('enrolledGrid');
+  const enrolledArr = courses.filter(c=>c.enrolled);
+  const availableArr = courses.filter(c=>!c.enrolled);
+
+  // Enrolled section
+  if(enrolledArr.length){
+    document.getElementById('enrolledSection').classList.remove('hidden');
+    enrolledGrid.innerHTML = enrolledArr.map(c=>courseCardHTML(c,true)).join('');
+  }
+
+  // Stats
+  document.getElementById('sMyCourses').textContent = enrolledArr.length;
+
+  // Available
+  if(!availableArr.length){ grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">📚</div><p>لا توجد كورسات متاحة لصفك حالياً</p></div>'; return; }
+  grid.innerHTML = availableArr.map(c=>courseCardHTML(c,false)).join('');
+}
+
+function courseCardHTML(c, enrolled){
+  const status = enrolled ? 'enrolled' : (c.payment_status==='pending' ? 'pending' : 'available');
+  const statusLabel = enrolled ? '✅ مشترك' : (status==='pending' ? '⏳ قيد المراجعة' : '💳 اشتراك');
+  const statusClass = enrolled ? 'status-enrolled' : (status==='pending' ? 'status-pending' : 'status-available');
+  const sched = (c.schedules||[]).slice(0,2).map(s=>`${s.day_of_week} ${s.start_time}`).join(' | ');
+
+  // Progress
+  const progress = c.progress_percent || 0;
+  let progressHTML = '';
+  if(enrolled && progress !== undefined){
+    progressHTML = `<div class="mt-2"><div class="flex items-center justify-between mb-1"><span class="text-xs text-muted">التقدم</span><span class="text-xs font-bold text-primary">${progress}%</span></div><div class="progress-wrap"><div class="progress-bar" style="width:${progress}%"></div></div></div>`;
+  }
+
+  const priceHTML = !enrolled && c.price > 0 ? `<span class="badge badge-warn">${fmtNum(c.price)} جنيه</span>` : (c.price===0?'<span class="badge badge-success">مجاني</span>':'');
+
+  return `<div class="course-card">
+    <div class="course-card-body">
+      <div class="flex items-center justify-between mb-2">
+        <span class="badge badge-primary">${c.subject||''}</span>
+        ${priceHTML}
+      </div>
+      <div class="course-card-title">${c.title}</div>
+      <div class="course-card-teacher">👨‍🏫 ${c.teacher_name}</div>
+      ${sched?`<div class="text-xs text-muted mt-2">📅 ${sched}</div>`:''}
+      ${progressHTML}
+    </div>
+    <div class="course-card-footer">
+      <span class="course-status ${statusClass}">${statusLabel}</span>
+      ${enrolled
+        ? `<button class="btn btn-primary btn-sm" onclick="openCourse(${c.id},'${c.title.replace(/'/g,'\\'')}','${c.subject||''}','${c.teacher_name.replace(/'/g,'\\'')}',${c.price||0})">▶️ فتح</button>`
+        : status==='available'
+          ? `<button class="btn btn-primary btn-sm" onclick="goPay(${c.id},'${c.title.replace(/'/g,'\\'')}','${c.subject||''}','${c.teacher_name.replace(/'/g,'\\'')}',${c.price||0})">💳 اشتراك</button>`
+          : '<span class="text-xs text-muted">جاري المراجعة</span>'
+      }
+    </div>
+  </div>`;
+}
+
+function openCourse(id, title, subject, teacher, price){
+  localStorage.setItem('mf_selected_course', JSON.stringify({id,title,subject,teacher_name:teacher,price}));
+  window.location.href = 'course.html';
+}
+function goPay(id, title, subject, teacher, price){
+  localStorage.setItem('mf_selected_course', JSON.stringify({id,title,subject,teacher_name:teacher,price}));
+  window.location.href = 'payment.html';
+}
+
+function renderCerts(certs){
+  document.getElementById('sCerts').textContent = certs.length;
+  if(!certs.length) return;
+  document.getElementById('certsSection').classList.remove('hidden');
+  document.getElementById('certsGrid').innerHTML = certs.map(c=>`
+    <div class="cert-card fade-up">
+      <div class="text-center mb-3" style="font-size:40px">🏅</div>
+      <div class="font-bold text-center">${c.course_title||'كورس'}</div>
+      <div class="text-sm text-muted text-center mt-1">${c.subject||''} — ${c.teacher||''}</div>
+      <div class="text-xs text-muted text-center mt-2">${fmtDate(c.issued_at)}</div>
+      <div class="text-center mt-2"><span class="badge badge-success"># ${c.cert_code}</span></div>
+    </div>`).join('');
+}
+
+// ─── Notifications ────────────────────
+let notifData = [];
+function renderNotifs(notifs){
+  notifData = notifs;
+  const unread = notifs.filter(n=>!n.is_read).length;
+  document.getElementById('notifDot').classList.toggle('hidden', !unread);
+  const list = document.getElementById('notifList');
+  if(!notifs.length){ list.innerHTML = '<div class="text-center text-muted p-4 text-sm">لا توجد إشعارات</div>'; return; }
+  list.innerHTML = notifs.map(n=>`
+    <div class="notif-item ${n.is_read?'':'unread'}">
+      ${!n.is_read?'<div class="notif-dot-item"></div>':'<div style="width:8px"></div>'}
+      <div><div class="text-sm font-bold">${n.title}</div><div class="text-xs text-muted mt-1">${n.message}</div><div class="text-xs text-muted mt-1">${fmtDateTime(n.created_at)}</div></div>
+    </div>`).join('');
+}
+
+function toggleNotifs(){
+  notifOpen = !notifOpen;
+  document.getElementById('notifPanel').classList.toggle('hidden', !notifOpen);
+}
+function markAllRead(){
+  document.getElementById('notifDot').classList.add('hidden');
+  document.querySelectorAll('.notif-item').forEach(el=>el.classList.remove('unread'));
+  document.querySelectorAll('.notif-dot-item').forEach(el=>el.remove());
+}
+
+// Close notifs on outside click
+document.addEventListener('click',e=>{
+  if(notifOpen && !document.getElementById('notifPanel').contains(e.target) && !document.getElementById('notifBtn').contains(e.target)){
+    notifOpen=false; document.getElementById('notifPanel').classList.add('hidden');
+  }
+});
+
+loadAll();
+</script>
+</body>
+</html>
