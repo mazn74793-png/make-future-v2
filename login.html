@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Make Future Center — تسجيل الدخول</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="styles.css">
+<style>
+.login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.login-card { width: 100%; max-width: 440px; }
+.login-logo { text-align: center; margin-bottom: 32px; }
+.login-logo .logo-icon { font-size: 48px; margin-bottom: 8px; }
+.login-logo h1 { font-size: 26px; font-weight: 900; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.login-logo p { font-size: 13px; color: var(--text2); margin-top: 4px; }
+.login-tabs { display: flex; gap: 4px; background: var(--bg3); border-radius: 12px; padding: 4px; margin-bottom: 24px; }
+.login-tab { flex: 1; padding: 10px; border-radius: 8px; border: none; font-family: 'Cairo',sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; background: transparent; color: var(--text2); transition: all 0.2s; }
+.login-tab.active { background: var(--grad); color: #fff; box-shadow: 0 4px 12px rgba(124,58,237,0.3); }
+.pass-wrap { position: relative; }
+.pass-wrap .form-input { padding-left: 44px; }
+.pass-toggle { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text2); font-size: 18px; background: none; border: none; }
+.or-divider { display: flex; align-items: center; gap: 12px; margin: 16px 0; color: var(--text3); font-size: 12px; }
+.or-divider::before, .or-divider::after { content: ''; flex: 1; height: 1px; background: var(--border2); }
+.grade-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.grade-btn { padding: 10px; border-radius: 10px; border: 1px solid var(--border2); background: var(--bg3); color: var(--text2); font-family: 'Cairo',sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; }
+.grade-btn.selected { border-color: var(--primary); background: rgba(124,58,237,0.15); color: var(--primary-light); }
+.theme-corner { position: fixed; top: 16px; left: 16px; z-index: 100; }
+.particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.particle { position: absolute; border-radius: 50%; opacity: 0.08; animation: float 6s ease-in-out infinite; }
+</style>
+</head>
+<body>
+<div class="bg-mesh"></div>
+<div class="particles" id="particles"></div>
+
+<div class="theme-corner">
+  <button class="theme-toggle" onclick="onToggleTheme()" id="themeBtn">🌙</button>
+</div>
+
+<div class="login-wrap">
+  <div class="login-card fade-up">
+    <div class="login-logo">
+      <div class="logo-icon">🎓</div>
+      <h1>Make Future Center</h1>
+      <p>منصة التعليم الإلكتروني المتكاملة</p>
+    </div>
+
+    <div class="glass p-6">
+      <div class="login-tabs">
+        <button class="login-tab active" id="tabLogin" onclick="switchTab('login')">تسجيل الدخول</button>
+        <button class="login-tab" id="tabSignup" onclick="switchTab('signup')">إنشاء حساب</button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <div id="formLogin">
+        <div class="form-group">
+          <label class="form-label">رقم الموبايل أو اسم المستخدم</label>
+          <input type="text" class="form-input" id="loginField" placeholder="01XXXXXXXXX" autocomplete="username" inputmode="tel">
+        </div>
+        <div class="form-group">
+          <label class="form-label">كلمة المرور</label>
+          <div class="pass-wrap">
+            <input type="password" class="form-input" id="loginPass" placeholder="كلمة المرور" autocomplete="current-password">
+            <button class="pass-toggle" onclick="togglePass('loginPass', this)">👁️</button>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-block btn-lg mt-4" id="btnLogin" onclick="doLogin()">
+          <span>دخول</span>
+          <span>←</span>
+        </button>
+        <p class="text-center text-sm text-muted mt-3">
+          كلمة المرور الافتراضية = رقم موبايلك
+        </p>
+      </div>
+
+      <!-- SIGNUP FORM -->
+      <div id="formSignup" class="hidden">
+        <div class="form-group">
+          <label class="form-label">الاسم الكامل</label>
+          <input type="text" class="form-input" id="suName" placeholder="محمد أحمد" maxlength="100">
+        </div>
+        <div class="form-group">
+          <label class="form-label">رقم موبايل الطالب</label>
+          <input type="tel" class="form-input" id="suPhone" placeholder="01XXXXXXXXX" inputmode="tel" maxlength="11">
+        </div>
+        <div class="form-group">
+          <label class="form-label">رقم موبايل ولي الأمر <span class="text-muted">(اختياري)</span></label>
+          <input type="tel" class="form-input" id="suParent" placeholder="01XXXXXXXXX" inputmode="tel" maxlength="11">
+        </div>
+        <div class="form-group">
+          <label class="form-label">الصف الدراسي</label>
+          <div class="grade-grid" id="gradeGrid">
+            <button class="grade-btn" data-grade="3prep" onclick="selectGrade(this)">الثالث الإعدادي</button>
+            <button class="grade-btn" data-grade="1sec" onclick="selectGrade(this)">الأول الثانوي</button>
+            <button class="grade-btn" data-grade="2sec" onclick="selectGrade(this)">الثاني الثانوي</button>
+            <button class="grade-btn" data-grade="3sec" onclick="selectGrade(this)">الثالث الثانوي</button>
+          </div>
+          <input type="hidden" id="suGrade">
+        </div>
+        <div class="form-group">
+          <label class="form-label">كلمة المرور</label>
+          <div class="pass-wrap">
+            <input type="password" class="form-input" id="suPass" placeholder="6 أحرف على الأقل" autocomplete="new-password">
+            <button class="pass-toggle" onclick="togglePass('suPass', this)">👁️</button>
+          </div>
+          <p class="text-xs text-muted mt-1">تلقائياً: رقم موبايلك كـ كلمة مرور</p>
+        </div>
+        <button class="btn btn-primary btn-block btn-lg mt-4" id="btnSignup" onclick="doSignup()">
+          <span>إنشاء الحساب</span>
+          <span>←</span>
+        </button>
+      </div>
+    </div>
+
+    <p class="text-center text-xs text-muted mt-4" style="opacity:0.5">
+      Make Future Center © 2025 — جميع الحقوق محفوظة
+    </p>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+initTheme();
+updateThemeBtn();
+
+// ─── Particles ────────────────────────
+(function(){
+  const p = document.getElementById('particles');
+  for(let i=0;i<12;i++){
+    const el = document.createElement('div');
+    el.className = 'particle';
+    const size = Math.random()*80+20;
+    el.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${Math.random()*100}%;background:${Math.random()>0.5?'#7c3aed':'#06b6d4'};animation-delay:${Math.random()*4}s;animation-duration:${4+Math.random()*4}s;`;
+    p.appendChild(el);
+  }
+})();
+
+function updateThemeBtn(){
+  const t = document.documentElement.getAttribute('data-theme');
+  document.getElementById('themeBtn').textContent = t==='dark'?'☀️':'🌙';
+}
+function onToggleTheme(){ toggleTheme(); updateThemeBtn(); }
+
+function switchTab(tab){
+  document.getElementById('formLogin').classList.toggle('hidden', tab!=='login');
+  document.getElementById('formSignup').classList.toggle('hidden', tab!=='signup');
+  document.getElementById('tabLogin').classList.toggle('active', tab==='login');
+  document.getElementById('tabSignup').classList.toggle('active', tab!=='login');
+}
+
+function togglePass(id, btn){
+  const inp = document.getElementById(id);
+  if(inp.type==='password'){ inp.type='text'; btn.textContent='🙈'; }
+  else { inp.type='password'; btn.textContent='👁️'; }
+}
+
+let selectedGrade = '';
+function selectGrade(btn){
+  document.querySelectorAll('.grade-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedGrade = btn.dataset.grade;
+  document.getElementById('suGrade').value = selectedGrade;
+}
+
+// ─── Login ────────────────────────────
+async function doLogin(){
+  const login = document.getElementById('loginField').value.trim();
+  const password = document.getElementById('loginPass').value;
+  if(!login||!password){ toast('أدخل بياناتك','warn'); return; }
+  const btn = document.getElementById('btnLogin');
+  btn.disabled = true; btn.textContent = '⏳ جاري الدخول...';
+  const res = await mfFetch('auth-login', { method:'POST', body: JSON.stringify({login, password}) });
+  btn.disabled = false; btn.innerHTML = '<span>دخول</span><span>←</span>';
+  if(!res.ok){ toast(res.error || 'بيانات غلط', 'error'); return; }
+  localStorage.setItem('mf_user', JSON.stringify(res.user));
+  localStorage.setItem('mf_access_token', res.access_token);
+  localStorage.setItem('mf_refresh_token', res.refresh_token);
+  const role = res.user?.role;
+  toast('أهلاً ' + (res.user?.name || '')+ ' 👋', 'success');
+  setTimeout(()=>{
+    if(role==='student') window.location.href='student.html';
+    else window.location.href='admin.html';
+  }, 800);
+}
+
+// ─── Signup ───────────────────────────
+async function doSignup(){
+  const full_name = document.getElementById('suName').value.trim();
+  const phone_student = document.getElementById('suPhone').value.trim();
+  const phone_parent = document.getElementById('suParent').value.trim();
+  const grade = selectedGrade;
+  let password = document.getElementById('suPass').value;
+  if(!password) password = phone_student; // default password
+  if(!full_name){ toast('أدخل الاسم الكامل','warn'); return; }
+  if(!/^01[0-9]{9}$/.test(phone_student)){ toast('رقم الموبايل غير صحيح','error'); return; }
+  if(!grade){ toast('اختر الصف الدراسي','warn'); return; }
+  if(password.length<6){ toast('كلمة المرور أقل من 6 أحرف','warn'); return; }
+  const btn = document.getElementById('btnSignup');
+  btn.disabled = true; btn.textContent = '⏳ جاري التسجيل...';
+  const res = await mfFetch('auth-signup', { method:'POST', body: JSON.stringify({full_name, phone_student, phone_parent: phone_parent||undefined, grade, password}) });
+  btn.disabled = false; btn.innerHTML = '<span>إنشاء الحساب</span><span>←</span>';
+  if(!res.ok){ toast(res.error || 'فشل التسجيل', 'error'); return; }
+  toast('تم إنشاء الحساب! سجل دخول الآن ✅', 'success', 4000);
+  switchTab('login');
+  document.getElementById('loginField').value = phone_student;
+}
+
+// Enter key
+document.addEventListener('keydown', e=>{
+  if(e.key==='Enter'){
+    if(!document.getElementById('formLogin').classList.contains('hidden')) doLogin();
+    else doSignup();
+  }
+});
+
+// Check if already logged in
+const u = getUser();
+if(u){ window.location.href = u.role==='student'?'student.html':'admin.html'; }
+</script>
+</body>
+</html>
