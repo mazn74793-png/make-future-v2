@@ -1107,17 +1107,16 @@ async function uploadToR2(file, courseId, title){
   for(let i=0;i<totalParts;i++){
     const chunk=file.slice(i*PART,(i+1)*PART);
     const pn=i+1;
-    // بنبعت الـ chunk لـ Supabase function بدل R2 مباشرة (حل مشكلة CORS)
+    // بنبعت الـ chunk لـ Supabase function (proxy لـ R2) بـ query params
     const token=localStorage.getItem('mf_access_token');
-    const chunkRes=await fetch(`${MF_CONFIG.FN}/r2-multipart`,{
+    const validTok=token&&token!=='null'&&token.length>20;
+    const chunkUrl=`${MF_CONFIG.FN}/r2-multipart?upload_id=${encodeURIComponent(upload_id)}&key=${encodeURIComponent(key)}&part_number=${pn}`;
+    const chunkRes=await fetch(chunkUrl,{
       method:'PUT',
       headers:{
         'Content-Type':file.type||'video/mp4',
         'apikey':MF_CONFIG.ANON_KEY,
-        'Authorization':`Bearer ${token&&token!=='null'?token:MF_CONFIG.ANON_KEY}`,
-        'x-upload-id':upload_id,
-        'x-r2-key':key,
-        'x-part-number':String(pn)
+        'Authorization':`Bearer ${validTok?token:MF_CONFIG.ANON_KEY}`
       },
       body:chunk
     });
