@@ -1339,7 +1339,7 @@ async function saveUserRole(){
   toast('تم التحديث ✅','success'); closeModal('modalUserRole'); loadUsers();
 }
 
-async function resetPass(userId,name){ const np=prompt('كلمة مرور جديدة لـ '+name+':'); if(!np||np.length<6){ toast('كلمة مرور قصيرة جداً','warn'); return; } const res=await mfFetch('admin-reset-password',{method:'POST',body:JSON.stringify({user_id:userId,new_password:np})}); if(!res.ok){ toast(res.error,'error'); return; } toast('تم تغيير الباسورد ✅','success'); }
+function resetPass(userId, name, phone){ openResetPass(userId, name, phone||''); }
 function resetPassBtn(el){ resetPass(el.dataset.uid, el.dataset.name); }
 
 // ─── QUIZZES ──────────────────────────
@@ -1537,19 +1537,106 @@ function renderMyCourseStudents(students){
     <div style="padding:12px;color:var(--text2);font-size:12px">إجمالي: ${students.length} طالب</div>`;
 }
 
-async function myCourseResetPass(userId, name, phone){
-  const newPass = prompt(`إعادة تعيين كلمة مرور: ${name}\nأدخل كلمة المرور الجديدة (6 أحرف على الأقل):`);
-  if(!newPass || newPass.length < 6){ if(newPass !== null) toast('كلمة المرور قصيرة جداً','warn'); return; }
-  const res = await mfFetch('admin-reset-password',{method:'POST',body:JSON.stringify({user_id:userId,new_password:newPass,admin_id:user.id})});
-  if(!res.ok){ toast(res.error||'فشل','error'); return; }
-  toast(`✅ تم تغيير باسورد ${name}`,'success');
-  // Offer to notify via WhatsApp
-  if(phone && confirm('هل تريد إرسال الباسورد الجديد عبر واتساب؟')){
-    const msg = `مرحباً ${name}،\nتم تغيير كلمة مرورك على منصة Make Future\nكلمة المرور الجديدة: ${newPass}\nرقمك: ${phone}`;
-    window.open(`https://wa.me/2${phone}?text=${encodeURIComponent(msg)}`,'_blank');
-  }
+function myCourseResetPass(userId, name, phone){ openResetPass(userId, name, phone||""); }
+
+// ── Reset Password Modal ──────────────────
+let _resetUserId = null, _resetUserName = null, _resetUserPhone = null;
+
+function openResetPass(userId, name, phone){
+  _resetUserId = userId; _resetUserName = name; _resetUserPhone = phone;
+  document.getElementById('resetPassName').textContent = name + ' (' + phone + ')';
+  document.getElementById('resetNewPass').value = '';
+  document.getElementById('resetNewPassConfirm').value = '';
+  document.getElementById('resetPassErr').textContent = '';
+  openModal('modalResetPass');
+  setTimeout(() => document.getElementById('resetNewPass')?.focus(), 200);
 }
 
+function genRandomPass(){
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let p = '';
+  for(let i=0; i<10; i++) p += chars[Math.floor(Math.random()*chars.length)];
+  document.getElementById('resetNewPass').value = p;
+  document.getElementById('resetNewPassConfirm').value = p;
+  // Show it
+  ['resetNewPass','resetNewPassConfirm'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.type = 'text';
+  });
+  document.getElementById('resetPassErr').textContent = '';
+}
+
+async function doResetPass(){
+  const np = document.getElementById('resetNewPass').value;
+  const nc = document.getElementById('resetNewPassConfirm').value;
+  const errEl = document.getElementById('resetPassErr');
+  errEl.textContent = '';
+  if(!np || np.length < 8){ errEl.textContent = '❌ كلمة المرور أقل من 8 أحرف'; return; }
+  if(np !== nc){ errEl.textContent = '❌ كلمتا المرور غير متطابقتين'; return; }
+
+  const btn = document.getElementById('btnDoReset');
+  btn.disabled = true; btn.textContent = '⏳ جاري التغيير...';
+  const res = await mfFetch('admin-reset-password',{method:'POST',body:JSON.stringify({user_id:_resetUserId,new_password:np,admin_id:user.id})});
+  btn.disabled = false; btn.textContent = '✅ حفظ كلمة المرور';
+
+  if(!res.ok){ errEl.textContent = '❌ ' + (res.error||'فشل التغيير'); return; }
+
+  closeModal('modalResetPass');
+  toast(`✅ تم تغيير باسورد ${_resetUserName}`,'success');
+
+  // Offer WhatsApp notification
+  const waMsg = `مرحباً ${_resetUserName}،
+تم تغيير كلمة مرورك على منصة Make Future Center
+
+كلمة المرور الجديدة: ${np}
+رقمك: ${_resetUserPhone}
+
+يمكنك تغييرها من داخل المنصة بعد الدخول.`;
+  if(_resetUserPhone && confirm('إرسال كلمة المرور الجديدة للطالب عبر واتساب؟')){
+    window.open(`https://wa.me/2${_resetUserPhone}?text=${encodeURIComponent(waMsg)}`,'_blank');
+  }
+}
 </script>
+
+<!-- Reset Password Modal -->
+<div class="modal-overlay" id="modalResetPass">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <h3 class="modal-title">🔑 إعادة تعيين كلمة المرور</h3>
+      <button class="btn btn-icon btn-secondary" onclick="closeModal('modalResetPass')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--bg3);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--text2)">
+        👤 <span id="resetPassName" style="font-weight:700;color:var(--text1)"></span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">كلمة المرور الجديدة</label>
+        <div style="position:relative">
+          <input type="password" class="form-input" id="resetNewPass" placeholder="٨ أحرف على الأقل" style="padding-left:44px">
+          <button onclick="document.getElementById('resetNewPass').type=document.getElementById('resetNewPass').type==='password'?'text':'password'" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text2);font-size:16px">👁️</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">تأكيد كلمة المرور</label>
+        <div style="position:relative">
+          <input type="password" class="form-input" id="resetNewPassConfirm" placeholder="أعد الكتابة">
+        </div>
+      </div>
+
+      <button onclick="genRandomPass()" class="btn btn-secondary btn-block" style="margin-bottom:10px;font-size:12px">
+        🎲 توليد كلمة مرور تلقائية
+      </button>
+
+      <div id="resetPassErr" style="color:#f87171;font-size:12px;font-weight:700;min-height:18px;margin-bottom:8px"></div>
+
+      <button class="btn btn-primary btn-block" id="btnDoReset" onclick="doResetPass()">
+        ✅ حفظ كلمة المرور
+      </button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
