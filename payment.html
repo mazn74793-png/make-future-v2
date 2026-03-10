@@ -426,6 +426,22 @@ tr:hover td { background: rgba(124,58,237,0.04); }
         <input type="text" class="form-input" id="txnId" placeholder="مثال: 1234567890" inputmode="numeric">
       </div>
 
+      <!-- صورة الإيصال -->
+      <div class="form-group">
+        <label class="form-label">📸 صورة الإيصال <span style="color:var(--danger)">*</span></label>
+        <div id="receiptDropArea" onclick="document.getElementById('receiptFile').click()"
+          style="border:2px dashed var(--border2);border-radius:14px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg3)">
+          <div id="receiptPlaceholder">
+            <div style="font-size:32px;margin-bottom:8px">📷</div>
+            <div style="font-size:13px;font-weight:700">اضغط لرفع صورة الإيصال</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:4px">JPG / PNG / WEBP — حتى 5 ميجا</div>
+          </div>
+          <img id="receiptPreview" src="" style="max-width:100%;max-height:200px;border-radius:10px;display:none;object-fit:contain">
+        </div>
+        <input type="file" id="receiptFile" accept="image/*" style="display:none" onchange="previewReceipt(this)">
+        <div id="receiptStatus" style="font-size:11px;margin-top:6px;color:var(--text2)"></div>
+      </div>
+
       <!-- Note -->
       <div class="form-group">
         <label class="form-label">ملاحظة (اختياري)</label>
@@ -655,14 +671,60 @@ function updateFinalPrice(){
   }
 }
 
+function previewReceipt(input){
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 5*1024*1024){ toast('الصورة أكبر من 5 ميجا','error'); input.value=''; return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('receiptPreview').src = e.target.result;
+    document.getElementById('receiptPreview').style.display = '';
+    document.getElementById('receiptPlaceholder').style.display = 'none';
+    document.getElementById('receiptStatus').textContent = '✅ ' + file.name;
+    document.getElementById('receiptDropArea').style.borderColor = 'var(--primary)';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function uploadReceipt(){
+  const file = document.getElementById('receiptFile').files[0];
+  if(!file) return null;
+  document.getElementById('receiptStatus').textContent = '⏳ جاري رفع الصورة...';
+  const token = localStorage.getItem('mf_access_token');
+  try{
+    const res = await fetch(`${MF_CONFIG.FN}/upload-image`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': file.type,
+        'apikey': MF_CONFIG.ANON_KEY,
+        'Authorization': `Bearer ${token||MF_CONFIG.ANON_KEY}`,
+        'x-image-type': 'receipt',
+        'x-file-name': file.name
+      },
+      body: file
+    });
+    const data = await res.json();
+    if(data.ok){ document.getElementById('receiptStatus').textContent = '✅ تم الرفع'; return data.url; }
+    else { document.getElementById('receiptStatus').textContent = '❌ ' + data.error; return null; }
+  }catch(e){ document.getElementById('receiptStatus').textContent = '❌ فشل الرفع'; return null; }
+}
+
 async function doPayment(){
   if(!selectedMethod){ toast('اختر طريقة الدفع','warn'); return; }
   const txnId = document.getElementById('txnId').value.trim();
   if(!txnId){ toast('أدخل رقم العملية','warn'); return; }
+  const receiptFile = document.getElementById('receiptFile').files[0];
+  if(!receiptFile){ toast('ارفع صورة الإيصال أولاً 📸','warn'); return; }
   const note = document.getElementById('txnNote').value.trim();
 
   const btn = document.getElementById('btnPay');
-  btn.disabled=true; btn.textContent='⏳ جاري الإرسال...';
+  btn.disabled=true; btn.textContent='⏳ جاري رفع الصورة...';
+
+  // رفع الإيصال أولاً
+  const receiptUrl = await uploadReceipt();
+  if(!receiptUrl){ btn.disabled=false; btn.innerHTML='📤 إرسال طلب الاشتراك'; toast('فشل رفع الإيصال — حاول مرة أخرى','error'); return; }
+
+  btn.textContent='⏳ جاري الإرسال...';
 
   const body = {
     user_id: user.id,
@@ -671,7 +733,8 @@ async function doPayment(){
     amount: originalPrice,
     final_amount: finalPrice,
     transaction_id: txnId,
-    receipt_note: note||null
+    receipt_note: note||null,
+    receipt_image_url: receiptUrl
   };
   if(appliedCoupon) body.coupon_id = appliedCoupon.id;
 
@@ -679,8 +742,31 @@ async function doPayment(){
   btn.disabled=false; btn.innerHTML='📤 إرسال طلب الاشتراك';
 
   if(!res.ok){ toast(res.error||'فشل الإرسال','error'); return; }
-  toast('تم إرسال طلبك بنجاح! ✅ سيتم مراجعته قريباً','success',5000);
-  setTimeout(()=>window.location.href='student.html', 2000);
+
+  // ── إشعار الأدمن على واتساب تلقائياً
+  const notifyRes = await mfFetch('send-otp', {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'payment_notify',
+      student_phone: user.phone_student || user.phone,
+      student_name: user.full_name || user.name,
+      course_title: course.title,
+      amount: finalPrice,
+      payment_method: selectedMethod === 'vodafone' ? 'فودافون كاش' : 'انستا باي'
+    })
+  });
+
+  if(notifyRes.ok && notifyRes.wa_link) {
+    toast('تم إرسال طلبك! ✅ افتح واتساب لإبلاغ الأدمن بالتحويل','success', 6000);
+    // افتح واتساب بعد ثانية
+    setTimeout(() => {
+      window.open(notifyRes.wa_link, '_blank');
+    }, 1200);
+  } else {
+    toast('تم إرسال طلبك بنجاح! ✅ سيتم مراجعته قريباً','success', 5000);
+  }
+
+  setTimeout(()=>window.location.href='student.html', 3500);
 }
 </script>
 </body>
