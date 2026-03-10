@@ -155,6 +155,9 @@ img { max-width: 100%; }
   background: var(--bg2);
 }
 .form-input::placeholder { color: var(--text3); }
+.mc-stab { flex:1; min-width:80px; padding:7px 10px; border-radius:7px; border:none; background:transparent; color:var(--text2); font-size:12px; font-weight:700; cursor:pointer; font-family:Cairo,sans-serif; transition:all .2s; }
+.mc-stab.active { background:var(--bg2); color:var(--primary); box-shadow:0 2px 8px rgba(0,0,0,.2); }
+.mc-stab:hover:not(.active) { background:var(--bg4); }
 .form-textarea { resize: vertical; min-height: 80px; }
 .form-select { cursor: pointer; }
 
@@ -528,16 +531,62 @@ tr:hover td { background: rgba(124,58,237,0.04); }
       <div id="quizzesList"><div class="empty-state"><div class="empty-icon">📝</div><p>اختر كورس لعرض كويزاته</p></div></div>
     </div>
 
-    <!-- ══ MYCOURSE PANEL (course_admin only) ══ -->
+    <!-- ══ MYCOURSE PANEL (course_admin — full management) ══ -->
     <div class="tab-panel" id="panel-mycourse">
-      <div class="section-header">
-        <h2 class="section-title">🎓 طلاب كورسي</h2>
-        <div style="font-size:12px;color:var(--text2)" id="myCourseSubtitle"></div>
+
+      <!-- Course selector (لو عنده أكتر من كورس) -->
+      <div id="mcCourseBar" style="padding:0 0 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="font-size:13px;font-weight:700;color:var(--text2)">الكورس:</div>
+        <div id="mcCourseChips" style="display:flex;gap:8px;flex-wrap:wrap"></div>
       </div>
-      <div class="flex gap-2 mb-4" id="myCourseFilterBar">
-        <input type="text" class="form-input" id="myCourseSearch" placeholder="🔍 بحث بالاسم أو الرقم..." oninput="filterMyCourseStudents()" style="flex:1">
+
+      <!-- Sub-tabs -->
+      <div style="display:flex;gap:4px;margin-bottom:16px;background:var(--bg3);padding:4px;border-radius:10px;flex-wrap:wrap" id="mcSubTabs">
+        <button class="mc-stab active" onclick="mcSwitch('videos',this)">🎬 فيديوهات</button>
+        <button class="mc-stab" onclick="mcSwitch('schedules',this)">📅 مواعيد</button>
+        <button class="mc-stab" onclick="mcSwitch('quizzes',this)">📝 كويزات</button>
+        <button class="mc-stab" onclick="mcSwitch('students',this)">👥 الطلاب</button>
       </div>
-      <div id="myCourseStudentsList"><div class="empty-state"><div class="empty-icon">👥</div><p>جاري تحميل البيانات...</p></div></div>
+
+      <!-- Videos sub-panel -->
+      <div id="mc-panel-videos">
+        <div class="section-header">
+          <h2 class="section-title">🎬 فيديوهات الكورس</h2>
+          <button class="btn btn-primary btn-sm" onclick="openMcVideoModal()">+ إضافة فيديو</button>
+        </div>
+        <div id="mcVideosList"><div class="empty-state"><div class="empty-icon">🎬</div><p>لا توجد فيديوهات</p></div></div>
+      </div>
+
+      <!-- Schedules sub-panel -->
+      <div id="mc-panel-schedules" class="hidden">
+        <div class="section-header">
+          <h2 class="section-title">📅 مواعيد الكورس</h2>
+          <button class="btn btn-primary btn-sm" onclick="openMcScheduleModal()">+ إضافة موعد</button>
+        </div>
+        <div id="mcSchedulesList"><div class="empty-state"><div class="empty-icon">📅</div><p>لا توجد مواعيد</p></div></div>
+      </div>
+
+      <!-- Quizzes sub-panel -->
+      <div id="mc-panel-quizzes" class="hidden">
+        <div class="section-header">
+          <h2 class="section-title">📝 كويزات الكورس</h2>
+          <button class="btn btn-primary btn-sm" onclick="openMcQuizModal()">+ إنشاء كويز</button>
+        </div>
+        <div id="mcQuizzesList"><div class="empty-state"><div class="empty-icon">📝</div><p>لا توجد كويزات</p></div></div>
+      </div>
+
+      <!-- Students sub-panel -->
+      <div id="mc-panel-students" class="hidden">
+        <div class="section-header">
+          <h2 class="section-title">👥 طلاب الكورس</h2>
+          <div style="font-size:12px;color:var(--text2)" id="myCourseSubtitle"></div>
+        </div>
+        <div class="flex gap-2 mb-4">
+          <input type="text" class="form-input" id="myCourseSearch" placeholder="🔍 بحث بالاسم أو الرقم..." oninput="filterMyCourseStudents()" style="flex:1">
+        </div>
+        <div id="myCourseStudentsList"><div class="empty-state"><div class="empty-icon">👥</div><p>جاري تحميل البيانات...</p></div></div>
+      </div>
+
     </div>
 
   </main>
@@ -700,9 +749,26 @@ tr:hover td { background: rgba(124,58,237,0.04); }
       <input type="hidden" id="qQuizId">
       <div class="form-group"><label class="form-label">السؤال</label><textarea class="form-textarea" id="qText" rows="2"></textarea></div>
       <div class="form-group">
-        <label class="form-label">🖼️ صورة السؤال <span style="color:var(--text2);font-weight:400">(اختياري — رابط URL)</span></label>
-        <input type="text" class="form-input" id="qImageUrl" placeholder="https://example.com/image.jpg">
-        <div id="qImagePreview" style="margin-top:8px;display:none"><img id="qImgPreviewEl" src="" style="max-width:100%;max-height:160px;border-radius:10px;object-fit:contain;background:var(--bg3);border:1px solid var(--border2)" onerror="this.parentElement.style.display='none'"></div>
+        <label class="form-label">🖼️ صورة السؤال <span style="color:var(--text2);font-weight:400">(اختياري)</span></label>
+        <!-- Upload من التلفون / الجهاز -->
+        <div id="qImgUploadArea" style="border:2px dashed var(--border2);border-radius:12px;padding:14px;text-align:center;cursor:pointer;background:var(--bg3);transition:all .2s" onclick="document.getElementById('qImgFile').click()" ondragover="event.preventDefault();this.style.borderColor='var(--primary)'" ondragleave="this.style.borderColor='var(--border2)'" ondrop="handleQImgDrop(event)">
+          <div id="qImgUploadLabel" style="color:var(--text2);font-size:13px">📷 اضغط لاختيار صورة من الجهاز أو التلفون</div>
+          <div style="font-size:11px;color:#64748b;margin-top:4px">JPG / PNG / WEBP — حتى 5MB</div>
+          <input type="file" id="qImgFile" accept="image/*" style="display:none" onchange="handleQImgSelect(this.files[0])">
+        </div>
+        <!-- أو رابط URL -->
+        <div style="display:flex;align-items:center;gap:8px;margin:8px 0">
+          <div style="flex:1;height:1px;background:var(--border2)"></div>
+          <span style="font-size:11px;color:#64748b">أو رابط URL</span>
+          <div style="flex:1;height:1px;background:var(--border2)"></div>
+        </div>
+        <input type="text" class="form-input" id="qImageUrl" placeholder="https://example.com/image.jpg" oninput="onQImgUrlInput(this.value)" style="font-size:12px">
+        <!-- Preview -->
+        <div id="qImagePreview" style="margin-top:8px;display:none;position:relative">
+          <img id="qImgPreviewEl" src="" style="max-width:100%;max-height:180px;border-radius:10px;object-fit:contain;background:var(--bg3);border:1px solid var(--border2)" onerror="this.parentElement.style.display='none'">
+          <button onclick="clearQImg()" style="position:absolute;top:6px;left:6px;background:rgba(0,0,0,.6);border:none;color:#fff;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">✕</button>
+          <div id="qImgUploadStatus" style="font-size:11px;color:#22d3ee;margin-top:4px;text-align:center"></div>
+        </div>
       </div>
       <div class="form-group"><label class="form-label">الخيار أ</label><input type="text" class="form-input" id="qOptA"></div>
       <div class="form-group"><label class="form-label">الخيار ب</label><input type="text" class="form-input" id="qOptB"></div>
@@ -888,14 +954,16 @@ const ALL_TABS = [
   {id:'comments',label:'التعليقات',icon:'💬'},
   {id:'users',label:'المستخدمين',icon:'👥'},
   {id:'quizzes',label:'الكويزات',icon:'📝'},
-  {id:'mycourse',label:'طلاب كورسي',icon:'🎓',courseAdminOnly:true},
+  {id:'mycourse',label:'إدارة كورسي',icon:'🎓',courseAdminOnly:true},
 ];
 
 // الـ tabs المتاحة حسب الدور
 const isCourseAdmin = user.role === 'course_admin';
+// course_admin: يشوف mycourse بس — مفيش dashboard ومفيش بيانات الموقع
 const VISIBLE_TABS = isCourseAdmin
-  ? ALL_TABS.filter(t => ['dashboard','mycourse'].includes(t.id))
+  ? ALL_TABS.filter(t => t.id === 'mycourse')
   : ALL_TABS.filter(t => !t.courseAdminOnly);
+// course_admin مسموحله بالـ mycourse بس — اللي فيه كل حاجه
 
 function buildSidebar(){
   const items = document.getElementById('sideItems');
@@ -908,15 +976,28 @@ function buildSidebar(){
 
 let currentTab = 'dashboard';
 function switchTab(tab){
+  // course_admin: منع الوصول لأي tab غير mycourse
+  const PROTECTED = ['dashboard','courses','schedules','videos','payments','coupons','comments','users','quizzes'];
+  if(isCourseAdmin && PROTECTED.includes(tab)) return;
+
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.side-item').forEach(s=>s.classList.remove('active'));
   document.getElementById('panel-'+tab)?.classList.add('active');
   document.getElementById('side-'+tab)?.classList.add('active');
   currentTab = tab;
-  // Close sidebar on mobile
   document.getElementById('adminSidebar').classList.remove('open');
-  // Load data
-  const loaders={dashboard:loadDashboard,courses:loadCourses,schedules:loadSchedules,videos:()=>{},payments:()=>loadPayments('pending',document.querySelector('.tabs .tab-btn')),coupons:loadCoupons,comments:()=>{},users:loadUsers,quizzes:()=>{},mycourse:loadMyCourseStudents};
+  const loaders={
+    dashboard: ()=>{ if(!isCourseAdmin) loadDashboard(); },
+    courses:   ()=>{ if(!isCourseAdmin) loadCourses(); },
+    schedules: ()=>{ if(!isCourseAdmin) loadSchedules(); },
+    videos:    ()=>{},
+    payments:  ()=>{ if(!isCourseAdmin) loadPayments('pending',document.querySelector('.tabs .tab-btn')); },
+    coupons:   ()=>{ if(!isCourseAdmin) loadCoupons(); },
+    comments:  ()=>{},
+    users:     ()=>{ if(!isCourseAdmin) loadUsers(); },
+    quizzes:   ()=>{},
+    mycourse:  ()=> loadMyCourseStudents()
+  };
   loaders[tab]?.();
 }
 
@@ -929,6 +1010,7 @@ document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click
 
 // ─── DASHBOARD ────────────────────────
 async function loadDashboard(){
+  if(isCourseAdmin) return; // حماية إضافية
   const res = await mfFetch('admin-stats');
   if(!res.ok){ 
     document.getElementById('dashStats').innerHTML = `<div style="grid-column:1/-1" class="glass p-4 text-center"><div style="font-size:32px">⚠️</div><p class="mt-2 text-sm text-muted">${res.error||'فشل تحميل البيانات'}</p><button class="btn btn-primary btn-sm mt-3" onclick="loadDashboard()">🔄 إعادة المحاولة</button></div>`;
@@ -965,6 +1047,7 @@ async function loadDashboard(){
 // ─── COURSES ──────────────────────────
 let allCourses = [];
 async function loadCourses(){
+  if(isCourseAdmin) return;
   const grade = document.getElementById('filterGrade')?.value||'';
   const res = await mfFetch('admin-courses?grade='+grade);
   allCourses = res.courses||[];
@@ -1230,6 +1313,7 @@ async function bulkApprove(){
 
 // ─── COUPONS ──────────────────────────
 async function loadCoupons(){
+  if(isCourseAdmin) return;
   const res=await mfFetch('coupons');
   const coupons=res.coupons||[];
   const tbody=document.getElementById('couponsTable');
@@ -1296,6 +1380,7 @@ async function deleteComment(id){ if(!confirm('حذف التعليق؟')) return
 // ─── USERS ────────────────────────────
 let allUsers=[];
 async function loadUsers(){
+  if(isCourseAdmin) return;
   const res=await mfFetch('admin-users');
   allUsers=res.users||[];
   renderUsers(allUsers);
@@ -1379,6 +1464,76 @@ async function saveQuiz(){
   toast('تم إنشاء الكويز ✅','success'); closeModal('modalQuiz'); document.getElementById('editQuizId').value=''; loadQuizzes();
 }
 
+// ─── Quiz Image Upload ────────────────────────────────
+async function handleQImgSelect(file){
+  if(!file) return;
+  if(!file.type.startsWith('image/')){ toast('اختر ملف صورة فقط','warn'); return; }
+  if(file.size > 5*1024*1024){ toast('الصورة أكبر من 5MB','warn'); return; }
+  await uploadQImg(file);
+}
+
+function handleQImgDrop(e){
+  e.preventDefault();
+  document.getElementById('qImgUploadArea').style.borderColor = 'var(--border2)';
+  const file = e.dataTransfer.files[0];
+  if(file) handleQImgSelect(file);
+}
+
+function onQImgUrlInput(val){
+  const preview = document.getElementById('qImagePreview');
+  const img = document.getElementById('qImgPreviewEl');
+  if(val.trim()){ img.src=val.trim(); preview.style.display='block'; document.getElementById('qImgUploadStatus').textContent=''; }
+  else { preview.style.display='none'; }
+}
+
+function clearQImg(){
+  document.getElementById('qImageUrl').value = '';
+  document.getElementById('qImagePreview').style.display = 'none';
+  document.getElementById('qImgUploadLabel').textContent = '📷 اضغط لاختيار صورة من الجهاز أو التلفون';
+  document.getElementById('qImgFile').value = '';
+}
+
+async function uploadQImg(file){
+  const statusEl = document.getElementById('qImgUploadStatus');
+  const labelEl  = document.getElementById('qImgUploadLabel');
+  const previewEl = document.getElementById('qImagePreview');
+  const imgEl    = document.getElementById('qImgPreviewEl');
+
+  labelEl.textContent = '⏳ جاري الرفع...';
+  if(statusEl) statusEl.textContent = '⏳ جاري رفع الصورة...';
+
+  const token = localStorage.getItem('mf_access_token');
+  try {
+    const res = await fetch(`${MF_CONFIG.FN}/upload-image`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': file.type,
+        'apikey': MF_CONFIG.ANON_KEY,
+        'Authorization': `Bearer ${token||MF_CONFIG.ANON_KEY}`,
+        'x-file-name': file.name,
+        'x-file-type': file.type
+      },
+      body: file
+    });
+    const data = await res.json();
+    if(data.ok && data.url){
+      document.getElementById('qImageUrl').value = data.url;
+      imgEl.src = data.url;
+      previewEl.style.display = 'block';
+      labelEl.textContent = '✅ ' + file.name;
+      if(statusEl) statusEl.textContent = '✅ تم الرفع بنجاح';
+      toast('تم رفع الصورة ✅','success');
+    } else {
+      labelEl.textContent = '❌ فشل الرفع — ' + (data.error||'');
+      if(statusEl) statusEl.textContent = '';
+      toast(data.error||'فشل رفع الصورة','error');
+    }
+  } catch(e){
+    labelEl.textContent = '❌ خطأ: ' + e.message;
+    toast('فشل رفع الصورة: '+e.message,'error');
+  }
+}
+
 function openAddQuestion(quizId){
   document.getElementById('qQuizId').value=quizId;
   document.getElementById('editQId').value='';
@@ -1425,13 +1580,14 @@ buildSidebar();
 // إعادة التوجيه حسب الدور
 if(isCourseAdmin){
   switchTab('mycourse');
+  loadMyCourseStudents(); // يلود بيانات الكورس فوراً
 } else {
-  // Set first sidebar item active
   document.getElementById('side-dashboard')?.classList.add('active');
 }
 
 // Load dashboard with explicit error display
 (async function init() {
+  if(isCourseAdmin) return; // course_admin مش محتاج dashboard
   console.log('📊 Loading dashboard...');
   try {
     const res = await mfFetch('admin-stats');
@@ -1462,35 +1618,256 @@ if(isCourseAdmin){
 // ═══ MYCOURSE (course_admin dashboard) ═════════════════════════════
 let myCourseAllStudents = [];
 
+// ═══ COURSE_ADMIN MANAGEMENT ═══════════════════════════
+let mcActiveCourseId = null;
+let mcAllCourses = [];
+let mcActiveSubTab = 'videos';
+
 async function loadMyCourseStudents(){
+  // الـ loader الرئيسي لـ panel-mycourse
   const managed = user.managed_courses || [];
   if(!managed.length){
     document.getElementById('myCourseStudentsList').innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>لا توجد كورسات معينة لك — تواصل مع السوبر أدمن</p></div>';
     return;
   }
-  const wrap = document.getElementById('myCourseStudentsList');
-  wrap.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>جاري تحميل البيانات...</p></div>';
 
-  // جيب طلاب كل الكورسات بتاعته
-  let allStudents = [];
-  let courseNames = [];
+  // جيب بيانات الكورسات
+  const coursesRes = await mfFetch('admin-courses');
+  const allCourses = coursesRes.courses || [];
+  mcAllCourses = allCourses.filter(c => managed.includes(c.id));
 
-  for(const courseId of managed){
-    const res = await mfFetch(`course-admin-students?course_id=${courseId}&admin_id=${user.id}`);
-    if(res.ok && res.course){
-      courseNames.push(res.course.title);
-      // إضافة اسم الكورس لكل طالب
-      (res.students||[]).forEach(s => {
-        s.course_title = res.course.title;
-        s.course_id = courseId;
-        allStudents.push(s);
-      });
-    }
+  // ابني chip لكل كورس
+  const chips = document.getElementById('mcCourseChips');
+  if(chips){
+    chips.innerHTML = mcAllCourses.map((c,i) =>
+      `<button class="mc-course-chip ${i===0?'active':''}" onclick="mcSelectCourse(${c.id},this)" style="padding:6px 14px;border-radius:20px;border:2px solid ${i===0?'var(--primary)':'var(--border2)'};background:${i===0?'rgba(124,58,237,.15)':'var(--bg3)'};color:${i===0?'var(--primary)':'var(--text2)'};font-size:12px;font-weight:700;cursor:pointer;font-family:Cairo,sans-serif;transition:all .2s">${c.title}</button>`
+    ).join('');
   }
 
-  document.getElementById('myCourseSubtitle').textContent = 'كورساتك: ' + courseNames.join(' | ') + ' — إجمالي: ' + allStudents.length + ' طالب';
-  myCourseAllStudents = allStudents;
-  renderMyCourseStudents(allStudents);
+  // افتح أول كورس
+  if(mcAllCourses.length){
+    mcActiveCourseId = mcAllCourses[0].id;
+    mcLoadActiveSubTab();
+  }
+}
+
+function mcSelectCourse(id, btn){
+  mcActiveCourseId = id;
+  document.querySelectorAll('.mc-course-chip').forEach(b => {
+    b.style.borderColor = 'var(--border2)';
+    b.style.background = 'var(--bg3)';
+    b.style.color = 'var(--text2)';
+  });
+  btn.style.borderColor = 'var(--primary)';
+  btn.style.background = 'rgba(124,58,237,.15)';
+  btn.style.color = 'var(--primary)';
+  mcLoadActiveSubTab();
+}
+
+function mcSwitch(tab, btn){
+  mcActiveSubTab = tab;
+  document.querySelectorAll('.mc-stab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['videos','schedules','quizzes','students'].forEach(t => {
+    document.getElementById('mc-panel-'+t).classList.toggle('hidden', t !== tab);
+  });
+  mcLoadActiveSubTab();
+}
+
+function mcLoadActiveSubTab(){
+  if(!mcActiveCourseId) return;
+  if(mcActiveSubTab === 'videos')    mcLoadVideos();
+  if(mcActiveSubTab === 'schedules') mcLoadSchedules();
+  if(mcActiveSubTab === 'quizzes')   mcLoadQuizzes();
+  if(mcActiveSubTab === 'students')  mcLoadStudents();
+}
+
+// ── VIDEOS ─────────────────────────────────
+async function mcLoadVideos(){
+  const el = document.getElementById('mcVideosList');
+  el.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>جاري التحميل...</p></div>';
+  const res = await mfFetch(`course-videos?course_id=${mcActiveCourseId}`);
+  const videos = res.videos || [];
+  if(!videos.length){ el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎬</div><p>لا توجد فيديوهات — أضف أول فيديو!</p></div>'; return; }
+  el.innerHTML = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr style="background:var(--bg3)">
+      <th style="padding:8px 10px;text-align:right">الترتيب</th>
+      <th style="padding:8px 10px;text-align:right">العنوان</th>
+      <th style="padding:8px 10px;text-align:center">النوع</th>
+      <th style="padding:8px 10px;text-align:center">إجراء</th>
+    </tr></thead><tbody>
+    ${videos.map(v => `<tr style="border-bottom:1px solid var(--border2)">
+      <td style="padding:8px 10px;text-align:center;color:var(--text2)">${v.order_index}</td>
+      <td style="padding:8px 10px;font-weight:600">${v.title}</td>
+      <td style="padding:8px 10px;text-align:center"><span class="badge ${v.video_type==='youtube'?'badge-warn':'badge-info'}">${v.video_type==='youtube'?'يوتيوب':'رفع'}</span></td>
+      <td style="padding:8px 10px;text-align:center;display:flex;gap:6px;justify-content:center">
+        <button class="btn btn-sm btn-secondary" onclick="openMcVideoModal(${JSON.stringify(v).replace(/"/g,'&quot;')})">✏️</button>
+        <button class="btn btn-sm btn-danger" onclick="mcDeleteVideo(${v.id})" style="background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.3)">🗑️</button>
+      </td>
+    </tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+let _mcEditVideo = null;
+function openMcVideoModal(video=null){
+  _mcEditVideo = video;
+  document.getElementById('mcVidTitle').value = video?.title || '';
+  document.getElementById('mcVidOrder').value = video?.order_index ?? 0;
+  document.getElementById('mcVidDesc').value = video?.description || '';
+  const isYt = !video || video.video_type === 'youtube';
+  document.getElementById('mcVidTypeYt').checked = isYt;
+  document.getElementById('mcVidTypeUp').checked = !isYt;
+  document.getElementById('mcVidYtWrap').classList.toggle('hidden', !isYt);
+  document.getElementById('mcVidUpWrap').classList.toggle('hidden', isYt);
+  document.getElementById('mcVidYtUrl').value = video?.youtube_url || '';
+  document.getElementById('mcVidEditId').value = video?.id || '';
+  openModal('modalMcVideo');
+}
+
+function mcToggleVidType(type){
+  document.getElementById('mcVidYtWrap').classList.toggle('hidden', type!=='youtube');
+  document.getElementById('mcVidUpWrap').classList.toggle('hidden', type!=='upload');
+}
+
+async function mcSaveVideo(){
+  const title = document.getElementById('mcVidTitle').value.trim();
+  const order = parseInt(document.getElementById('mcVidOrder').value)||0;
+  const desc  = document.getElementById('mcVidDesc').value.trim();
+  const type  = document.getElementById('mcVidTypeYt').checked ? 'youtube' : 'upload';
+  const ytUrl = document.getElementById('mcVidYtUrl').value.trim();
+  const editId = document.getElementById('mcVidEditId').value;
+  if(!title){ toast('أدخل عنوان الفيديو','warn'); return; }
+  if(type==='youtube' && !ytUrl){ toast('أدخل رابط يوتيوب','warn'); return; }
+
+  const body = {course_id: mcActiveCourseId, title, description: desc, order_index: order, video_type: type, youtube_url: type==='youtube'?ytUrl:null};
+  if(editId) body.id = parseInt(editId);
+
+  const res = await mfFetch('course-videos', {method:'POST', body: JSON.stringify(body)});
+  if(!res.ok){ toast(res.error||'فشل الحفظ','error'); return; }
+  toast('تم حفظ الفيديو ✅','success');
+  closeModal('modalMcVideo');
+  mcLoadVideos();
+}
+
+async function mcDeleteVideo(id){
+  if(!confirm('حذف الفيديو؟')) return;
+  await mfFetch('course-videos',{method:'DELETE',body:JSON.stringify({id})});
+  toast('تم الحذف','success'); mcLoadVideos();
+}
+
+// ── SCHEDULES ───────────────────────────────
+async function mcLoadSchedules(){
+  const el = document.getElementById('mcSchedulesList');
+  el.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>جاري التحميل...</p></div>';
+  const res = await mfFetch(`admin-schedules?course_id=${mcActiveCourseId}`);
+  const scheds = res.schedules?.filter(s => s.course_id === mcActiveCourseId) || [];
+  if(!scheds.length){ el.innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><p>لا توجد مواعيد</p></div>'; return; }
+  el.innerHTML = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr style="background:var(--bg3)">
+      <th style="padding:8px 10px;text-align:right">اليوم</th>
+      <th style="padding:8px 10px;text-align:center">من</th>
+      <th style="padding:8px 10px;text-align:center">إلى</th>
+      <th style="padding:8px 10px;text-align:right">ملاحظة</th>
+      <th style="padding:8px 10px;text-align:center">إجراء</th>
+    </tr></thead><tbody>
+    ${scheds.map(s => `<tr style="border-bottom:1px solid var(--border2)">
+      <td style="padding:8px 10px;font-weight:700">${s.day_of_week||''}</td>
+      <td style="padding:8px 10px;text-align:center;direction:ltr">${s.start_time||''}</td>
+      <td style="padding:8px 10px;text-align:center;direction:ltr">${s.end_time||''}</td>
+      <td style="padding:8px 10px;color:var(--text2)">${s.note||'—'}</td>
+      <td style="padding:8px 10px;text-align:center">
+        <button class="btn btn-sm btn-danger" onclick="mcDeleteSchedule(${s.id})" style="background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.3)">🗑️</button>
+      </td>
+    </tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+function openMcScheduleModal(){
+  document.getElementById('mcSchedDay').value = 'السبت';
+  document.getElementById('mcSchedStart').value = '';
+  document.getElementById('mcSchedEnd').value = '';
+  document.getElementById('mcSchedNote').value = '';
+  openModal('modalMcSchedule');
+}
+
+async function mcSaveSchedule(){
+  const day   = document.getElementById('mcSchedDay').value;
+  const start = document.getElementById('mcSchedStart').value;
+  const end   = document.getElementById('mcSchedEnd').value;
+  const note  = document.getElementById('mcSchedNote').value.trim();
+  if(!start||!end){ toast('أدخل وقت البداية والنهاية','warn'); return; }
+  const res = await mfFetch('admin-schedules',{method:'POST',body:JSON.stringify({course_id:mcActiveCourseId,day_of_week:day,start_time:start,end_time:end,note})});
+  if(!res.ok){ toast(res.error||'فشل الحفظ','error'); return; }
+  toast('تم إضافة الموعد ✅','success'); closeModal('modalMcSchedule'); mcLoadSchedules();
+}
+
+async function mcDeleteSchedule(id){
+  if(!confirm('حذف الموعد؟')) return;
+  await mfFetch('admin-schedules',{method:'DELETE',body:JSON.stringify({id})});
+  toast('تم الحذف','success'); mcLoadSchedules();
+}
+
+// ── QUIZZES ─────────────────────────────────
+let mcActiveQuizId = null;
+async function mcLoadQuizzes(){
+  const el = document.getElementById('mcQuizzesList');
+  el.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>جاري التحميل...</p></div>';
+  const res = await mfFetch(`quizzes?course_id=${mcActiveCourseId}`);
+  const quizzes = res.quizzes || [];
+  if(!quizzes.length){ el.innerHTML = '<div class="empty-state"><div class="empty-icon">📝</div><p>لا توجد كويزات</p></div>'; return; }
+  el.innerHTML = quizzes.map(q => `
+    <div style="background:var(--bg3);border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid var(--border2)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div><div style="font-weight:700">${q.title}</div><div style="font-size:12px;color:var(--text2)">نجاح: ${q.pass_score}%</div></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm btn-primary" onclick="mcOpenQuizQuestions(${q.id},'${q.title.replace(/'/g,'')}')">📝 الأسئلة</button>
+          <button class="btn btn-sm btn-danger" onclick="mcDeleteQuiz(${q.id})" style="background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.3)">🗑️</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function openMcQuizModal(){
+  document.getElementById('mcQuizTitle').value = '';
+  document.getElementById('mcQuizPass').value = '60';
+  document.getElementById('mcQuizDesc').value = '';
+  openModal('modalMcQuiz');
+}
+
+async function mcSaveQuiz(){
+  const title = document.getElementById('mcQuizTitle').value.trim();
+  const pass  = parseInt(document.getElementById('mcQuizPass').value)||60;
+  const desc  = document.getElementById('mcQuizDesc').value.trim();
+  if(!title){ toast('أدخل عنوان الكويز','warn'); return; }
+  const res = await mfFetch('quizzes',{method:'POST',body:JSON.stringify({course_id:mcActiveCourseId,title,description:desc,pass_score:pass})});
+  if(!res.ok){ toast(res.error||'فشل','error'); return; }
+  toast('تم إنشاء الكويز ✅','success'); closeModal('modalMcQuiz'); mcLoadQuizzes();
+}
+
+async function mcDeleteQuiz(id){
+  if(!confirm('حذف الكويز وكل أسئلته؟')) return;
+  await mfFetch('quizzes',{method:'DELETE',body:JSON.stringify({id})});
+  toast('تم الحذف','success'); mcLoadQuizzes();
+}
+
+function mcOpenQuizQuestions(quizId, quizTitle){
+  mcActiveQuizId = quizId;
+  // reuse existing quiz question modal
+  document.getElementById('qQuizId').value = quizId;
+  document.getElementById('modalQuestion').querySelector('.modal-title').textContent = 'أسئلة: ' + quizTitle;
+  loadQuizQuestions(quizId);
+  openModal('modalQuestion');
+}
+
+// ── STUDENTS ────────────────────────────────
+async function mcLoadStudents(){
+  const el = document.getElementById('myCourseStudentsList');
+  el.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>جاري التحميل...</p></div>';
+  const res = await mfFetch(`course-admin-students?course_id=${mcActiveCourseId}&admin_id=${user.id}`);
+  const students = res.students || [];
+  document.getElementById('myCourseSubtitle').textContent = (res.course?.title||'') + ' — إجمالي: ' + students.length + ' طالب';
+  myCourseAllStudents = students;
+  renderMyCourseStudents(students);
 }
 
 function filterMyCourseStudents(){
@@ -1597,6 +1974,66 @@ async function doResetPass(){
   }
 }
 </script>
+
+<!-- MC Video Modal -->
+<div class="modal-overlay" id="modalMcVideo">
+  <div class="modal-box" style="max-width:500px">
+    <div class="modal-header"><h3 class="modal-title">إضافة / تعديل فيديو</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalMcVideo')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="mcVidEditId">
+      <div class="form-group"><label class="form-label">عنوان الفيديو *</label><input type="text" class="form-input" id="mcVidTitle"></div>
+      <div class="form-group"><label class="form-label">الترتيب</label><input type="number" class="form-input" id="mcVidOrder" value="0" min="0"></div>
+      <div class="form-group"><label class="form-label">نوع الفيديو</label>
+        <div style="display:flex;gap:16px;margin-top:6px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="mcVidType" id="mcVidTypeYt" value="youtube" checked onchange="mcToggleVidType('youtube')"> يوتيوب</label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="mcVidType" id="mcVidTypeUp" value="upload" onchange="mcToggleVidType('upload')"> رفع فيديو</label>
+        </div>
+      </div>
+      <div id="mcVidYtWrap" class="form-group"><label class="form-label">رابط يوتيوب</label><input type="text" class="form-input" id="mcVidYtUrl" placeholder="https://youtube.com/watch?v=..."></div>
+      <div id="mcVidUpWrap" class="form-group hidden"><label class="form-label">ملف الفيديو</label>
+        <div class="upload-drop-zone" onclick="document.getElementById('mcVidFile').click()" style="text-align:center;padding:24px;border:2px dashed var(--border2);border-radius:12px;cursor:pointer">
+          <div id="mcVidFileName" style="color:var(--text2);font-size:13px">اضغط لاختيار فيديو</div>
+          <input type="file" id="mcVidFile" accept="video/*" style="display:none" onchange="document.getElementById('mcVidFileName').textContent=this.files[0]?.name||'اضغط لاختيار فيديو'">
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">وصف (اختياري)</label><textarea class="form-textarea" id="mcVidDesc" rows="2"></textarea></div>
+      <button class="btn btn-primary btn-block" onclick="mcSaveVideo()">💾 حفظ الفيديو</button>
+    </div>
+  </div>
+</div>
+
+<!-- MC Schedule Modal -->
+<div class="modal-overlay" id="modalMcSchedule">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header"><h3 class="modal-title">إضافة موعد</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalMcSchedule')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">اليوم</label>
+        <select class="form-select" id="mcSchedDay">
+          <option>السبت</option><option>الأحد</option><option>الاثنين</option><option>الثلاثاء</option><option>الأربعاء</option><option>الخميس</option><option>الجمعة</option>
+        </select>
+      </div>
+      <div class="grid-2 gap-3">
+        <div class="form-group"><label class="form-label">من</label><input type="time" class="form-input" id="mcSchedStart"></div>
+        <div class="form-group"><label class="form-label">إلى</label><input type="time" class="form-input" id="mcSchedEnd"></div>
+      </div>
+      <div class="form-group"><label class="form-label">ملاحظة (اختياري)</label><input type="text" class="form-input" id="mcSchedNote" placeholder="مثلاً: أونلاين / أوفلاين"></div>
+      <button class="btn btn-primary btn-block" onclick="mcSaveSchedule()">💾 حفظ الموعد</button>
+    </div>
+  </div>
+</div>
+
+<!-- MC Quiz Modal -->
+<div class="modal-overlay" id="modalMcQuiz">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header"><h3 class="modal-title">إنشاء كويز</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalMcQuiz')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">عنوان الكويز *</label><input type="text" class="form-input" id="mcQuizTitle"></div>
+      <div class="form-group"><label class="form-label">درجة النجاح %</label><input type="number" class="form-input" id="mcQuizPass" value="60" min="1" max="100"></div>
+      <div class="form-group"><label class="form-label">وصف (اختياري)</label><textarea class="form-textarea" id="mcQuizDesc" rows="2"></textarea></div>
+      <button class="btn btn-primary btn-block" onclick="mcSaveQuiz()">💾 إنشاء الكويز</button>
+    </div>
+  </div>
+</div>
 
 <!-- Reset Password Modal -->
 <div class="modal-overlay" id="modalResetPass">
