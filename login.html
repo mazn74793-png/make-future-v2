@@ -155,6 +155,9 @@ img { max-width: 100%; }
   background: var(--bg2);
 }
 .form-input::placeholder { color: var(--text3); }
+.field-err { font-size:11px; color:#f87171; margin-top:4px; min-height:16px; font-weight:600; }
+.form-input.err-field { border-color:#f87171 !important; background:rgba(248,113,113,.05); }
+.form-input.ok-field { border-color:#10b981 !important; }
 .form-textarea { resize: vertical; min-height: 80px; }
 .form-select { cursor: pointer; }
 
@@ -406,51 +409,96 @@ tr:hover td { background: rgba(124,58,237,0.04); }
           <span>←</span>
         </button>
 
+        <div style="text-align:center;margin-top:14px">
+          <button onclick="resetViaWhatsapp()" style="background:none;border:none;color:#64748b;font-size:12px;cursor:pointer;font-family:Cairo,sans-serif;text-decoration:underline">
+            🔑 نسيت كلمة المرور؟ تواصل مع الأدمن
+          </button>
+        </div>
       </div>
 
       <!-- SIGNUP FORM -->
       <div id="formSignup" class="hidden">
-        <div class="form-group">
-          <label class="form-label">الاسم الكامل</label>
-          <input type="text" class="form-input" id="suName" placeholder="محمد أحمد" maxlength="100">
-        </div>
-        <div class="form-group">
-          <label class="form-label">رقم موبايل الطالب</label>
-          <input type="tel" class="form-input" id="suPhone" placeholder="01XXXXXXXXX" inputmode="tel" maxlength="11">
-        </div>
-        <div class="form-group">
-          <label class="form-label">رقم موبايل ولي الأمر <span class="text-muted">(اختياري)</span></label>
-          <input type="tel" class="form-input" id="suParent" placeholder="01XXXXXXXXX" inputmode="tel" maxlength="11">
-        </div>
-        <div class="form-group">
-          <label class="form-label">الصف الدراسي</label>
-          <div class="grade-grid" id="gradeGrid">
-            <button class="grade-btn" data-grade="3prep" onclick="selectGrade(this)">الثالث الإعدادي</button>
-            <button class="grade-btn" data-grade="1sec" onclick="selectGrade(this)">الأول الثانوي</button>
-            <button class="grade-btn" data-grade="2sec" onclick="selectGrade(this)">الثاني الثانوي</button>
-            <button class="grade-btn" data-grade="3sec" onclick="selectGrade(this)">الثالث الثانوي</button>
+
+        <!-- Step 1: البيانات الأساسية -->
+        <div id="signupStep1">
+          <div class="form-group">
+            <label class="form-label">الاسم الكامل <span style="color:#f87171">*</span></label>
+            <input type="text" class="form-input" id="suName" placeholder="مثال: محمد أحمد علي" maxlength="100" oninput="clearErr('suName')">
+            <div class="field-err" id="err-suName"></div>
           </div>
-          <input type="hidden" id="suGrade">
+
+          <div class="form-group">
+            <label class="form-label">رقم موبايل الطالب <span style="color:#f87171">*</span></label>
+            <input type="tel" class="form-input" id="suPhone" placeholder="01XXXXXXXXX" inputmode="tel" maxlength="11" oninput="formatPhone(this); clearErr('suPhone')">
+            <div class="field-err" id="err-suPhone"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">رقم واتساب ولي الأمر <span style="color:#f87171">*</span></label>
+            <input type="tel" class="form-input" id="suParent" placeholder="01XXXXXXXXX" inputmode="tel" maxlength="11" oninput="formatPhone(this); clearErr('suParent')">
+            <div style="font-size:11px;color:#64748b;margin-top:4px">📱 للتواصل في حالة مشاكل الحساب</div>
+            <div class="field-err" id="err-suParent"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">الصف الدراسي <span style="color:#f87171">*</span></label>
+            <div class="grade-grid" id="gradeGrid">
+              <button class="grade-btn" data-grade="3prep" onclick="selectGrade(this)">الثالث الإعدادي</button>
+              <button class="grade-btn" data-grade="1sec" onclick="selectGrade(this)">الأول الثانوي</button>
+              <button class="grade-btn" data-grade="2sec" onclick="selectGrade(this)">الثاني الثانوي</button>
+              <button class="grade-btn" data-grade="3sec" onclick="selectGrade(this)">الثالث الثانوي</button>
+            </div>
+            <div class="field-err" id="err-grade"></div>
+            <input type="hidden" id="suGrade">
+          </div>
+
+          <button class="btn btn-primary btn-block btn-lg mt-4" onclick="goToStep2()">
+            <span>التالي</span><span>←</span>
+          </button>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">كلمة المرور</label>
-          <div class="pass-wrap">
-            <input type="password" class="form-input" id="suPass" placeholder="اختار كلمة مرور قوية" autocomplete="new-password">
-            <button class="pass-toggle" onclick="togglePass('suPass', this)">👁️</button>
+        <!-- Step 2: كلمة المرور -->
+        <div id="signupStep2" class="hidden">
+          <div style="background:var(--bg3);border-radius:12px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+            <div style="font-size:22px">👤</div>
+            <div>
+              <div style="font-size:13px;font-weight:700" id="stepSummaryName"></div>
+              <div style="font-size:12px;color:var(--text2)" id="stepSummaryPhone"></div>
+            </div>
+            <button onclick="goBackStep1()" style="margin-right:auto;background:none;border:none;color:#64748b;cursor:pointer;font-size:12px;font-family:Cairo,sans-serif">تعديل ✏️</button>
           </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">تأكيد كلمة المرور</label>
-          <div class="pass-wrap">
-            <input type="password" class="form-input" id="suPassConfirm" placeholder="أعد كتابة كلمة المرور" autocomplete="new-password">
-            <button class="pass-toggle" onclick="togglePass('suPassConfirm', this)">👁️</button>
+
+          <div class="form-group">
+            <label class="form-label">كلمة المرور <span style="color:#f87171">*</span></label>
+            <div class="pass-wrap">
+              <input type="password" class="form-input" id="suPass" placeholder="٨ أحرف على الأقل" autocomplete="new-password" oninput="checkPassStrength(this.value); clearErr('suPass')">
+              <button class="pass-toggle" onclick="togglePass('suPass', this)">👁️</button>
+            </div>
+            <!-- Password strength bar -->
+            <div id="passStrengthWrap" style="margin-top:8px;display:none">
+              <div style="height:4px;background:var(--bg3);border-radius:4px;overflow:hidden">
+                <div id="passStrengthBar" style="height:100%;border-radius:4px;transition:all .3s;width:0%"></div>
+              </div>
+              <div id="passStrengthLbl" style="font-size:11px;margin-top:4px;color:#64748b"></div>
+            </div>
+            <div class="field-err" id="err-suPass"></div>
           </div>
+
+          <div class="form-group">
+            <label class="form-label">تأكيد كلمة المرور <span style="color:#f87171">*</span></label>
+            <div class="pass-wrap">
+              <input type="password" class="form-input" id="suPassConfirm" placeholder="أعد كتابة كلمة المرور" autocomplete="new-password" oninput="clearErr('suPassConfirm')">
+              <button class="pass-toggle" onclick="togglePass('suPassConfirm', this)">👁️</button>
+            </div>
+            <div class="field-err" id="err-suPassConfirm"></div>
+          </div>
+
+          <button class="btn btn-primary btn-block btn-lg mt-4" id="btnSignup" onclick="doSignup()">
+            <span>إنشاء الحساب</span><span>←</span>
+          </button>
+          <button onclick="goBackStep1()" class="btn btn-secondary btn-block mt-2" style="font-size:12px">→ رجوع</button>
         </div>
-        <button class="btn btn-primary btn-block btn-lg mt-4" id="btnSignup" onclick="doSignup()">
-          <span>إنشاء الحساب</span>
-          <span>←</span>
-        </button>
+
       </div>
     </div>
 
@@ -619,7 +667,10 @@ function selectGrade(btn){
 async function doLogin(){
   const login = document.getElementById('loginField').value.trim();
   const password = document.getElementById('loginPass').value;
-  if(!login||!password){ toast('أدخل بياناتك','warn'); return; }
+  // Validate phone format
+  if(!login){ toast('أدخل رقم الموبايل أو اسم المستخدم','warn'); return; }
+  if(/^[0-9]/.test(login) && !/^01[0-9]{9}$/.test(login)){ toast('رقم الموبايل غير صحيح — يجب أن يبدأ بـ 01 ويكون 11 رقم','error'); return; }
+  if(!password){ toast('أدخل كلمة المرور','warn'); return; }
   const btn = document.getElementById('btnLogin');
   btn.disabled = true; btn.textContent = '⏳ جاري الدخول...';
   const res = await mfFetch('auth-login', { method:'POST', body: JSON.stringify({login, password}) });
@@ -637,6 +688,82 @@ async function doLogin(){
 }
 
 // ─── Signup ───────────────────────────
+
+
+// ── Helper: format phone (numbers only)
+function formatPhone(el){
+  el.value = el.value.replace(/[^0-9]/g,'').slice(0,11);
+}
+
+// ── Helper: show field error
+function showErr(id, msg){
+  const el = document.getElementById('err-'+id);
+  const inp = document.getElementById(id);
+  if(el) el.textContent = msg;
+  if(inp) inp.classList.add('err-field');
+}
+function clearErr(id){
+  const el = document.getElementById('err-'+id);
+  const inp = document.getElementById(id);
+  if(el) el.textContent = '';
+  if(inp) inp.classList.remove('err-field');
+}
+function markOk(id){
+  const inp = document.getElementById(id);
+  if(inp){ inp.classList.remove('err-field'); inp.classList.add('ok-field'); }
+}
+
+// ── Password strength
+function checkPassStrength(val){
+  const wrap = document.getElementById('passStrengthWrap');
+  const bar = document.getElementById('passStrengthBar');
+  const lbl = document.getElementById('passStrengthLbl');
+  if(!wrap) return;
+  wrap.style.display = val.length > 0 ? '' : 'none';
+  let score = 0;
+  if(val.length >= 8) score++;
+  if(val.length >= 12) score++;
+  if(/[A-Z]/.test(val) || /[a-z]/.test(val)) score++;
+  if(/[0-9]/.test(val)) score++;
+  if(/[^A-Za-z0-9]/.test(val)) score++;
+  const levels = [
+    {w:'20%',c:'#ef4444',t:'ضعيفة جداً'},
+    {w:'40%',c:'#f97316',t:'ضعيفة'},
+    {w:'60%',c:'#fbbf24',t:'متوسطة'},
+    {w:'80%',c:'#84cc16',t:'جيدة'},
+    {w:'100%',c:'#10b981',t:'قوية جداً ✅'}
+  ];
+  const lv = levels[Math.min(score, 4)];
+  bar.style.width = lv.w; bar.style.background = lv.c;
+  lbl.textContent = 'قوة كلمة المرور: ' + lv.t; lbl.style.color = lv.c;
+}
+
+// ── Step 1 → 2
+function goToStep2(){
+  const name = document.getElementById('suName').value.trim();
+  const phone = document.getElementById('suPhone').value.trim();
+  const parent = document.getElementById('suParent').value.trim();
+  let ok = true;
+
+  if(!name || name.length < 3){ showErr('suName','أدخل الاسم الكامل (3 أحرف على الأقل)'); ok=false; } else { clearErr('suName'); markOk('suName'); }
+  if(!/^01[0-9]{9}$/.test(phone)){ showErr('suPhone','رقم غير صحيح — يجب أن يبدأ بـ 01 ويكون 11 رقم'); ok=false; } else { clearErr('suPhone'); markOk('suPhone'); }
+  if(!/^01[0-9]{9}$/.test(parent)){ showErr('suParent','رقم واتساب ولي الأمر غير صحيح'); ok=false; } else { clearErr('suParent'); markOk('suParent'); }
+  if(!selectedGrade){ showErr('grade','اختر الصف الدراسي'); ok=false; } else { clearErr('grade'); }
+
+  if(!ok) return;
+
+  document.getElementById('stepSummaryName').textContent = name;
+  document.getElementById('stepSummaryPhone').textContent = phone + ' | ' + document.querySelector('.grade-btn.active')?.textContent;
+  document.getElementById('signupStep1').classList.add('hidden');
+  document.getElementById('signupStep2').classList.remove('hidden');
+  document.getElementById('suPass').focus();
+}
+
+function goBackStep1(){
+  document.getElementById('signupStep2').classList.add('hidden');
+  document.getElementById('signupStep1').classList.remove('hidden');
+}
+
 async function doSignup(){
   const full_name = document.getElementById('suName').value.trim();
   const phone_student = document.getElementById('suPhone').value.trim();
@@ -644,19 +771,45 @@ async function doSignup(){
   const grade = selectedGrade;
   const password = document.getElementById('suPass').value;
   const passConfirm = document.getElementById('suPassConfirm').value;
-  if(!full_name){ toast('أدخل الاسم الكامل','warn'); return; }
-  if(!/^01[0-9]{9}$/.test(phone_student)){ toast('رقم الموبايل غير صحيح','error'); return; }
-  if(!grade){ toast('اختر الصف الدراسي','warn'); return; }
-  if(!password || password.length < 6){ toast('كلمة المرور أقل من 6 أحرف','warn'); return; }
-  if(password !== passConfirm){ toast('كلمتا المرور غير متطابقتين ❌','error'); return; }
+  let ok = true;
+
+  if(!password || password.length < 8){ showErr('suPass','كلمة المرور أقل من 8 أحرف'); ok=false; }
+  if(password !== passConfirm){ showErr('suPassConfirm','كلمتا المرور غير متطابقتين ❌'); ok=false; }
+  if(!ok) return;
+
   const btn = document.getElementById('btnSignup');
-  btn.disabled = true; btn.textContent = '⏳ جاري التسجيل...';
-  const res = await mfFetch('auth-signup', { method:'POST', body: JSON.stringify({full_name, phone_student, phone_parent: phone_parent||undefined, grade, password}) });
+  btn.disabled = true; btn.innerHTML = '<span>⏳ جاري إنشاء الحساب...</span>';
+
+  const res = await mfFetch('auth-signup', {
+    method: 'POST',
+    body: JSON.stringify({full_name, phone_student, phone_parent, grade, password})
+  });
+
   btn.disabled = false; btn.innerHTML = '<span>إنشاء الحساب</span><span>←</span>';
-  if(!res.ok){ toast(res.error || 'فشل التسجيل', 'error'); return; }
-  toast('تم إنشاء الحساب! سجل دخول الآن ✅', 'success', 4000);
+
+  if(!res.ok){
+    const errMsg = res.error || 'فشل إنشاء الحساب';
+    if(errMsg.includes('مسجل') || errMsg.includes('exist')){
+      toast('هذا الرقم مسجل مسبقاً — جرب تسجيل الدخول 🔑', 'warn', 5000);
+      switchTab('login');
+      document.getElementById('loginField').value = phone_student;
+    } else {
+      toast(errMsg, 'error');
+    }
+    return;
+  }
+
+  toast('تم إنشاء الحساب بنجاح! أهلاً ' + full_name + ' 🎉', 'success', 4000);
   switchTab('login');
   document.getElementById('loginField').value = phone_student;
+}
+
+function resetViaWhatsapp(){
+  const phone = document.getElementById('loginField').value.trim();
+  const msg = phone && /^01[0-9]{9}$/.test(phone)
+    ? `مرحباً، أريد إعادة تعيين كلمة المرور لرقمي ${phone} على منصة Make Future`
+    : `مرحباً، أريد إعادة تعيين كلمة المرور على منصة Make Future`;
+  window.open(`https://wa.me/201210575530?text=${encodeURIComponent(msg)}`,'_blank');
 }
 
 // Enter key
