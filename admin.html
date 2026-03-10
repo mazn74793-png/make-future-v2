@@ -546,6 +546,7 @@ tr:hover td { background: rgba(124,58,237,0.04); }
         <button class="mc-stab" onclick="mcSwitch('schedules',this)">📅 مواعيد</button>
         <button class="mc-stab" onclick="mcSwitch('quizzes',this)">📝 كويزات</button>
         <button class="mc-stab" onclick="mcSwitch('students',this)">👥 الطلاب</button>
+        <button class="mc-stab" onclick="mcSwitch('payments',this)">💳 اشتراكات</button>
       </div>
 
       <!-- Videos sub-panel -->
@@ -585,6 +586,19 @@ tr:hover td { background: rgba(124,58,237,0.04); }
           <input type="text" class="form-input" id="myCourseSearch" placeholder="🔍 بحث بالاسم أو الرقم..." oninput="filterMyCourseStudents()" style="flex:1">
         </div>
         <div id="myCourseStudentsList"><div class="empty-state"><div class="empty-icon">👥</div><p>جاري تحميل البيانات...</p></div></div>
+      </div>
+
+      <!-- Payments sub-panel -->
+      <div id="mc-panel-payments" class="hidden">
+        <div class="section-header">
+          <h2 class="section-title">💳 طلبات الاشتراك</h2>
+        </div>
+        <div class="tabs mb-4">
+          <button class="tab-btn active" onclick="mcLoadPayments('pending',this)">⏳ قيد المراجعة</button>
+          <button class="tab-btn" onclick="mcLoadPayments('approved',this)">✅ مقبول</button>
+          <button class="tab-btn" onclick="mcLoadPayments('rejected',this)">❌ مرفوض</button>
+        </div>
+        <div id="mcPaymentsList"><div class="empty-state"><div class="empty-icon">💳</div><p>جاري التحميل...</p></div></div>
       </div>
 
     </div>
@@ -1253,23 +1267,34 @@ async function loadPayments(status, btn){
   document.querySelectorAll('.tabs .tab-btn').forEach(b=>b.classList.remove('active'));
   btn?.classList.add('active');
   selectedPayments.clear();
-  const res=await mfFetch('admin-payments?status='+status);
+  // course_admin: يفلتر على كورساته بس
+  let url='admin-payments?status='+status;
+  if(isCourseAdmin && mcActiveCourseId) url+='&course_id='+mcActiveCourseId;
+  const res=await mfFetch(url);
   const payments=res.payments||[];
   const list=document.getElementById('paymentsList');
   if(!payments.length){ list.innerHTML='<div class="empty-state"><div class="empty-icon">💳</div><p>لا توجد طلبات</p></div>'; return; }
   list.innerHTML=`<div class="glass-sm">${payments.map(p=>`
     <div class="payment-row" id="prow-${p.id}">
-      ${status==='pending'?`<input type="checkbox" onchange="toggleSelect(${p.id},this)" style="margin-top:4px">`:''} 
+      ${status==='pending'?`<input type="checkbox" onchange="toggleSelect(${p.id},this)" style="margin-top:4px">`:''}
       <div style="flex:1">
         <div class="flex items-center gap-2 flex-wrap">
           <span class="font-bold">${p.full_name||'—'}</span>
-          ${p.phone_student ? `<a href="https://wa.me/2${p.phone_student}" target="_blank" style="color:#25d366;text-decoration:none;font-size:11px">💬 ${p.phone_student}</a>` : ''}
+          ${p.phone_student?`<a href="https://wa.me/2${p.phone_student}" target="_blank" style="color:#25d366;text-decoration:none;font-size:11px">💬 ${p.phone_student}</a>`:''}
           <span class="badge badge-primary">${gradeLabel(p.grade||'')}</span>
         </div>
         <div class="text-sm mt-1">📚 ${p.course_title||''} — 👨‍🏫 ${p.teacher_name||''}</div>
         <div class="text-sm mt-1">💰 ${fmtNum(p.final_amount||p.amount)} جنيه — 📱 ${p.method||''}</div>
         ${p.transaction_id?`<div class="text-xs text-muted mt-1">🔢 رقم العملية: ${p.transaction_id}</div>`:''}
         ${p.receipt_note?`<div class="text-xs text-muted">📝 ${p.receipt_note}</div>`:''}
+        ${p.receipt_image_url?`
+        <div style="margin-top:8px">
+          <img src="${p.receipt_image_url}" alt="إيصال الدفع"
+            style="max-width:180px;max-height:120px;border-radius:10px;cursor:pointer;border:1px solid var(--border2);object-fit:cover"
+            onclick="window.open('${p.receipt_image_url}','_blank')"
+            title="اضغط لعرض الصورة كاملة">
+          <div class="text-xs text-muted" style="margin-top:3px">📸 صورة الإيصال — اضغط للتكبير</div>
+        </div>`:'<div class="text-xs" style="color:#f59e0b;margin-top:4px">⚠️ لا توجد صورة إيصال</div>'}
         ${p.teacher_payment_info?`<div class="text-xs" style="color:var(--accent);margin-top:4px">🏦 دفع المدرس: ${p.teacher_payment_info}</div>`:''}
         <div class="text-xs text-muted mt-1">${fmtDateTime(p.created_at)}</div>
         ${status==='pending'?`<div class="payment-actions">
@@ -1284,9 +1309,9 @@ function toggleSelect(id,cb){ if(cb.checked)selectedPayments.add(id); else selec
 
 async function approvePayment(id,btn){
   btn.disabled=true; btn.textContent='⏳';
-  const res=await mfFetch('admin-payments',{method:'POST',body:JSON.stringify({id,action:'approve'})});
+  const res=await mfFetch('admin-payments',{method:'POST',body:JSON.stringify({id,action:'approve',admin_id:user.id})});
   if(!res.ok){ toast(res.error,'error'); btn.disabled=false; btn.textContent='✅ قبول'; return; }
-  toast('تم القبول ✅','success');
+  toast('تم القبول ✅ — تم تفعيل اشتراك الطالب','success');
   if(res.wa_url){ if(confirm('فتح WhatsApp لإبلاغ الطالب؟')) window.open(res.wa_url,'_blank'); }
   document.getElementById('prow-'+id)?.remove();
 }
@@ -1294,9 +1319,11 @@ async function approvePayment(id,btn){
 async function rejectPayment(id,btn){
   if(!confirm('رفض هذا الطلب؟')) return;
   btn.disabled=true; btn.textContent='⏳';
-  const res=await mfFetch('admin-payments',{method:'POST',body:JSON.stringify({id,action:'reject'})});
+  const res=await mfFetch('admin-payments',{method:'POST',body:JSON.stringify({id,action:'reject',admin_id:user.id})});
   if(!res.ok){ toast(res.error,'error'); btn.disabled=false; return; }
-  toast('تم الرفض','success'); document.getElementById('prow-'+id)?.remove();
+  toast('تم الرفض','success');
+  if(res.wa_url){ if(confirm('فتح WhatsApp لإبلاغ الطالب بالرفض؟')) window.open(res.wa_url,'_blank'); }
+  document.getElementById('prow-'+id)?.remove();
 }
 
 async function bulkApprove(){
@@ -1668,8 +1695,8 @@ function mcSwitch(tab, btn){
   mcActiveSubTab = tab;
   document.querySelectorAll('.mc-stab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  ['videos','schedules','quizzes','students'].forEach(t => {
-    document.getElementById('mc-panel-'+t).classList.toggle('hidden', t !== tab);
+  ['videos','schedules','quizzes','students','payments'].forEach(t => {
+    document.getElementById('mc-panel-'+t)?.classList.toggle('hidden', t !== tab);
   });
   mcLoadActiveSubTab();
 }
@@ -1680,6 +1707,61 @@ function mcLoadActiveSubTab(){
   if(mcActiveSubTab === 'schedules') mcLoadSchedules();
   if(mcActiveSubTab === 'quizzes')   mcLoadQuizzes();
   if(mcActiveSubTab === 'students')  mcLoadStudents();
+  if(mcActiveSubTab === 'payments')  mcLoadPayments('pending');
+}
+
+async function mcLoadPayments(status, btn){
+  if(btn){ document.querySelectorAll('#mc-panel-payments .tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+  const list = document.getElementById('mcPaymentsList');
+  list.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>جاري التحميل...</p></div>';
+  const res = await mfFetch(`admin-payments?status=${status}&course_id=${mcActiveCourseId}`);
+  const payments = res.payments || [];
+  if(!payments.length){ list.innerHTML='<div class="empty-state"><div class="empty-icon">💳</div><p>لا توجد طلبات</p></div>'; return; }
+  list.innerHTML = `<div class="glass-sm">${payments.map(p=>`
+    <div class="payment-row" id="mcprow-${p.id}">
+      <div style="flex:1">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="font-bold">${p.full_name||'—'}</span>
+          ${p.phone_student?`<a href="https://wa.me/2${p.phone_student}" target="_blank" style="color:#25d366;font-size:11px">💬 ${p.phone_student}</a>`:''}
+          <span class="badge badge-primary">${gradeLabel(p.grade||'')}</span>
+        </div>
+        <div class="text-sm mt-1">💰 ${fmtNum(p.final_amount||p.amount)} جنيه — 📱 ${p.method||''}</div>
+        ${p.transaction_id?`<div class="text-xs text-muted mt-1">🔢 رقم العملية: ${p.transaction_id}</div>`:''}
+        ${p.receipt_image_url?`
+        <div style="margin-top:8px">
+          <img src="${p.receipt_image_url}" alt="إيصال"
+            style="max-width:160px;max-height:100px;border-radius:10px;cursor:pointer;border:1px solid var(--border2);object-fit:cover"
+            onclick="window.open('${p.receipt_image_url}','_blank')"
+            title="اضغط للتكبير">
+          <div class="text-xs text-muted" style="margin-top:2px">📸 صورة الإيصال</div>
+        </div>`:`<div class="text-xs" style="color:#f59e0b;margin-top:4px">⚠️ لا توجد صورة إيصال</div>`}
+        ${p.receipt_note?`<div class="text-xs text-muted mt-1">📝 ${p.receipt_note}</div>`:''}
+        <div class="text-xs text-muted mt-1">${fmtDateTime(p.created_at)}</div>
+        ${status==='pending'?`<div class="payment-actions">
+          <button class="btn btn-sm btn-success" onclick="mcApprovePayment(${p.id},this)">✅ قبول</button>
+          <button class="btn btn-sm btn-danger" onclick="mcRejectPayment(${p.id},this)">❌ رفض</button>
+        </div>`:''}
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+async function mcApprovePayment(id, btn){
+  btn.disabled=true; btn.textContent='⏳';
+  const res=await mfFetch('admin-payments',{method:'POST',body:JSON.stringify({id,action:'approve',admin_id:user.id})});
+  if(!res.ok){ toast(res.error||'فشل','error'); btn.disabled=false; btn.textContent='✅ قبول'; return; }
+  toast('تم القبول ✅ — تم تفعيل اشتراك الطالب','success');
+  if(res.wa_url){ if(confirm('فتح WhatsApp لإبلاغ الطالب؟')) window.open(res.wa_url,'_blank'); }
+  document.getElementById('mcprow-'+id)?.remove();
+}
+
+async function mcRejectPayment(id, btn){
+  if(!confirm('رفض هذا الطلب؟')) return;
+  btn.disabled=true; btn.textContent='⏳';
+  const res=await mfFetch('admin-payments',{method:'POST',body:JSON.stringify({id,action:'reject',admin_id:user.id})});
+  if(!res.ok){ toast(res.error||'فشل','error'); btn.disabled=false; return; }
+  toast('تم الرفض','success');
+  if(res.wa_url){ if(confirm('إبلاغ الطالب بالرفض على واتساب؟')) window.open(res.wa_url,'_blank'); }
+  document.getElementById('mcprow-'+id)?.remove();
 }
 
 // ── VIDEOS ─────────────────────────────────
