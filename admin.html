@@ -528,6 +528,18 @@ tr:hover td { background: rgba(124,58,237,0.04); }
       <div id="quizzesList"><div class="empty-state"><div class="empty-icon">📝</div><p>اختر كورس لعرض كويزاته</p></div></div>
     </div>
 
+    <!-- ══ MYCOURSE PANEL (course_admin only) ══ -->
+    <div class="tab-panel" id="panel-mycourse">
+      <div class="section-header">
+        <h2 class="section-title">🎓 طلاب كورسي</h2>
+        <div style="font-size:12px;color:var(--text2)" id="myCourseSubtitle"></div>
+      </div>
+      <div class="flex gap-2 mb-4" id="myCourseFilterBar">
+        <input type="text" class="form-input" id="myCourseSearch" placeholder="🔍 بحث بالاسم أو الرقم..." oninput="filterMyCourseStudents()" style="flex:1">
+      </div>
+      <div id="myCourseStudentsList"><div class="empty-state"><div class="empty-icon">👥</div><p>جاري تحميل البيانات...</p></div></div>
+    </div>
+
   </main>
 </div>
 
@@ -687,6 +699,11 @@ tr:hover td { background: rgba(124,58,237,0.04); }
       <input type="hidden" id="editQId">
       <input type="hidden" id="qQuizId">
       <div class="form-group"><label class="form-label">السؤال</label><textarea class="form-textarea" id="qText" rows="2"></textarea></div>
+      <div class="form-group">
+        <label class="form-label">🖼️ صورة السؤال <span style="color:var(--text2);font-weight:400">(اختياري — رابط URL)</span></label>
+        <input type="text" class="form-input" id="qImageUrl" placeholder="https://example.com/image.jpg">
+        <div id="qImagePreview" style="margin-top:8px;display:none"><img id="qImgPreviewEl" src="" style="max-width:100%;max-height:160px;border-radius:10px;object-fit:contain;background:var(--bg3);border:1px solid var(--border2)" onerror="this.parentElement.style.display='none'"></div>
+      </div>
       <div class="form-group"><label class="form-label">الخيار أ</label><input type="text" class="form-input" id="qOptA"></div>
       <div class="form-group"><label class="form-label">الخيار ب</label><input type="text" class="form-input" id="qOptB"></div>
       <div class="form-group"><label class="form-label">الخيار ج</label><input type="text" class="form-input" id="qOptC"></div>
@@ -869,13 +886,20 @@ const ALL_TABS = [
   {id:'payments',label:'المدفوعات',icon:'💳'},
   {id:'coupons',label:'الكوبونات',icon:'🎫'},
   {id:'comments',label:'التعليقات',icon:'💬'},
-  {id:'users',label:'المستخدمين',icon:'👥',superOnly:false},
+  {id:'users',label:'المستخدمين',icon:'👥'},
   {id:'quizzes',label:'الكويزات',icon:'📝'},
+  {id:'mycourse',label:'طلاب كورسي',icon:'🎓',courseAdminOnly:true},
 ];
+
+// الـ tabs المتاحة حسب الدور
+const isCourseAdmin = user.role === 'course_admin';
+const VISIBLE_TABS = isCourseAdmin
+  ? ALL_TABS.filter(t => ['dashboard','mycourse'].includes(t.id))
+  : ALL_TABS.filter(t => !t.courseAdminOnly);
 
 function buildSidebar(){
   const items = document.getElementById('sideItems');
-  items.innerHTML = ALL_TABS.map(t=>`
+  items.innerHTML = VISIBLE_TABS.map(t=>`
     <div class="side-item" id="side-${t.id}" onclick="switchTab('${t.id}')">
       <span class="side-icon">${t.icon}</span>
       <span>${t.label}</span>
@@ -892,7 +916,7 @@ function switchTab(tab){
   // Close sidebar on mobile
   document.getElementById('adminSidebar').classList.remove('open');
   // Load data
-  const loaders={dashboard:loadDashboard,courses:loadCourses,schedules:loadSchedules,videos:()=>{},payments:()=>loadPayments('pending',document.querySelector('.tabs .tab-btn')),coupons:loadCoupons,comments:()=>{},users:loadUsers,quizzes:()=>{}};
+  const loaders={dashboard:loadDashboard,courses:loadCourses,schedules:loadSchedules,videos:()=>{},payments:()=>loadPayments('pending',document.querySelector('.tabs .tab-btn')),coupons:loadCoupons,comments:()=>{},users:loadUsers,quizzes:()=>{},mycourse:loadMyCourseStudents};
   loaders[tab]?.();
 }
 
@@ -1156,7 +1180,7 @@ async function loadPayments(status, btn){
       <div style="flex:1">
         <div class="flex items-center gap-2 flex-wrap">
           <span class="font-bold">${p.full_name||'—'}</span>
-          <span class="text-xs text-muted">${p.phone_student||''}</span>
+          ${p.phone_student ? `<a href="https://wa.me/2${p.phone_student}" target="_blank" style="color:#25d366;text-decoration:none;font-size:11px">💬 ${p.phone_student}</a>` : ''}
           <span class="badge badge-primary">${gradeLabel(p.grade||'')}</span>
         </div>
         <div class="text-sm mt-1">📚 ${p.course_title||''} — 👨‍🏫 ${p.teacher_name||''}</div>
@@ -1282,7 +1306,9 @@ function renderUsers(users){
   if(!users.length){ tbody.innerHTML='<tr><td colspan="5" class="text-center text-muted p-4">لا يوجد مستخدمين</td></tr>'; return; }
   tbody.innerHTML=users.map(u=>`<tr>
     <td><div class="font-bold">${u.full_name}</div></td>
-    <td class="text-sm" style="direction:ltr;text-align:right">${u.phone_student||'—'}</td>
+    <td class="text-sm" style="direction:ltr;text-align:right">
+      ${u.phone_student ? `<a href="https://wa.me/2${u.phone_student}" target="_blank" style="color:var(--primary-light);text-decoration:none" title="فتح واتساب">💬 ${u.phone_student}</a>` : '—'}
+    </td>
     <td>${gradeLabel(u.grade)}</td>
     <td><span class="badge ${u.role==='superadmin'?'badge-danger':u.role==='admin'?'badge-warn':u.role==='course_admin'?'badge-info':'badge-primary'}">${u.role}</span></td>
     <td><div class="flex gap-2">
@@ -1353,12 +1379,32 @@ async function saveQuiz(){
   toast('تم إنشاء الكويز ✅','success'); closeModal('modalQuiz'); document.getElementById('editQuizId').value=''; loadQuizzes();
 }
 
-function openAddQuestion(quizId){ document.getElementById('qQuizId').value=quizId; document.getElementById('editQId').value=''; ['qText','qOptA','qOptB','qOptC','qOptD'].forEach(id=>document.getElementById(id).value=''); openModal('modalQuestion'); }
+function openAddQuestion(quizId){
+  document.getElementById('qQuizId').value=quizId;
+  document.getElementById('editQId').value='';
+  ['qText','qOptA','qOptB','qOptC','qOptD','qImageUrl'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('qCorrect').value='a';
+  const prev=document.getElementById('qImagePreview'); if(prev) prev.style.display='none';
+  openModal('modalQuestion');
+}
+
+// Preview image when URL typed
+setTimeout(()=>{
+  const imgInput=document.getElementById('qImageUrl');
+  if(imgInput) imgInput.addEventListener('input',function(){
+    const v=this.value.trim();
+    const preview=document.getElementById('qImagePreview');
+    const img=document.getElementById('qImgPreviewEl');
+    if(v&&preview&&img){ img.src=v; preview.style.display='block'; }
+    else if(preview){ preview.style.display='none'; }
+  });
+},500);
 
 async function saveQuestion(){
   const quizId=parseInt(document.getElementById('qQuizId').value);
   const id=document.getElementById('editQId').value;
-  const body={quiz_id:quizId,type:'question',question:document.getElementById('qText').value.trim(),option_a:document.getElementById('qOptA').value.trim(),option_b:document.getElementById('qOptB').value.trim(),option_c:document.getElementById('qOptC').value.trim(),option_d:document.getElementById('qOptD').value.trim(),correct_answer:document.getElementById('qCorrect').value,order_index:0};
+  const imageUrl=(document.getElementById('qImageUrl')?.value||'').trim()||null;
+  const body={quiz_id:quizId,type:'question',question:document.getElementById('qText').value.trim(),option_a:document.getElementById('qOptA').value.trim(),option_b:document.getElementById('qOptB').value.trim(),option_c:document.getElementById('qOptC').value.trim(),option_d:document.getElementById('qOptD').value.trim(),correct_answer:document.getElementById('qCorrect').value,order_index:0,image_url:imageUrl};
   if(id)body.id=parseInt(id);
   if(!body.question||!body.option_a){ toast('أدخل السؤال والخيارات','warn'); return; }
   const res=await mfFetch('quizzes',{method:'POST',body:JSON.stringify(body)});
@@ -1376,8 +1422,13 @@ console.log('👤 User:', localStorage.getItem('mf_user'));
 
 buildSidebar();
 
-// Set first sidebar item active
-document.getElementById('side-dashboard')?.classList.add('active');
+// إعادة التوجيه حسب الدور
+if(isCourseAdmin){
+  switchTab('mycourse');
+} else {
+  // Set first sidebar item active
+  document.getElementById('side-dashboard')?.classList.add('active');
+}
 
 // Load dashboard with explicit error display
 (async function init() {
@@ -1407,6 +1458,98 @@ document.getElementById('side-dashboard')?.classList.add('active');
   }
   loadCourses();
 })();
+
+// ═══ MYCOURSE (course_admin dashboard) ═════════════════════════════
+let myCourseAllStudents = [];
+
+async function loadMyCourseStudents(){
+  const managed = user.managed_courses || [];
+  if(!managed.length){
+    document.getElementById('myCourseStudentsList').innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>لا توجد كورسات معينة لك — تواصل مع السوبر أدمن</p></div>';
+    return;
+  }
+  const wrap = document.getElementById('myCourseStudentsList');
+  wrap.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>جاري تحميل البيانات...</p></div>';
+
+  // جيب طلاب كل الكورسات بتاعته
+  let allStudents = [];
+  let courseNames = [];
+
+  for(const courseId of managed){
+    const res = await mfFetch(`course-admin-students?course_id=${courseId}&admin_id=${user.id}`);
+    if(res.ok && res.course){
+      courseNames.push(res.course.title);
+      // إضافة اسم الكورس لكل طالب
+      (res.students||[]).forEach(s => {
+        s.course_title = res.course.title;
+        s.course_id = courseId;
+        allStudents.push(s);
+      });
+    }
+  }
+
+  document.getElementById('myCourseSubtitle').textContent = 'كورساتك: ' + courseNames.join(' | ') + ' — إجمالي: ' + allStudents.length + ' طالب';
+  myCourseAllStudents = allStudents;
+  renderMyCourseStudents(allStudents);
+}
+
+function filterMyCourseStudents(){
+  const q = document.getElementById('myCourseSearch').value.toLowerCase();
+  renderMyCourseStudents(myCourseAllStudents.filter(u =>
+    (u.full_name||'').toLowerCase().includes(q) || (u.phone_student||'').includes(q)
+  ));
+}
+
+function renderMyCourseStudents(students){
+  const wrap = document.getElementById('myCourseStudentsList');
+  if(!students.length){
+    wrap.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><p>لا يوجد طلاب مشتركون في كورساتك</p></div>';
+    return;
+  }
+  wrap.innerHTML = `
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:var(--bg3);border-bottom:2px solid var(--border2)">
+            <th style="padding:10px 12px;text-align:right">الاسم</th>
+            <th style="padding:10px 12px;text-align:right">الرقم</th>
+            <th style="padding:10px 12px;text-align:right">الصف</th>
+            <th style="padding:10px 12px;text-align:center">واتساب</th>
+            <th style="padding:10px 12px;text-align:center">إعادة باسورد</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${students.map(u => `
+            <tr style="border-bottom:1px solid var(--border2)">
+              <td style="padding:10px 12px;font-weight:600">${u.full_name}</td>
+              <td style="padding:10px 12px;direction:ltr;text-align:right;color:var(--text2)">${u.phone_student||'—'}</td>
+              <td style="padding:10px 12px"><span class="badge badge-primary">${gradeLabel(u.grade)}</span></td>
+              <td style="padding:10px 12px;text-align:center">
+                ${u.phone_student ? `<a href="https://wa.me/2${u.phone_student}" target="_blank" class="btn btn-sm" style="background:#25d366;color:#fff;text-decoration:none;padding:4px 10px;border-radius:8px;font-size:11px">💬 واتساب</a>` : '—'}
+              </td>
+              <td style="padding:10px 12px;text-align:center">
+                <button class="btn btn-sm btn-secondary" onclick="myCourseResetPass('${u.id}','${u.full_name}','${u.phone_student}')">🔑 إعادة تعيين</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div style="padding:12px;color:var(--text2);font-size:12px">إجمالي: ${students.length} طالب</div>`;
+}
+
+async function myCourseResetPass(userId, name, phone){
+  const newPass = prompt(`إعادة تعيين كلمة مرور: ${name}\nأدخل كلمة المرور الجديدة (6 أحرف على الأقل):`);
+  if(!newPass || newPass.length < 6){ if(newPass !== null) toast('كلمة المرور قصيرة جداً','warn'); return; }
+  const res = await mfFetch('admin-reset-password',{method:'POST',body:JSON.stringify({user_id:userId,new_password:newPass,admin_id:user.id})});
+  if(!res.ok){ toast(res.error||'فشل','error'); return; }
+  toast(`✅ تم تغيير باسورد ${name}`,'success');
+  // Offer to notify via WhatsApp
+  if(phone && confirm('هل تريد إرسال الباسورد الجديد عبر واتساب؟')){
+    const msg = `مرحباً ${name}،\nتم تغيير كلمة مرورك على منصة Make Future\nكلمة المرور الجديدة: ${newPass}\nرقمك: ${phone}`;
+    window.open(`https://wa.me/2${phone}?text=${encodeURIComponent(msg)}`,'_blank');
+  }
+}
+
 </script>
 </body>
 </html>
