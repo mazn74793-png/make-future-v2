@@ -350,7 +350,14 @@ async function chkCourses() {
 
 async function chkSchedules() {
   let rows=[], s='ok';
-  const r=await api('admin-schedules');
+  // ✅ FIX: admin-schedules محتاج course_id — بنجيب أول كورس متاح من admin-courses
+  let courseId = 1;
+  try {
+    const rc = await api('admin-courses');
+    if(rc.data?.ok && rc.data.courses?.length) courseId = rc.data.courses[0].id;
+  } catch(e){}
+  rows.push(row('course_id المستخدم', courseId, 'info'));
+  const r=await api(`admin-schedules?course_id=${courseId}`);
   rows.push(row('HTTP',r.status,r.status===200?'ok':'err'));
   if(r.data?.ok){
     rows.push(row('مواعيد',(r.data.schedules||[]).length,'info'));
@@ -472,11 +479,11 @@ async function chkQuizzes() {
   RESULTS.push({id:'quizzes',s,name:'quizzes'});
 }
 
-// ✅ NEW: فحص upload-image
+// ✅ FIX: upload-image محتاج data URI كامل مش base64 فقط
 async function chkImageUpload() {
   let rows=[], s='ok';
-  // بنبعت base64 صغير جداً كـ test
-  const tiny1px = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+  // صورة PNG صغيرة 1x1 بـ data URI كامل
+  const tiny1px = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
   const r=await api('upload-image',{method:'POST',body:JSON.stringify({image:tiny1px, folder:'test'})});
   rows.push(row('HTTP',r.status,'info'));
   rows.push(row('Latency',r.ms+'ms','info'));
@@ -487,7 +494,7 @@ async function chkImageUpload() {
     rows.push(row('Auth','⚠️ محتاج صلاحيات — طبيعي للـ test','warn'));
     s='warn';
   } else {
-    rows.push(row('خطأ',JSON.stringify(r.data).substring(0,100),'err'));
+    rows.push(row('خطأ',JSON.stringify(r.data).substring(0,120),'err'));
     s='err';
   }
   setBody('imgup',tbl(...rows)); setBadge('imgup',s,s==='ok'?'✅ شغال':s==='warn'?'⚠️ تحقق':'❌ مكسور');
@@ -578,14 +585,17 @@ async function chkPages() {
 
 async function chkFnList() {
   let rows=[], s='ok';
+  // ✅ FIX: استخدم الـ user_id الحقيقي من الـ session مش 'test'
+  const u=gU();
+  const uid=u?.id||'00000000-0000-0000-0000-000000000000';
   const tests=[
     ['admin-stats','GET'],
     ['admin-courses','GET'],
     ['admin-payments','GET'],
     ['admin-users','GET'],
     ['coupons','GET'],
-    ['user-notifications?user_id=test','GET'],
-    ['certificates?user_id=test','GET'],
+    [`user-notifications?user_id=${uid}`,'GET'],
+    [`certificates?user_id=${uid}`,'GET'],
   ];
   let ok=0;
   for(const [ep] of tests){
