@@ -1309,76 +1309,73 @@ async function uploadToR2(file, courseId, title, videoId=null){
   const spd = document.getElementById('uploadSpeed');
   document.getElementById('uploadFileName').textContent = file.name;
 
-  // ── Init ──────────────────────────────────────────────────
+  const PART       = 10*1024*1024; // 10MB per chunk — مباشر لـ R2 بدون حد
+  const totalParts = Math.ceil(file.size/PART);
+  const startTime  = Date.now();
+
+  // ── Init: نجيب upload_id + presigned URLs كلها دفعة واحدة ─
+  spd.textContent = '⏳ جاري التحضير...';
   const initRes = await mfFetch('r2-multipart',{method:'POST',body:JSON.stringify({
-    action:'init', course_id:courseId, filename:file.name, content_type:file.type||'video/mp4'
+    action:'init', course_id:courseId, filename:file.name,
+    content_type:file.type||'video/mp4', total_parts:totalParts
   })});
-  if(!initRes.ok){ toast('فشل بدء الرفع: '+initRes.error,'error'); throw new Error(initRes.error); }
-  const {upload_id, key} = initRes;
+  if(!initRes.ok){ toast('فشل بدء الرفع: '+(initRes.error||''),'error'); throw new Error(initRes.error); }
+  const {upload_id, key, urls} = initRes;
+  // urls = مصفوفة presigned URLs من R2 مباشرة — مفيش proxy
 
-  const PART        = 5*1024*1024;    // 5 MB per chunk (Supabase max ~6MB)
-  const CONCURRENCY = 2;              // 2 chunks بالتوازي (أكثر ثباتاً على الموبايل)
-  const totalParts  = Math.ceil(file.size/PART);
-  const parts       = new Array(totalParts);
-  let   uploaded    = 0;
-  const startTime   = Date.now();
+  const parts = new Array(totalParts);
+  let uploaded = 0;
 
-  const token    = localStorage.getItem('mf_access_token');
-  const validTok = token && token!=='null' && token.length>20;
-  const authHdr  = `Bearer ${validTok?token:MF_CONFIG.ANON_KEY}`;
-
-  // ── دالة رفع chunk واحد ───────────────────────────────────
+  // ── رفع chunk واحد مباشرة لـ R2 ────────────────────────────
   async function uploadChunk(i){
-    const chunk = file.slice(i*PART, (i+1)*PART);
-    const pn    = i+1;
-    const url   = `${MF_CONFIG.FN}/r2-multipart?upload_id=${encodeURIComponent(upload_id)}&key=${encodeURIComponent(key)}&part_number=${pn}`;
-    
+    const chunk     = file.slice(i*PART, (i+1)*PART);
+    const pn        = i+1;
+    const signedUrl = urls[i]; // presigned URL من R2
+
     let lastErr;
-    for(let attempt=1; attempt<=4; attempt++){
+    for(let attempt=1; attempt<=3; attempt++){
       try{
-        // timeout 60 ثانية للـ chunk
         const ctrl = new AbortController();
-        const tid  = setTimeout(()=>ctrl.abort(), 60000);
-        const res  = await fetch(url,{
+        const tid  = setTimeout(()=>ctrl.abort(), 120000); // 2 دقيقة timeout
+        // بنبعت مباشرة لـ R2 — مش عن طريق Supabase
+        const res = await fetch(signedUrl,{
           method:'PUT',
-          headers:{'Content-Type':file.type||'video/mp4','apikey':MF_CONFIG.ANON_KEY,'Authorization':authHdr},
-          body:chunk,
+          headers:{'Content-Type': file.type||'video/mp4'},
+          body: chunk,
           signal: ctrl.signal
         });
         clearTimeout(tid);
-        let data={};
-        try{ data=await res.json(); }catch(e){}
-        if(res.ok && data.ok){
-          parts[i] = {PartNumber:pn, ETag:data.etag||'"'+pn+'"'};
+        if(res.ok){
+          const etag = res.headers.get('etag') || res.headers.get('ETag') || `"${pn}"`;
+          parts[i] = {PartNumber:pn, ETag:etag};
           uploaded++;
           const pct  = Math.round(uploaded/totalParts*100);
-          pb.style.width = pct+'%'; pp.textContent = pct+'%';
+          pb.style.width=pct+'%'; pp.textContent=pct+'%';
           const sec  = (Date.now()-startTime)/1000;
           const mbUp = (PART*uploaded/1024/1024).toFixed(1);
           const spds = sec>0?(PART*uploaded/1024/1024/sec).toFixed(1):'...';
           spd.textContent = `${mbUp} MB / ${(file.size/1024/1024).toFixed(1)} MB — ${spds} MB/s`;
           return;
         }
-        lastErr = data.error || `HTTP ${res.status}`;
+        lastErr = `HTTP ${res.status}`;
       }catch(e){
-        lastErr = e.name==='AbortError' ? 'timeout — سيعيد المحاولة' : e.message;
+        lastErr = e.name==='AbortError'?'timeout':e.message;
       }
       spd.textContent = `⚠️ جزء ${pn}: ${lastErr} — محاولة ${attempt+1}...`;
       await new Promise(r=>setTimeout(r, 2000*attempt));
     }
-    throw new Error(`فشل رفع الجزء ${pn} بعد 4 محاولات: ${lastErr}`);
+    throw new Error(`فشل رفع الجزء ${pn}: ${lastErr}`);
   }
 
-  // ── رفع بالتوازي (CONCURRENCY chunks دفعة واحدة) ──────────
+  // ── رفع 3 chunks بالتوازي ───────────────────────────────────
   spd.textContent = '⏳ جاري الرفع...';
-  for(let i=0; i<totalParts; i+=CONCURRENCY){
-    const batch = [];
-    for(let j=i; j<Math.min(i+CONCURRENCY, totalParts); j++) batch.push(uploadChunk(j));
+  for(let i=0; i<totalParts; i+=3){
+    const batch=[];
+    for(let j=i;j<Math.min(i+3,totalParts);j++) batch.push(uploadChunk(j));
     try{
       await Promise.all(batch);
     }catch(e){
       toast(e.message,'error');
-      // Abort upload
       mfFetch('r2-multipart',{method:'POST',body:JSON.stringify({action:'abort',upload_id,key})}).catch(()=>{});
       pw.style.display='none';
       throw e;
