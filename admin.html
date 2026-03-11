@@ -1521,43 +1521,53 @@ function clearQImg(){
 }
 
 async function uploadQImg(file){
-  const statusEl = document.getElementById('qImgUploadStatus');
-  const labelEl  = document.getElementById('qImgUploadLabel');
+  const statusEl  = document.getElementById('qImgUploadStatus');
+  const labelEl   = document.getElementById('qImgUploadLabel');
   const previewEl = document.getElementById('qImagePreview');
-  const imgEl    = document.getElementById('qImgPreviewEl');
+  const imgEl     = document.getElementById('qImgPreviewEl');
 
   labelEl.textContent = '⏳ جاري الرفع...';
   if(statusEl) statusEl.textContent = '⏳ جاري رفع الصورة...';
 
-  const token = localStorage.getItem('mf_access_token');
   try {
-    const res = await fetch(`${MF_CONFIG.FN}/upload-image`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': file.type,
-        'apikey': MF_CONFIG.ANON_KEY,
-        'Authorization': `Bearer ${token||MF_CONFIG.ANON_KEY}`,
-        'x-file-name': file.name,
-        'x-file-type': file.type
-      },
-      body: file
-    });
-    const data = await res.json();
-    if(data.ok && data.url){
-      document.getElementById('qImageUrl').value = data.url;
-      imgEl.src = data.url;
-      previewEl.style.display = 'block';
-      labelEl.textContent = '✅ ' + file.name;
-      if(statusEl) statusEl.textContent = '✅ تم الرفع بنجاح';
-      toast('تم رفع الصورة ✅','success');
-    } else {
-      labelEl.textContent = '❌ فشل الرفع — ' + (data.error||'');
+    const token = localStorage.getItem('mf_access_token') || MF_CONFIG.ANON_KEY;
+    const ext = file.name.split('.').pop() || 'jpg';
+    const path = `quiz-images/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+
+    const res = await fetch(
+      `${MF_CONFIG.SUPABASE_URL}/storage/v1/object/${path}`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'apikey': MF_CONFIG.ANON_KEY,
+          'Content-Type': file.type,
+          'x-upsert': 'true'
+        },
+        body: file
+      }
+    );
+
+    if(!res.ok){
+      const err = await res.text();
+      labelEl.textContent = '❌ فشل الرفع (' + res.status + ')';
       if(statusEl) statusEl.textContent = '';
-      toast(data.error||'فشل رفع الصورة','error');
+      console.error('Upload error:', err);
+      toast('فشل رفع الصورة: ' + res.status, 'error');
+      return;
     }
+
+    const publicUrl = `${MF_CONFIG.SUPABASE_URL}/storage/v1/object/public/${path}`;
+    document.getElementById('qImageUrl').value = publicUrl;
+    imgEl.src = publicUrl;
+    previewEl.style.display = 'block';
+    labelEl.textContent = '✅ ' + file.name;
+    if(statusEl) statusEl.textContent = '✅ تم الرفع بنجاح';
+    toast('تم رفع الصورة ✅','success');
+
   } catch(e){
     labelEl.textContent = '❌ خطأ: ' + e.message;
-    toast('فشل رفع الصورة: '+e.message,'error');
+    toast('فشل رفع الصورة: ' + e.message, 'error');
   }
 }
 
