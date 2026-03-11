@@ -458,7 +458,7 @@ tr:hover td { background: rgba(124,58,237,0.04); }
     <div class="tab-panel" id="panel-videos">
       <div class="section-header">
         <h2 class="section-title">🎬 الفيديوهات</h2>
-        <button class="btn btn-primary btn-sm" onclick="openModal('modalVideo')">+ إضافة فيديو</button>
+        <button class="btn btn-primary btn-sm" onclick="openAddVideoModal()">+ إضافة فيديو</button>
       </div>
       <div class="flex gap-2 mb-4">
         <select class="form-select" style="width:auto" id="vidCourseFilter" onchange="loadVideos()"><option value="">اختر كورس</option></select>
@@ -1176,41 +1176,108 @@ async function loadVideos(){
   </table></div>`;
 }
 
-function editVideo(v){ document.getElementById('editVideoId').value=v.id; document.getElementById('vidCourseId').value=v.course_id; document.getElementById('vidTitle').value=v.title; document.getElementById('vidDesc').value=v.description||''; document.getElementById('vidOrder').value=v.order_index||0; document.getElementById('vidYtUrl').value=v.youtube_url||''; document.querySelector(`input[name="vidType"][value="${v.video_type||'youtube'}"]`).checked=true; toggleVidType(v.video_type||'youtube'); openModal('modalVideo'); }
+function editVideo(v){
+  // ملء الحقول
+  document.getElementById('editVideoId').value  = v.id;
+  document.getElementById('vidCourseId').value  = v.course_id;
+  document.getElementById('vidTitle').value     = v.title;
+  document.getElementById('vidDesc').value      = v.description||'';
+  document.getElementById('vidOrder').value     = v.order_index||0;
+  document.getElementById('vidYtUrl').value     = v.youtube_url||'';
+  document.querySelector(`input[name="vidType"][value="${v.video_type||'youtube'}"]`).checked = true;
+  toggleVidType(v.video_type||'youtube');
+  
+  // لو نوعه upload — بيّن اسم الفيديو الحالي وإشعار إن الرفع اختياري
+  if(v.video_type === 'upload'){
+    uploadFile = null;  // reset أي ملف محدد سابقاً
+    const drop = document.getElementById('uploadDrop');
+    if(drop) drop.innerHTML = `
+      <div style="font-size:28px">🎬</div>
+      <div class="mt-2 font-bold" style="color:var(--success)">✅ فيديو محفوظ: ${v.title}</div>
+      <div class="text-sm text-muted mt-1">اضغط لاستبدال الفيديو أو اتركه كما هو</div>`;
+  } else {
+    uploadFile = null;
+  }
+  
+  document.querySelector('#modalVideo .modal-title').textContent = '✏️ تعديل فيديو';
+  openModal('modalVideo');
+}
+
+function openAddVideoModal(){
+  // ريست كل حاجة
+  document.getElementById('editVideoId').value = '';
+  document.getElementById('vidTitle').value    = '';
+  document.getElementById('vidDesc').value     = '';
+  document.getElementById('vidOrder').value    = '0';
+  document.getElementById('vidYtUrl').value    = '';
+  document.querySelector('input[name="vidType"][value="youtube"]').checked = true;
+  toggleVidType('youtube');
+  uploadFile = null;
+  const drop = document.getElementById('uploadDrop');
+  if(drop) drop.innerHTML = `<div style="font-size:32px">🎬</div><div class="mt-2 text-muted">اسحب الفيديو هنا أو اضغط للاختيار</div>`;
+  document.querySelector('#modalVideo .modal-title').textContent = 'إضافة فيديو';
+  openModal('modalVideo');
+}
 
 let uploadFile=null;
 function handleFileSelect(e){ uploadFile=e.target.files[0]; if(uploadFile) document.getElementById('uploadDrop').innerHTML=`<div style="font-size:32px">🎬</div><div class="mt-2 font-bold">${uploadFile.name}</div><div class="text-sm text-muted mt-1">${(uploadFile.size/1024/1024).toFixed(1)} MB</div>`; }
 function handleDrop(e){ e.preventDefault(); document.getElementById('uploadDrop').classList.remove('drag-over'); const files=e.dataTransfer.files; if(files[0]) { uploadFile=files[0]; handleFileSelect({target:{files}}); } }
 
 async function saveVideo(){
-  const id=document.getElementById('editVideoId').value;
-  const type=document.querySelector('input[name="vidType"]:checked').value;
-  const cid=document.getElementById('vidCourseId').value;
+  const id    = document.getElementById('editVideoId').value;  // موجود = edit، فاضي = add
+  const type  = document.querySelector('input[name="vidType"]:checked').value;
+  const cid   = document.getElementById('vidCourseId').value;
   if(!cid){ toast('اختر كورس','warn'); return; }
-  const title=document.getElementById('vidTitle').value.trim();
+  const title = document.getElementById('vidTitle').value.trim();
   if(!title){ toast('أدخل عنوان الفيديو','warn'); return; }
+
+  // تحقق: إضافة جديدة من نوع upload لازم يكون في ملف
   if(type==='upload' && !id && !uploadFile){ toast('اختر ملف فيديو','warn'); return; }
 
-  const btn=document.getElementById('btnSaveVideo');
+  const btn = document.getElementById('btnSaveVideo');
   btn.disabled=true; btn.textContent='⏳ جاري الحفظ...';
 
-  if(type==='youtube'||id){
-    const body={course_id:parseInt(cid),title,description:document.getElementById('vidDesc').value||null,order_index:parseInt(document.getElementById('vidOrder').value)||0,video_type:type,is_active:true};
-    if(type==='youtube') body.youtube_url=document.getElementById('vidYtUrl').value.trim();
-    if(id) body.id=parseInt(id);
-    const res=await mfFetch('course-videos',{method:'POST',body:JSON.stringify(body)});
+  try{
+    if(type === 'youtube'){
+      // ── YouTube: سواء add أو edit ────────────────────────
+      const body={course_id:parseInt(cid),title,
+        description:document.getElementById('vidDesc').value||null,
+        order_index:parseInt(document.getElementById('vidOrder').value)||0,
+        video_type:'youtube',
+        youtube_url:document.getElementById('vidYtUrl').value.trim(),
+        is_active:true};
+      if(id) body.id=parseInt(id);
+      const res=await mfFetch('course-videos',{method:'POST',body:JSON.stringify(body)});
+      if(!res.ok){ toast(res.error||'فشل الحفظ','error'); return; }
+
+    } else if(type === 'upload'){
+      if(uploadFile){
+        // ── Upload جديد (add أو استبدال الفيديو في edit) ───
+        await uploadToR2(uploadFile, cid, title, id ? parseInt(id) : null);
+        uploadFile=null;
+      } else {
+        // ── Edit على فيديو upload بدون ملف جديد (تعديل العنوان/الترتيب فقط) ──
+        const body={id:parseInt(id),course_id:parseInt(cid),title,
+          description:document.getElementById('vidDesc').value||null,
+          order_index:parseInt(document.getElementById('vidOrder').value)||0,
+          video_type:'upload',is_active:true};
+        const res=await mfFetch('course-videos',{method:'POST',body:JSON.stringify(body)});
+        if(!res.ok){ toast(res.error||'فشل الحفظ','error'); return; }
+      }
+    }
+
+    toast('تم الحفظ ✅','success');
+    closeModal('modalVideo');
+    document.getElementById('editVideoId').value='';
+  }catch(e){
+    toast('حدث خطأ: '+(e.message||e),'error');
+  }finally{
     btn.disabled=false; btn.textContent='💾 حفظ';
-    if(!res.ok){ toast(res.error,'error'); return; }
-  } else {
-    // Multipart R2 upload
-    await uploadToR2(uploadFile, cid, title);
-    btn.disabled=false; btn.textContent='💾 حفظ';
-    uploadFile=null;
+    loadVideos();
   }
-  toast('تم الحفظ ✅','success'); closeModal('modalVideo'); document.getElementById('editVideoId').value=''; loadVideos();
 }
 
-async function uploadToR2(file, courseId, title){
+async function uploadToR2(file, courseId, title, videoId=null){
   const pw  = document.getElementById('uploadProgressWrap'); pw.style.display='block';
   const pb  = document.getElementById('uploadProgressBar');
   const pp  = document.getElementById('uploadPct');
@@ -1287,12 +1354,14 @@ async function uploadToR2(file, courseId, title){
   // ── Complete ──────────────────────────────────────────────
   spd.textContent = '✅ جاري الإنهاء...';
   const sortedParts = parts.sort((a,b)=>a.PartNumber-b.PartNumber);
-  const completeRes = await mfFetch('r2-multipart',{method:'POST',body:JSON.stringify({
+  const completeBody = {
     action:'complete', upload_id, key, parts:sortedParts,
     course_id:parseInt(courseId), title,
     description:document.getElementById('vidDesc').value||null,
     order_index:parseInt(document.getElementById('vidOrder').value)||0
-  })});
+  };
+  if(videoId) completeBody.video_id = videoId;  // edit: حدّث الـ record الموجود
+  const completeRes = await mfFetch('r2-multipart',{method:'POST',body:JSON.stringify(completeBody)});
   if(!completeRes.ok){ toast('فشل إكمال الرفع: '+(completeRes.error||''),'error'); throw new Error(); }
   pw.style.display='none';
   spd.textContent='';
