@@ -686,15 +686,33 @@ function previewReceipt(input){
   reader.readAsDataURL(file);
 }
 
-async function uploadReceipt(){
-  const file = document.getElementById('receiptFile').files[0];
-  if(!file) return null;
-  const statusEl = document.getElementById('receiptStatus');
-  statusEl.textContent = '⏳ جاري رفع الصورة...';
+
+// ═══ Supabase Storage Upload Helper ═══════════════════════════
+async function uploadToStorage(file, bucket, statusEl){
+  if(statusEl) statusEl.textContent = '⏳ جاري رفع الصورة...';
   try{
     const token = localStorage.getItem('mf_access_token') || MF_CONFIG.ANON_KEY;
-    const ext = file.name.split('.').pop() || 'jpg';
-    const path = `receipts/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    
+    // تحديد نوع الملف بشكل صحيح
+    let ct = file.type;
+    if(!ct || ct === 'application/octet-stream'){
+      const ext = file.name.split('.').pop().toLowerCase();
+      const types = {jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp',gif:'image/gif'};
+      ct = types[ext] || 'image/jpeg';
+    }
+    
+    // التحقق من النوع
+    const allowed = ['image/jpeg','image/jpg','image/png','image/webp'];
+    if(!allowed.includes(ct)){
+      if(statusEl) statusEl.textContent = '❌ نوع الملف غير مدعوم';
+      return null;
+    }
+    
+    // بناء اسم الملف والـ path
+    const ext = ct.split('/')[1].replace('jpeg','jpg');
+    const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const path = `${bucket}/${filename}`;
+    
     const res = await fetch(
       `${MF_CONFIG.SUPABASE_URL}/storage/v1/object/${path}`,
       {
@@ -702,26 +720,39 @@ async function uploadReceipt(){
         headers: {
           'Authorization': `Bearer ${token}`,
           'apikey': MF_CONFIG.ANON_KEY,
-          'Content-Type': file.type,
+          'Content-Type': ct,
           'x-upsert': 'true'
         },
         body: file
       }
     );
+    
     if(!res.ok){
-      const err = await res.text();
-      statusEl.textContent = '❌ فشل الرفع: ' + res.status;
-      console.error('Upload error:', err);
+      const errText = await res.text().catch(()=>'');
+      let errMsg = `فشل الرفع (${res.status})`;
+      try{ const j = JSON.parse(errText); errMsg = j.message || errMsg; }catch{}
+      if(statusEl) statusEl.textContent = '❌ ' + errMsg;
+      console.error('Storage upload error:', res.status, errText);
       return null;
     }
+    
     const publicUrl = `${MF_CONFIG.SUPABASE_URL}/storage/v1/object/public/${path}`;
-    statusEl.textContent = '✅ تم رفع الصورة';
+    if(statusEl) statusEl.textContent = '✅ تم الرفع';
     return publicUrl;
+    
   }catch(e){
-    statusEl.textContent = '❌ فشل الرفع';
-    console.error(e);
+    if(statusEl) statusEl.textContent = '❌ خطأ في الرفع';
+    console.error('Upload exception:', e);
     return null;
   }
+}
+// ════════════════════════════════════════════════════════════════
+
+async function uploadReceipt(){
+  const file = document.getElementById('receiptFile').files[0];
+  if(!file) return null;
+  const statusEl = document.getElementById('receiptStatus');
+  return await uploadToStorage(file, 'receipts', statusEl);
 }
 
 async function doPayment(){
