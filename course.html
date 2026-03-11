@@ -797,9 +797,20 @@ async function playVideo(video){
     container.innerHTML = `<video id="nativeVideo" src="${urlRes.url}" controls controlsList="nodownload" oncontextmenu="return false" style="width:100%;aspect-ratio:16/9"></video><div id="watermark"></div>`;
     startWatermark();
     const vid = document.getElementById('nativeVideo');
-    if(resumeAt>5) vid.currentTime = resumeAt;
-    vid.addEventListener('timeupdate', ()=>{ watchedSec=Math.floor(vid.currentTime); totalSec=Math.floor(vid.duration)||totalSec; updateVideoProgressBar(totalSec?Math.min(100,Math.round(watchedSec/totalSec*100)):0); });
+    
+    // انتظر metadata عشان duration يتحدد
+    vid.addEventListener('loadedmetadata', ()=>{
+      totalSec = Math.floor(vid.duration)||totalSec;
+      if(resumeAt>5) vid.currentTime = resumeAt;
+      updateVideoProgressBar(totalSec?Math.min(100,Math.round(watchedSec/totalSec*100)):0);
+    });
+    vid.addEventListener('timeupdate', ()=>{
+      watchedSec = Math.floor(vid.currentTime);
+      if(!totalSec && vid.duration && !isNaN(vid.duration)) totalSec = Math.floor(vid.duration);
+      if(totalSec) updateVideoProgressBar(Math.min(100, Math.round(watchedSec/totalSec*100)));
+    });
     vid.addEventListener('pause', ()=>saveProgress(video));
+    vid.addEventListener('ended', ()=>saveProgress(video));
     startProgressTimer(video);
   }
 
