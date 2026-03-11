@@ -1291,8 +1291,8 @@ async function uploadToR2(file, courseId, title, videoId=null){
   if(!initRes.ok){ toast('فشل بدء الرفع: '+initRes.error,'error'); throw new Error(initRes.error); }
   const {upload_id, key} = initRes;
 
-  const PART        = 10*1024*1024;   // 10 MB per chunk
-  const CONCURRENCY = 3;              // 3 chunks بالتوازي
+  const PART        = 5*1024*1024;    // 5 MB per chunk (Supabase max ~6MB)
+  const CONCURRENCY = 2;              // 2 chunks بالتوازي (أكثر ثباتاً على الموبايل)
   const totalParts  = Math.ceil(file.size/PART);
   const parts       = new Array(totalParts);
   let   uploaded    = 0;
@@ -1309,30 +1309,39 @@ async function uploadToR2(file, courseId, title, videoId=null){
     const url   = `${MF_CONFIG.FN}/r2-multipart?upload_id=${encodeURIComponent(upload_id)}&key=${encodeURIComponent(key)}&part_number=${pn}`;
     
     let lastErr;
-    for(let attempt=1; attempt<=3; attempt++){   // 3 محاولات لو فشل
-      const res = await fetch(url,{
-        method:'PUT',
-        headers:{'Content-Type':file.type||'video/mp4','apikey':MF_CONFIG.ANON_KEY,'Authorization':authHdr},
-        body:chunk
-      });
-      let data={};
-      try{ data=await res.json(); }catch(e){}
-      if(res.ok && data.ok){
-        parts[i] = {PartNumber:pn, ETag:data.etag||'"'+pn+'"'};
-        uploaded++;
-        // تحديث شريط التقدم
-        const pct = Math.round(uploaded/totalParts*100);
-        pb.style.width = pct+'%'; pp.textContent = pct+'%';
-        const sec = (Date.now()-startTime)/1000;
-        const mb  = (PART*uploaded/1024/1024).toFixed(1);
-        const spds= (PART*uploaded/1024/1024/sec).toFixed(1);
-        spd.textContent = `${mb} MB مرفوع — ${spds} MB/s`;
-        return;
+    for(let attempt=1; attempt<=4; attempt++){
+      try{
+        // timeout 60 ثانية للـ chunk
+        const ctrl = new AbortController();
+        const tid  = setTimeout(()=>ctrl.abort(), 60000);
+        const res  = await fetch(url,{
+          method:'PUT',
+          headers:{'Content-Type':file.type||'video/mp4','apikey':MF_CONFIG.ANON_KEY,'Authorization':authHdr},
+          body:chunk,
+          signal: ctrl.signal
+        });
+        clearTimeout(tid);
+        let data={};
+        try{ data=await res.json(); }catch(e){}
+        if(res.ok && data.ok){
+          parts[i] = {PartNumber:pn, ETag:data.etag||'"'+pn+'"'};
+          uploaded++;
+          const pct  = Math.round(uploaded/totalParts*100);
+          pb.style.width = pct+'%'; pp.textContent = pct+'%';
+          const sec  = (Date.now()-startTime)/1000;
+          const mbUp = (PART*uploaded/1024/1024).toFixed(1);
+          const spds = sec>0?(PART*uploaded/1024/1024/sec).toFixed(1):'...';
+          spd.textContent = `${mbUp} MB / ${(file.size/1024/1024).toFixed(1)} MB — ${spds} MB/s`;
+          return;
+        }
+        lastErr = data.error || `HTTP ${res.status}`;
+      }catch(e){
+        lastErr = e.name==='AbortError' ? 'timeout — سيعيد المحاولة' : e.message;
       }
-      lastErr = data.error || res.status;
-      await new Promise(r=>setTimeout(r, 1000*attempt));  // انتظر قبل المحاولة التانية
+      spd.textContent = `⚠️ جزء ${pn}: ${lastErr} — محاولة ${attempt+1}...`;
+      await new Promise(r=>setTimeout(r, 2000*attempt));
     }
-    throw new Error('فشل رفع الجزء '+pn+': '+lastErr);
+    throw new Error(`فشل رفع الجزء ${pn} بعد 4 محاولات: ${lastErr}`);
   }
 
   // ── رفع بالتوازي (CONCURRENCY chunks دفعة واحدة) ──────────
@@ -1977,14 +1986,28 @@ function openMcVideoModal(video=null){
   _mcEditVideo = video;
   document.getElementById('mcVidTitle').value = video?.title || '';
   document.getElementById('mcVidOrder').value = video?.order_index ?? 0;
-  document.getElementById('mcVidDesc').value = video?.description || '';
+  document.getElementById('mcVidDesc').value  = video?.description || '';
   const isYt = !video || video.video_type === 'youtube';
   document.getElementById('mcVidTypeYt').checked = isYt;
   document.getElementById('mcVidTypeUp').checked = !isYt;
   document.getElementById('mcVidYtWrap').classList.toggle('hidden', !isYt);
   document.getElementById('mcVidUpWrap').classList.toggle('hidden', isYt);
-  document.getElementById('mcVidYtUrl').value = video?.youtube_url || '';
+  document.getElementById('mcVidYtUrl').value  = video?.youtube_url || '';
   document.getElementById('mcVidEditId').value = video?.id || '';
+
+  // reset file input دايماً
+  const fi = document.getElementById('mcVidFile');
+  if(fi) fi.value = '';
+  const fn = document.getElementById('mcVidFileName');
+  if(fn){
+    if(video?.video_type==='upload' && video?.title){
+      fn.textContent = '✅ محفوظ: ' + video.title + ' — اضغط لاستبداله';
+      fn.style.color = 'var(--success)';
+    } else {
+      fn.textContent = 'اضغط لاختيار فيديو';
+      fn.style.color = '';
+    }
+  }
   openModal('modalMcVideo');
 }
 
@@ -1994,23 +2017,51 @@ function mcToggleVidType(type){
 }
 
 async function mcSaveVideo(){
-  const title = document.getElementById('mcVidTitle').value.trim();
-  const order = parseInt(document.getElementById('mcVidOrder').value)||0;
-  const desc  = document.getElementById('mcVidDesc').value.trim();
-  const type  = document.getElementById('mcVidTypeYt').checked ? 'youtube' : 'upload';
-  const ytUrl = document.getElementById('mcVidYtUrl').value.trim();
+  const title  = document.getElementById('mcVidTitle').value.trim();
+  const order  = parseInt(document.getElementById('mcVidOrder').value)||0;
+  const desc   = document.getElementById('mcVidDesc').value.trim();
+  const type   = document.getElementById('mcVidTypeYt').checked ? 'youtube' : 'upload';
+  const ytUrl  = document.getElementById('mcVidYtUrl').value.trim();
   const editId = document.getElementById('mcVidEditId').value;
+  const mcFile = document.getElementById('mcVidFile').files[0];
+
   if(!title){ toast('أدخل عنوان الفيديو','warn'); return; }
   if(type==='youtube' && !ytUrl){ toast('أدخل رابط يوتيوب','warn'); return; }
+  if(type==='upload' && !editId && !mcFile){ toast('اختر ملف فيديو','warn'); return; }
 
-  const body = {course_id: mcActiveCourseId, title, description: desc, order_index: order, video_type: type, youtube_url: type==='youtube'?ytUrl:null};
-  if(editId) body.id = parseInt(editId);
+  const btn = document.querySelector('#modalMcVideo .btn-primary');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ جاري الحفظ...'; }
 
-  const res = await mfFetch('course-videos', {method:'POST', body: JSON.stringify(body)});
-  if(!res.ok){ toast(res.error||'فشل الحفظ','error'); return; }
-  toast('تم حفظ الفيديو ✅','success');
-  closeModal('modalMcVideo');
-  mcLoadVideos();
+  try{
+    if(type === 'youtube'){
+      const body = {course_id:mcActiveCourseId, title, description:desc, order_index:order,
+                    video_type:'youtube', youtube_url:ytUrl};
+      if(editId) body.id = parseInt(editId);
+      const res = await mfFetch('course-videos',{method:'POST',body:JSON.stringify(body)});
+      if(!res.ok){ toast(res.error||'فشل الحفظ','error'); return; }
+
+    } else if(type === 'upload'){
+      if(mcFile){
+        // ── رفع ملف جديد (أو استبدال) ──────────────────
+        // أظهر progress bar الـ admin
+        document.getElementById('uploadProgressWrap').style.display='block';
+        await uploadToR2(mcFile, mcActiveCourseId, title, editId ? parseInt(editId) : null);
+      } else {
+        // ── تعديل بيانات فقط بدون ملف جديد ────────────
+        const body = {id:parseInt(editId), course_id:mcActiveCourseId, title,
+                      description:desc, order_index:order, video_type:'upload'};
+        const res = await mfFetch('course-videos',{method:'POST',body:JSON.stringify(body)});
+        if(!res.ok){ toast(res.error||'فشل الحفظ','error'); return; }
+      }
+    }
+    toast('تم حفظ الفيديو ✅','success');
+    closeModal('modalMcVideo');
+  }catch(e){
+    toast('حدث خطأ: '+(e.message||e),'error');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='💾 حفظ'; }
+    mcLoadVideos();
+  }
 }
 
 async function mcDeleteVideo(id){
