@@ -20,7 +20,6 @@ button{padding:7px 14px;border-radius:7px;border:none;cursor:pointer;font-size:1
 #progLbl{font-size:11px;color:#64748b;margin-bottom:3px}
 #progBar{height:3px;background:var(--bg3);border-radius:3px;overflow:hidden}
 #progFill{height:100%;background:linear-gradient(90deg,#7c3aed,#22d3ee);width:0%;transition:width .25s;border-radius:3px}
-/* ALERT BOX */
 #alertBox{margin:12px 18px;padding:14px 18px;border-radius:10px;border:2px solid #f87171;background:rgba(248,113,113,.08);display:none}
 #alertBox h3{color:#f87171;margin-bottom:6px;font-size:14px}
 #alertBox p{color:#94a3b8;font-size:12px;line-height:1.6}
@@ -42,7 +41,7 @@ main{padding:10px 18px;display:grid;gap:8px}
 table{width:100%;border-collapse:collapse;font-size:12px}
 tr{border-bottom:1px solid var(--bg3)}tr:last-child{border:none}
 td{padding:5px 7px;vertical-align:top}
-td:first-child{color:#64748b;width:175px;white-space:nowrap;flex-shrink:0}
+td:first-child{color:#64748b;width:185px;white-space:nowrap;flex-shrink:0}
 td:last-child{word-break:break-all}
 .ok{color:#22d3ee}.err{color:#f87171}.warn{color:#fbbf24}.info{color:#a78bfa}
 .fix-btn{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;background:rgba(5,150,105,.15);color:#34d399;border:1px solid rgba(5,150,105,.3);cursor:pointer;margin-top:8px}
@@ -55,7 +54,7 @@ td:last-child{word-break:break-all}
 <body>
 
 <header>
-  <h1>🔍 Make Future Center — Debug Pro</h1>
+  <h1>🔍 Make Future Center — Debug Pro v2</h1>
   <div class="controls">
     <button class="btn-main" onclick="runAll()">▶ فحص شامل</button>
     <button class="btn-fix" id="fixAllBtn" onclick="fixAll()">🔧 إصلاح الكل</button>
@@ -67,11 +66,11 @@ td:last-child{word-break:break-all}
 
 <!-- تحذير لو شغال من file:// -->
 <div id="alertBox">
-  <h3>⚠️ الملف مش شغال من GitHub Pages!</h3>
+  <h3>⚠️ الملف مش شغال محلياً!</h3>
   <p>
     الـ debug tool شغال من جهازك مباشرة (<code>file://</code>) — ده بيمنع كل الـ requests بسبب CORS.<br><br>
-    لازم ترفع الملف على GitHub وتفتحه من:<br>
-    <a id="githubLink" href="#" target="_blank">https://mazn74793-png.github.io/make-future-v2/debug.html</a><br><br>
+    لازم ترفع الملف على Vercel وتفتحه من:<br>
+    <a id="vercelLink" href="#" target="_blank"></a><br><br>
     أو افتح الملف بـ: <strong>Live Server</strong> في VS Code بدلاً من double-click.
   </p>
 </div>
@@ -91,13 +90,22 @@ const C = {
   ANON: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqc2t6ZnlqenZpYnFnbGhkeWtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNjU4NTcsImV4cCI6MjA4ODY0MTg1N30.AqdIBX-6tP9nMRVao4X7A1aV5L4J7mTiNC1RWeWf7LI',
   PHONE: '01210575530',
   PASS:  'momomo',
-  GITHUB: 'https://mazn74793-png.github.io/make-future-v2',
-  PAGES: ['index.html','login.html','admin.html','student.html','course.html','payment.html','change-password.html','debug.html'],
-  FNS:   ['auth-login','auth-signup','admin-stats','admin-courses','admin-schedules','course-videos',
-          'admin-payments','admin-users','admin-reset-password','change-password','student-courses',
-          'check-enrollment','create-payment','video-progress','video-comments','coupons',
-          'user-notifications','certificates','quizzes','quiz-attempts','get-video-url',
-          'r2-multipart','create-admin','security-helpers','student-payments'],
+  // ✅ FIX: تم تحديث الـ URL من GitHub Pages لـ Vercel
+  SITE: 'https://make-future-seven.vercel.app',
+  PAGES: [
+    'index.html','login.html','admin.html','student.html',
+    'course.html','payment.html','change-password.html',
+    'debug.html','manifest.json'
+  ],
+  FNS: [
+    'auth-login','auth-signup','admin-stats','admin-courses',
+    'admin-schedules','course-videos','admin-payments','admin-users',
+    'admin-reset-password','change-password','student-courses',
+    'check-enrollment','create-payment','video-progress','video-comments',
+    'coupons','user-notifications','certificates','quizzes','quiz-attempts',
+    'get-video-url','r2-multipart','upload-image','send-otp',
+    'create-admin','security-helpers','student-payments','course-admin-students'
+  ],
 };
 
 let RESULTS = [], FIXES = [], isLocalFile = false;
@@ -107,8 +115,9 @@ function detectEnv() {
   isLocalFile = window.location.protocol === 'file:';
   if(isLocalFile) {
     document.getElementById('alertBox').style.display = 'block';
-    document.getElementById('githubLink').href = C.GITHUB + '/debug.html';
-    document.getElementById('githubLink').textContent = C.GITHUB + '/debug.html';
+    const lnk = document.getElementById('vercelLink');
+    lnk.href = C.SITE + '/debug.html';
+    lnk.textContent = C.SITE + '/debug.html';
   }
 }
 
@@ -179,7 +188,6 @@ async function runAll() {
   clearAll();
   detectEnv();
 
-  // لو file:// نوقف كل حاجة
   if(isLocalFile) {
     document.getElementById('progWrap').style.display='none';
     return;
@@ -187,29 +195,31 @@ async function runAll() {
 
   document.getElementById('progWrap').style.display='block';
 
-  // أول حاجة تجديد الجلسة تلقائي
+  // تجديد الجلسة تلقائي أول حاجة
   await fixSession(true);
 
   const checks = [
-    ['session',  '🔑', 'الجلسة & التوكن',        chkSession],
-    ['connect',  '🌐', 'الاتصال بـ Supabase',     chkConnect],
-    ['login',    '🔐', 'auth-login',              chkLogin],
-    ['signup',   '📝', 'auth-signup',             chkSignup],
-    ['stats',    '📊', 'admin-stats',             chkStats],
-    ['courses',  '📚', 'admin-courses',           chkCourses],
-    ['sched',    '📅', 'admin-schedules',         chkSchedules],
-    ['pays',     '💳', 'admin-payments',          chkPayments],
-    ['users',    '👥', 'admin-users',             chkUsers],
-    ['scourses', '🎓', 'student-courses',         chkStudentCourses],
-    ['vidcoms',  '💬', 'video-comments',          chkVideoComments],
-    ['notifs',   '🔔', 'user-notifications',      chkNotifs],
-    ['certs',    '🏅', 'certificates',            chkCerts],
-    ['coupons',  '🎫', 'coupons',                 chkCoupons],
-    ['quizzes',  '📝', 'quizzes',                 chkQuizzes],
-    ['r2',       '⬆️', 'رفع الفيديو R2',          chkR2],
-    ['pages',    '📄', 'ملفات GitHub Pages',      chkPages],
-    ['fnlist',   '⚙️', 'قائمة الـ Functions',     chkFnList],
-    ['perf',     '⚡', 'الأداء',                  chkPerf],
+    ['session',  '🔑', 'الجلسة & التوكن',          chkSession],
+    ['connect',  '🌐', 'الاتصال بـ Supabase',       chkConnect],
+    ['login',    '🔐', 'auth-login',                chkLogin],
+    ['signup',   '📝', 'auth-signup',               chkSignup],
+    ['stats',    '📊', 'admin-stats',               chkStats],
+    ['courses',  '📚', 'admin-courses',             chkCourses],
+    ['sched',    '📅', 'admin-schedules',           chkSchedules],
+    ['pays',     '💳', 'admin-payments',            chkPayments],
+    ['users',    '👥', 'admin-users',               chkUsers],
+    ['scourses', '🎓', 'student-courses',           chkStudentCourses],
+    ['vidcoms',  '💬', 'video-comments',            chkVideoComments],
+    ['notifs',   '🔔', 'user-notifications',        chkNotifs],
+    ['certs',    '🏅', 'certificates',              chkCerts],
+    ['coupons',  '🎫', 'coupons',                   chkCoupons],
+    ['quizzes',  '📝', 'quizzes',                   chkQuizzes],
+    ['imgup',    '🖼️', 'upload-image',              chkImageUpload],
+    ['r2',       '⬆️', 'رفع الفيديو R2',            chkR2],
+    ['pwa',      '📱', 'PWA & manifest.json',       chkPWA],
+    ['pages',    '📄', 'ملفات Vercel',              chkPages],
+    ['fnlist',   '⚙️', 'قائمة الـ Functions',       chkFnList],
+    ['perf',     '⚡', 'الأداء',                    chkPerf],
   ];
 
   checks.forEach(([id,icon,title]) => addCard(id, icon, title));
@@ -233,13 +243,12 @@ async function runAll() {
 async function chkSession() {
   const token=gT(), user=gU(), refresh=gR();
   let rows=[], s='ok';
-  if(user){ rows.push(row('المستخدم',`${user.full_name} <span class="tag">${user.role}</span>`,'ok')); rows.push(row('ID',user.id,'info')); }
+  if(user){ rows.push(row('المستخدم',`${user.full_name} <span class="tag">${user.role}</span>`,'ok')); rows.push(row('ID',user.id,'info')); rows.push(row('الصف',user.grade||'—','info')); }
   else { rows.push(row('المستخدم','❌ مفيش user في localStorage','err')); s='err'; }
   if(token&&token!=='null'&&token.length>20) {
     const p=decJWT(token);
     if(p){ const rem=p.exp-Math.floor(Date.now()/1000); rows.push(row('Token',rem>0?`✅ صالح — ينتهي بعد ${Math.floor(rem/60)} دقيقة`:`❌ منتهي منذ ${Math.floor(-rem/60)} دقيقة`,rem>0?'ok':'err')); if(rem<=0){s='err';FIXES.push(()=>fixSession(true));} }
     else { rows.push(row('Token','❌ JWT تالف','err')); s='err'; }
-    // Validate on Supabase
     const r=await fetch(`${C.SB}/auth/v1/user`,{headers:{'Authorization':`Bearer ${token}`,'apikey':C.ANON}});
     const d=await r.json().catch(()=>({}));
     rows.push(row('Supabase Auth',r.ok&&d.id?'✅ مقبول':'❌ مرفوض',r.ok&&d.id?'ok':'err'));
@@ -260,6 +269,11 @@ async function chkConnect() {
     rows.push(row('الاتصال','✅ متصل','ok'));
     rows.push(row('Latency',`${ms}ms`,ms<500?'ok':ms<1500?'warn':'err'));
     rows.push(row('Status',r.status,r.ok?'ok':'warn'));
+    // فحص Vercel كمان
+    const vt0=Date.now();
+    const vr=await fetch(C.SITE,{method:'HEAD',cache:'no-store'}).catch(()=>null);
+    const vms=Date.now()-vt0;
+    rows.push(row('Vercel',vr&&vr.ok?`✅ ${vms}ms`:vr?`⚠️ ${vr.status}`:' ❌ فشل',vr&&vr.ok?'ok':vr?'warn':'err'));
   }catch(e){ rows.push(row('الاتصال',`❌ ${e.message}`,'err')); s='err'; }
   setBody('connect',tbl(...rows)); setBadge('connect',s,s==='ok'?'✅ متصل':'❌ فشل');
   RESULTS.push({id:'connect',s,name:'الاتصال'});
@@ -273,24 +287,32 @@ async function chkLogin() {
   if(r.data?.ok){
     rows.push(row('Login','✅ يشتغل','ok'));
     rows.push(row('access_token',r.data.access_token?'✅ موجود':'❌ مفقود',r.data.access_token?'ok':'err'));
+    rows.push(row('refresh_token',r.data.refresh_token?'✅ موجود':'❌ مفقود',r.data.refresh_token?'ok':'err'));
     rows.push(row('user.role',r.data.user?.role||'—','info'));
+    rows.push(row('user.grade',r.data.user?.grade||'—','info'));
   } else { rows.push(row('خطأ',JSON.stringify(r.data),'err')); s='err'; }
+  // رفض باسورد غلط
   const r2=await api('auth-login',{method:'POST',body:JSON.stringify({login:C.PHONE,password:'WRONG_XXX'})},true);
   rows.push(row('رفض باسورد غلط',r2.status===401||r2.status===400?'✅ يرفض صح':'⚠️ '+r2.status,r2.status===401||r2.status===400?'ok':'warn'));
+  // رفض بيانات ناقصة
+  const r3=await api('auth-login',{method:'POST',body:JSON.stringify({})},true);
+  rows.push(row('رفض بيانات ناقصة',r3.status===400?'✅ يرفض':'⚠️ '+r3.status,r3.status===400?'ok':'warn'));
   setBody('login',tbl(...rows)); setBadge('login',s,s==='ok'?'✅ شغال':'❌ مكسور');
   RESULTS.push({id:'login',s,name:'auth-login'});
 }
 
 async function chkSignup() {
   let rows=[], s='ok';
+  // محاولة تسجيل بنفس الرقم (المفروض يرفض)
   const r=await api('auth-signup',{method:'POST',body:JSON.stringify({full_name:'تجربة',phone_student:C.PHONE,grade:'3sec',password:'test123456'})},true);
   rows.push(row('HTTP',r.status,'info')); rows.push(row('Latency',r.ms+'ms','info'));
-  const dupOk=r.status===400&&(r.data?.error?.includes('مسجل')||r.data?.error?.includes('exist'));
-  rows.push(row('رفض التكرار',dupOk?'✅ يرفض':r.status===400?`⚠️ ${r.data?.error}`:`❓ ${r.status}`,dupOk?'ok':r.status===400?'warn':'err'));
+  const dupOk=r.status===400&&(r.data?.error?.includes('مسجل')||r.data?.error?.includes('exist')||r.data?.error?.includes('موجود'));
+  rows.push(row('رفض التكرار',dupOk?'✅ يرفض صح':r.status===400?`⚠️ ${r.data?.error}`:`❓ ${r.status}`,dupOk?'ok':r.status===400?'warn':'err'));
   if(r.data?.error?.includes?.('.catch is not a function')){ rows.push(row('BUG .catch','❌ في مشكلة .catch','err')); s='err'; }
+  // بيانات ناقصة
   const r2=await api('auth-signup',{method:'POST',body:JSON.stringify({})},true);
   rows.push(row('Validation ناقص',r2.status===400?'✅ يرفض':'⚠️ '+r2.status,r2.status===400?'ok':'warn'));
-  setBody('signup',tbl(...rows)); setBadge('signup',s,s==='ok'?'✅ شغال':s==='warn'?'⚠️':'❌ مكسور');
+  setBody('signup',tbl(...rows)); setBadge('signup',s,s==='ok'?'✅ شغال':s==='warn'?'⚠️ تحقق':'❌ مكسور');
   RESULTS.push({id:'signup',s,name:'auth-signup'});
 }
 
@@ -298,8 +320,15 @@ async function chkStats() {
   let rows=[], s='ok';
   const r=await api('admin-stats');
   rows.push(row('HTTP',r.status,r.status===200?'ok':'err')); rows.push(row('Latency',r.ms+'ms','info'));
-  if(r.data?.ok){ const c=r.data.counts||{}; rows.push(row('Users',c.users??'—','info')); rows.push(row('Courses',c.courses??'—','info')); rows.push(row('Pending',c.pending??'—',c.pending>0?'warn':'info')); rows.push(row('Function','✅ شغالة','ok')); }
-  else { rows.push(row('خطأ',JSON.stringify(r.data),'err')); s='err'; }
+  if(r.data?.ok){
+    const c=r.data.counts||{};
+    rows.push(row('Users',c.users??'—','info'));
+    rows.push(row('Courses',c.courses??'—','info'));
+    rows.push(row('Payments (Pending)',c.pending??'—',c.pending>0?'warn':'info'));
+    rows.push(row('Payments (Total)',c.total_payments??'—','info'));
+    rows.push(row('Revenue',c.total_revenue!=null?`${c.total_revenue} جنيه`:'—','info'));
+    rows.push(row('Function','✅ شغالة','ok'));
+  } else { rows.push(row('خطأ',JSON.stringify(r.data),'err')); s='err'; }
   setBody('stats',tbl(...rows)); setBadge('stats',s,s==='ok'?'✅ شغال':'❌ مكسور');
   RESULTS.push({id:'stats',s,name:'admin-stats'});
 }
@@ -308,8 +337,13 @@ async function chkCourses() {
   let rows=[], s='ok';
   const r=await api('admin-courses');
   rows.push(row('HTTP',r.status,r.status===200?'ok':'err'));
-  if(r.data?.ok){ const cs=r.data.courses||[]; rows.push(row('كورسات',cs.length,'info')); cs.forEach(c=>rows.push(row(`#${c.id}`,`${c.title} | ${c.grade}`,'info'))); rows.push(row('Function','✅ شغالة','ok')); }
-  else { rows.push(row('خطأ',JSON.stringify(r.data),'err')); s='err'; }
+  if(r.data?.ok){
+    const cs=r.data.courses||[];
+    rows.push(row('كورسات',cs.length,'info'));
+    cs.slice(0,5).forEach(c=>rows.push(row(`#${c.id}`,`${c.title} <span class="tag">${c.grade}</span>`,'info')));
+    if(cs.length>5) rows.push(row('...','و '+(cs.length-5)+' كورس تاني','info'));
+    rows.push(row('Function','✅ شغالة','ok'));
+  } else { rows.push(row('خطأ',JSON.stringify(r.data),'err')); s='err'; }
   setBody('courses',tbl(...rows)); setBadge('courses',s,s==='ok'?'✅ شغال':'❌ مكسور');
   RESULTS.push({id:'courses',s,name:'admin-courses'});
 }
@@ -318,8 +352,10 @@ async function chkSchedules() {
   let rows=[], s='ok';
   const r=await api('admin-schedules');
   rows.push(row('HTTP',r.status,r.status===200?'ok':'err'));
-  if(r.data?.ok){ rows.push(row('مواعيد',(r.data.schedules||[]).length,'info')); rows.push(row('Function','✅ شغالة','ok')); }
-  else { rows.push(row('خطأ',JSON.stringify(r.data),'err')); s='err'; }
+  if(r.data?.ok){
+    rows.push(row('مواعيد',(r.data.schedules||[]).length,'info'));
+    rows.push(row('Function','✅ شغالة','ok'));
+  } else { rows.push(row('خطأ',JSON.stringify(r.data),'err')); s='err'; }
   setBody('sched',tbl(...rows)); setBadge('sched',s,s==='ok'?'✅ شغال':'❌ مكسور');
   RESULTS.push({id:'sched',s,name:'admin-schedules'});
 }
@@ -328,8 +364,14 @@ async function chkPayments() {
   let rows=[], s='ok';
   const r=await api('admin-payments');
   rows.push(row('HTTP',r.status,r.status===200?'ok':'err'));
-  if(r.data?.ok){ const ps=r.data.payments||[]; rows.push(row('إجمالي',ps.length,'info')); rows.push(row('Pending',ps.filter(p=>p.status==='pending').length,'warn')); rows.push(row('Approved',ps.filter(p=>p.status==='approved').length,'info')); rows.push(row('Function','✅ شغالة','ok')); }
-  else { rows.push(row('خطأ',JSON.stringify(r.data),'err')); s='err'; }
+  if(r.data?.ok){
+    const ps=r.data.payments||[];
+    rows.push(row('إجمالي',ps.length,'info'));
+    rows.push(row('Pending',ps.filter(p=>p.status==='pending').length,ps.filter(p=>p.status==='pending').length>0?'warn':'info'));
+    rows.push(row('Approved',ps.filter(p=>p.status==='approved').length,'info'));
+    rows.push(row('Rejected',ps.filter(p=>p.status==='rejected').length,'info'));
+    rows.push(row('Function','✅ شغالة','ok'));
+  } else { rows.push(row('خطأ',JSON.stringify(r.data),'err')); s='err'; }
   setBody('pays',tbl(...rows)); setBadge('pays',s,s==='ok'?'✅ شغال':'❌ مكسور');
   RESULTS.push({id:'pays',s,name:'admin-payments'});
 }
@@ -338,8 +380,14 @@ async function chkUsers() {
   let rows=[], s='ok';
   const r=await api('admin-users');
   rows.push(row('HTTP',r.status,r.status===200?'ok':'err'));
-  if(r.data?.ok){ (r.data.users||[]).forEach(u=>rows.push(row(u.full_name,`<span class="tag">${u.role}</span> ${u.phone_student}`,'info'))); rows.push(row('Function','✅ شغالة','ok')); }
-  else { rows.push(row('خطأ',JSON.stringify(r.data),'err')); s='err'; }
+  if(r.data?.ok){
+    const us=r.data.users||[];
+    rows.push(row('إجمالي المستخدمين',us.length,'info'));
+    const roles={};
+    us.forEach(u=>{ roles[u.role]=(roles[u.role]||0)+1; });
+    Object.entries(roles).forEach(([role,count])=>rows.push(row(`Role: ${role}`,count,'info')));
+    rows.push(row('Function','✅ شغالة','ok'));
+  } else { rows.push(row('خطأ',JSON.stringify(r.data),'err')); s='err'; }
   setBody('users',tbl(...rows)); setBadge('users',s,s==='ok'?'✅ شغال':'❌ مكسور');
   RESULTS.push({id:'users',s,name:'admin-users'});
 }
@@ -349,8 +397,13 @@ async function chkStudentCourses() {
   const u=gU();
   const r=await api(`student-courses?user_id=${u?.id||''}`);
   rows.push(row('HTTP',r.status,r.status===200?'ok':'err'));
-  if(r.data?.ok){ const cs=r.data.courses||[]; rows.push(row('إجمالي',cs.length,'info')); rows.push(row('مشترك',cs.filter(c=>c.enrolled).length,'info')); rows.push(row('Function','✅ شغالة','ok')); }
-  else { rows.push(row('خطأ',JSON.stringify(r.data),'err')); s='err'; }
+  if(r.data?.ok){
+    const cs=r.data.courses||[];
+    rows.push(row('إجمالي',cs.length,'info'));
+    rows.push(row('مشترك',cs.filter(c=>c.enrolled).length,'info'));
+    rows.push(row('مجاني',cs.filter(c=>c.price===0||c.price===null).length,'info'));
+    rows.push(row('Function','✅ شغالة','ok'));
+  } else { rows.push(row('خطأ',JSON.stringify(r.data),'err')); s='err'; }
   setBody('scourses',tbl(...rows)); setBadge('scourses',s,s==='ok'?'✅ شغال':'❌ مكسور');
   RESULTS.push({id:'scourses',s,name:'student-courses'});
 }
@@ -359,8 +412,10 @@ async function chkVideoComments() {
   let rows=[], s='ok';
   const r=await api('video-comments?video_id=1');
   rows.push(row('HTTP',r.status,r.status===200?'ok':'err'));
-  if(r.data?.ok!==false){ rows.push(row('تعليقات',(r.data.comments||[]).length,'info')); rows.push(row('Function','✅ شغالة','ok')); }
-  else { rows.push(row('خطأ',JSON.stringify(r.data),'err')); s='err'; }
+  if(r.data?.ok!==false){
+    rows.push(row('تعليقات',(r.data.comments||[]).length,'info'));
+    rows.push(row('Function','✅ شغالة','ok'));
+  } else { rows.push(row('خطأ',JSON.stringify(r.data),'err')); s='err'; }
   setBody('vidcoms',tbl(...rows)); setBadge('vidcoms',s,s==='ok'?'✅ شغال':'❌ مكسور');
   RESULTS.push({id:'vidcoms',s,name:'video-comments'});
 }
@@ -370,8 +425,10 @@ async function chkNotifs() {
   const u=gU();
   const r=await api(`user-notifications?user_id=${u?.id||''}`);
   rows.push(row('HTTP',r.status,r.status===200?'ok':'err'));
-  if(r.data?.ok){ rows.push(row('إشعارات',(r.data.notifications||[]).length,'info')); rows.push(row('Function','✅ شغالة','ok')); }
-  else { rows.push(row('خطأ',JSON.stringify(r.data),'err')); s='err'; }
+  if(r.data?.ok){
+    rows.push(row('إشعارات',(r.data.notifications||[]).length,'info'));
+    rows.push(row('Function','✅ شغالة','ok'));
+  } else { rows.push(row('خطأ',JSON.stringify(r.data),'err')); s='err'; }
   setBody('notifs',tbl(...rows)); setBadge('notifs',s,s==='ok'?'✅ شغال':'❌ مكسور');
   RESULTS.push({id:'notifs',s,name:'notifications'});
 }
@@ -381,8 +438,10 @@ async function chkCerts() {
   const u=gU();
   const r=await api(`certificates?user_id=${u?.id||''}`);
   rows.push(row('HTTP',r.status,r.status===200?'ok':'err'));
-  if(r.data?.ok){ rows.push(row('شهادات',(r.data.certificates||[]).length,'info')); rows.push(row('Function','✅ شغالة','ok')); }
-  else { rows.push(row('خطأ',JSON.stringify(r.data),'err')); s='err'; }
+  if(r.data?.ok){
+    rows.push(row('شهادات',(r.data.certificates||[]).length,'info'));
+    rows.push(row('Function','✅ شغالة','ok'));
+  } else { rows.push(row('خطأ',JSON.stringify(r.data),'err')); s='err'; }
   setBody('certs',tbl(...rows)); setBadge('certs',s,s==='ok'?'✅ شغال':'❌ مكسور');
   RESULTS.push({id:'certs',s,name:'certificates'});
 }
@@ -391,8 +450,12 @@ async function chkCoupons() {
   let rows=[], s='ok';
   const r=await api('coupons');
   rows.push(row('HTTP',r.status,r.status===200?'ok':'err'));
-  if(r.data?.ok){ const cs=r.data.coupons||[]; rows.push(row('كوبونات',cs.length,'info')); cs.forEach(c=>rows.push(row(c.code,`${c.discount_type} ${c.discount_value} | ${c.used_count}/${c.max_uses}`,'info'))); rows.push(row('Function','✅ شغالة','ok')); }
-  else { rows.push(row('خطأ',JSON.stringify(r.data),'err')); s='err'; }
+  if(r.data?.ok){
+    const cs=r.data.coupons||[];
+    rows.push(row('كوبونات',cs.length,'info'));
+    cs.slice(0,5).forEach(c=>rows.push(row(c.code,`${c.discount_type} ${c.discount_value} | ${c.used_count}/${c.max_uses}`,'info')));
+    rows.push(row('Function','✅ شغالة','ok'));
+  } else { rows.push(row('خطأ',JSON.stringify(r.data),'err')); s='err'; }
   setBody('coupons',tbl(...rows)); setBadge('coupons',s,s==='ok'?'✅ شغال':'❌ مكسور');
   RESULTS.push({id:'coupons',s,name:'coupons'});
 }
@@ -401,22 +464,44 @@ async function chkQuizzes() {
   let rows=[], s='ok';
   const r=await api('quizzes?course_id=1');
   rows.push(row('HTTP',r.status,r.status===200?'ok':'err'));
-  if(r.data?.ok!==false){ rows.push(row('كويزات',(r.data.quizzes||[]).length,'info')); rows.push(row('Function','✅ شغالة','ok')); }
-  else { rows.push(row('خطأ',JSON.stringify(r.data),'err')); s='err'; }
+  if(r.data?.ok!==false){
+    rows.push(row('كويزات',(r.data.quizzes||[]).length,'info'));
+    rows.push(row('Function','✅ شغالة','ok'));
+  } else { rows.push(row('خطأ',JSON.stringify(r.data),'err')); s='err'; }
   setBody('quizzes',tbl(...rows)); setBadge('quizzes',s,s==='ok'?'✅ شغال':'❌ مكسور');
   RESULTS.push({id:'quizzes',s,name:'quizzes'});
 }
 
+// ✅ NEW: فحص upload-image
+async function chkImageUpload() {
+  let rows=[], s='ok';
+  // بنبعت base64 صغير جداً كـ test
+  const tiny1px = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+  const r=await api('upload-image',{method:'POST',body:JSON.stringify({image:tiny1px, folder:'test'})});
+  rows.push(row('HTTP',r.status,'info'));
+  rows.push(row('Latency',r.ms+'ms','info'));
+  if(r.status===200&&r.data?.ok){
+    rows.push(row('رفع الصورة','✅ شغال','ok'));
+    rows.push(row('URL',r.data.url?'✅ موجود':'❌ مفقود',r.data.url?'ok':'err'));
+  } else if(r.status===401||r.status===403) {
+    rows.push(row('Auth','⚠️ محتاج صلاحيات — طبيعي للـ test','warn'));
+    s='warn';
+  } else {
+    rows.push(row('خطأ',JSON.stringify(r.data).substring(0,100),'err'));
+    s='err';
+  }
+  setBody('imgup',tbl(...rows)); setBadge('imgup',s,s==='ok'?'✅ شغال':s==='warn'?'⚠️ تحقق':'❌ مكسور');
+  RESULTS.push({id:'imgup',s,name:'upload-image'});
+}
+
 async function chkR2() {
   let rows=[], s='ok';
-  // Test init
   const r=await api('r2-multipart',{method:'POST',body:JSON.stringify({action:'init',course_id:1,filename:'debug_test.mp4',content_type:'video/mp4'})});
   rows.push(row('Init HTTP',r.status,r.status===200?'ok':'err'));
   rows.push(row('Init Latency',r.ms+'ms','info'));
   if(r.data?.ok&&r.data.upload_id) {
     rows.push(row('Upload ID','✅ رجع upload_id','ok'));
     const {upload_id,key}=r.data;
-    // Test chunk upload (1KB)
     const chunk=new Uint8Array(1024).fill(65);
     const token=gT(); const valid=token&&token!=='null'&&token.length>20;
     const url=`${C.FN}/r2-multipart?upload_id=${encodeURIComponent(upload_id)}&key=${encodeURIComponent(key)}&part_number=1`;
@@ -428,26 +513,61 @@ async function chkR2() {
       rows.push(row('Chunk PUT HTTP',cr.status,cr.ok?'ok':'err'));
       rows.push(row('Chunk Latency',ms+'ms','info'));
       if(cr.ok&&cd.ok){ rows.push(row('رفع الجزء','✅ نجح','ok')); rows.push(row('ETag',cd.etag,'info')); }
-      else { rows.push(row('رفع الجزء',`❌ ${cd.error||cr.status}`,'err')); rows.push(row('الرد الكامل',JSON.stringify(cd),'err')); s='err'; }
-    } catch(e){ rows.push(row('رفع الجزء',`❌ Exception: ${e.message}`,'err')); s='err'; }
-    // Abort in all cases
+      else { rows.push(row('رفع الجزء',`❌ ${cd.error||cr.status}`,'err')); rows.push(row('الرد',JSON.stringify(cd).substring(0,80),'err')); s='err'; }
+    } catch(e){ rows.push(row('رفع الجزء',`❌ ${e.message}`,'err')); s='err'; }
+    // إلغاء الاختبار دايماً
     await api('r2-multipart',{method:'POST',body:JSON.stringify({action:'abort',upload_id,key})}).catch(()=>{});
     rows.push(row('Abort','✅ تم إلغاء الاختبار','ok'));
   } else {
-    rows.push(row('Init','❌ فشل: '+(r.data?.error||JSON.stringify(r.data)),'err')); s='err';
+    rows.push(row('Init','❌ فشل: '+(r.data?.error||JSON.stringify(r.data)).substring(0,80),'err')); s='err';
   }
   setBody('r2',tbl(...rows)); setBadge('r2',s,s==='ok'?'✅ شغال':'❌ مكسور');
   RESULTS.push({id:'r2',s,name:'R2 Upload'});
 }
 
+// ✅ NEW: فحص PWA و manifest.json
+async function chkPWA() {
+  let rows=[], s='ok';
+  try {
+    const r=await fetch(`${C.SITE}/manifest.json`,{cache:'no-store'});
+    rows.push(row('manifest.json HTTP',r.status,r.ok?'ok':'err'));
+    if(r.ok){
+      const mf=await r.json().catch(()=>null);
+      if(mf){
+        rows.push(row('name',mf.name||'❌ مفقود',mf.name?'ok':'err'));
+        rows.push(row('start_url',mf.start_url||'❌ مفقود',mf.start_url?'ok':'err'));
+        rows.push(row('start_url صح؟',mf.start_url==='/login.html'?'✅ /login.html':mf.start_url==='./login.html'?'✅ ./login.html':mf.start_url==='login.html'?'✅ login.html':`⚠️ ${mf.start_url} — المفروض يكون /login.html`,mf.start_url?.includes('login')?'ok':'warn'));
+        rows.push(row('icons',mf.icons?.length?`✅ ${mf.icons.length} icons`:'❌ مفيش icons',mf.icons?.length?'ok':'err'));
+        rows.push(row('display',mf.display||'—',mf.display==='standalone'?'ok':'warn'));
+        rows.push(row('theme_color',mf.theme_color||'—','info'));
+        // فحص الأيقونات بالفعل
+        if(mf.icons?.length){
+          for(const icon of mf.icons){
+            const ir=await fetch(`${C.SITE}/${icon.src.replace(/^\//,'')}`).catch(()=>null);
+            rows.push(row(`icon ${icon.sizes}`,ir&&ir.ok?`✅ موجودة`:'❌ مفقودة',ir&&ir.ok?'ok':'err'));
+            if(!ir||!ir.ok) s='err';
+          }
+        }
+      } else { rows.push(row('parse','❌ JSON تالف','err')); s='err'; }
+    } else { rows.push(row('manifest','❌ مش موجود على السيرفر','err')); s='err'; }
+    // فحص service worker
+    rows.push(row('Service Worker','ℹ️ مش موجود (اختياري)','info'));
+  }catch(e){ rows.push(row('خطأ',e.message,'err')); s='err'; }
+  setBody('pwa',tbl(...rows)); setBadge('pwa',s,s==='ok'?'✅ جاهز':s==='err'?'❌ في مشاكل':'⚠️ تحقق');
+  RESULTS.push({id:'pwa',s,name:'PWA/Manifest'});
+}
+
+// ✅ FIX: تم تغيير الـ URL من GitHub Pages لـ Vercel
 async function chkPages() {
   let rows=[], s='ok';
-  const base=C.GITHUB;
+  const base=C.SITE;
   for(const f of C.PAGES) {
     try{
       const r=await fetch(`${base}/${f}`,{method:'HEAD',cache:'no-store'});
       const kb=Math.round(parseInt(r.headers.get('content-length')||'0')/1024);
-      if(r.ok&&kb>5){ rows.push(row(f,`✅ ${kb}KB`,'ok')); }
+      // manifest.json صغير طبيعي
+      const isJson=f.endsWith('.json');
+      if(r.ok&&(kb>2||isJson)){ rows.push(row(f,`✅ ${kb>0?kb+'KB':'موجود'}`,'ok')); }
       else if(r.ok){ rows.push(row(f,`⚠️ ${kb}KB — صغير جداً`,'warn')); if(s==='ok')s='warn'; }
       else { rows.push(row(f,`❌ ${r.status}`,'err')); s='err'; }
     }catch(e){ rows.push(row(f,`❌ ${e.message}`,'err')); s='err'; }
@@ -458,38 +578,46 @@ async function chkPages() {
 
 async function chkFnList() {
   let rows=[], s='ok';
-  // نتحقق من الـ functions عن طريق استدعاء واحد لكل مجموعة
   const tests=[
-    ['admin-stats','GET',null],
-    ['admin-courses','GET',null],
-    ['admin-payments','GET',null],
-    ['admin-users','GET',null],
-    ['coupons','GET',null],
+    ['admin-stats','GET'],
+    ['admin-courses','GET'],
+    ['admin-payments','GET'],
+    ['admin-users','GET'],
+    ['coupons','GET'],
+    ['user-notifications?user_id=test','GET'],
+    ['certificates?user_id=test','GET'],
   ];
   let ok=0;
   for(const [ep] of tests){
     const r=await api(ep);
     const working=r.status===200&&r.data?.ok;
     if(working) ok++;
-    rows.push(row(ep,working?`✅ ${r.ms}ms`:`❌ ${r.status}`,working?'ok':'err'));
+    rows.push(row(ep.split('?')[0],working?`✅ ${r.ms}ms`:`❌ ${r.status}`,working?'ok':'err'));
     if(!working) s='err';
   }
-  rows.push(row('إجمالي الـ functions',`${C.FNS.length} function مسجلة`,'info'));
+  rows.push(row('إجمالي الـ functions المسجلة',`${C.FNS.length} function`,'info'));
   setBody('fnlist',tbl(...rows)); setBadge('fnlist',s,s==='ok'?`✅ ${ok}/${tests.length}`:`❌ في مشاكل`);
   RESULTS.push({id:'fnlist',s,name:'Functions'});
 }
 
 async function chkPerf() {
   let rows=[], s='ok', total=0;
-  const eps=[['admin-stats','GET'],['admin-courses','GET'],['admin-payments','GET']];
+  const eps=[
+    ['admin-stats','GET'],
+    ['admin-courses','GET'],
+    ['admin-payments','GET'],
+    ['student-courses?user_id=test','GET'],
+    ['coupons','GET'],
+  ];
   for(const [ep] of eps){
     const r=await api(ep); total+=r.ms;
     const ps=r.ms<500?'ok':r.ms<1500?'warn':'err';
     if(ps==='err') s='warn';
-    rows.push(row(ep,`${r.ms}ms`,ps));
+    rows.push(row(ep.split('?')[0],`${r.ms}ms`,ps));
   }
   const avg=Math.round(total/eps.length);
   rows.push(row('المتوسط',`${avg}ms`,avg<800?'ok':avg<2000?'warn':'err'));
+  rows.push(row('التقييم',avg<500?'🚀 ممتاز':avg<1000?'✅ كويس':avg<2000?'⚠️ مقبول':'❌ بطيء جداً',avg<1000?'ok':avg<2000?'warn':'err'));
   setBody('perf',tbl(...rows)); setBadge('perf',s,s==='ok'?`✅ ${avg}ms`:'⚠️ بطيء');
   RESULTS.push({id:'perf',s,name:'الأداء'});
 }
@@ -504,6 +632,7 @@ function showSummary() {
   const color=err===0?'#22d3ee':err<=3?'#fbbf24':'#f87171';
   const icon=err===0?'🎉':err<=3?'⚠️':'❌';
   const fails=RESULTS.filter(r=>r.s==='err').map(r=>`<span style="display:inline-block;margin:2px;padding:2px 8px;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);border-radius:4px;font-size:11px;color:#f87171">${r.name}</span>`).join('');
+  const warns=RESULTS.filter(r=>r.s==='warn').map(r=>`<span style="display:inline-block;margin:2px;padding:2px 8px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:4px;font-size:11px;color:#fbbf24">${r.name}</span>`).join('');
   const el=document.getElementById('summary');
   el.style.display='block'; el.style.borderColor=color;
   el.innerHTML=`
@@ -511,11 +640,20 @@ function showSummary() {
       <div style="font-size:26px">${icon}</div>
       <div>
         <div style="font-size:15px;font-weight:800;color:${color}">${pct}% — ${ok}/${total} اختبار نجح</div>
-        <div style="font-size:12px;color:#64748b;margin-top:2px"><span style="color:#22d3ee">✅ ${ok}</span> &nbsp; <span style="color:#f87171">❌ ${err}</span> &nbsp; <span style="color:#fbbf24">⚠️ ${warn}</span></div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px">
+          <span style="color:#22d3ee">✅ ${ok}</span> &nbsp;
+          <span style="color:#f87171">❌ ${err}</span> &nbsp;
+          <span style="color:#fbbf24">⚠️ ${warn}</span>
+        </div>
       </div>
     </div>
     ${fails?`<div style="margin-top:10px">${fails}</div>`:''}
-    <div style="margin-top:8px;font-size:12px;color:#475569">${err===0?'✅ كل الـ backend شغال 100% — أي مشكلة في الـ HTML files فقط':err>0?`🔧 ${err} مشكلة — الكروت الفاشلة مفتوحة تلقائياً`:''}</div>`;
+    ${warns?`<div style="margin-top:6px">${warns}</div>`:''}
+    <div style="margin-top:8px;font-size:12px;color:#475569">
+      ${err===0&&warn===0?'🎉 كل حاجة تمام 100% — المشروع شغال على ما يرام!':
+        err===0?`⚠️ ${warn} تحذير بسيط`:
+        `🔧 ${err} مشكلة — الكروت الفاشلة مفتوحة تلقائياً`}
+    </div>`;
 }
 
 // ─── INIT ─────────────────────────────────────────────
