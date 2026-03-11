@@ -1475,11 +1475,40 @@ async function loadQuizzes(){
 }
 
 async function loadQuizQuestions(quizId){
-  const res=await mfFetch('quizzes?quiz_id='+quizId);
+  const res=await mfFetch('quizzes?quiz_id='+quizId+'&admin=1');
   const qs=res.questions||[];
   const wrap=document.getElementById('qlist-'+quizId);
   if(!qs.length){ wrap.innerHTML='<p class="text-sm text-muted">لا توجد أسئلة بعد</p>'; return; }
-  wrap.innerHTML=qs.map((q,i)=>`<div class="question-builder"><div class="text-sm font-bold mb-1">${i+1}. ${q.question}</div><div class="text-xs text-muted">أ: ${q.option_a} | ب: ${q.option_b} | ج: ${q.option_c} | د: ${q.option_d}</div><div class="text-xs mt-1" style="color:var(--success)">✅ الصح: ${q['option_'+q.correct_answer]}</div><button class="btn btn-xs btn-danger" style="position:absolute;top:8px;left:8px;padding:2px 8px;font-size:11px" onclick="deleteQuestion(${q.id},${quizId})">✕</button></div>`).join('');
+  const LETTERS={a:'أ',b:'ب',c:'ج',d:'د'};
+  wrap.innerHTML=qs.map((q,i)=>`
+    <div class="question-builder" style="position:relative">
+      ${q.image_url?`<img src="${q.image_url}" style="width:100%;max-height:100px;object-fit:contain;border-radius:8px;margin-bottom:6px;background:var(--bg4)">`:'' }
+      <div class="text-sm font-bold mb-1">${i+1}. ${q.question}</div>
+      <div class="text-xs text-muted">أ: ${q.option_a} | ب: ${q.option_b} | ج: ${q.option_c} | د: ${q.option_d}</div>
+      <div class="text-xs mt-1" style="color:var(--success)">✅ الصح: ${LETTERS[q.correct_answer]||'?'} — ${q['option_'+q.correct_answer]||'—'}</div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button class="btn btn-xs btn-secondary" onclick="editQuestion(${JSON.stringify(q).replace(/"/g,'&quot;')},${quizId})" style="font-size:11px;padding:2px 8px">✏️ تعديل</button>
+        <button class="btn btn-xs btn-danger" onclick="deleteQuestion(${q.id},${quizId})" style="font-size:11px;padding:2px 8px;background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.3)">🗑️ حذف</button>
+      </div>
+    </div>`).join('');
+}
+
+function editQuestion(q, quizId){
+  document.getElementById('qQuizId').value = quizId;
+  document.getElementById('editQId').value = q.id;
+  document.getElementById('qText').value = q.question || '';
+  document.getElementById('qOptA').value = q.option_a || '';
+  document.getElementById('qOptB').value = q.option_b || '';
+  document.getElementById('qOptC').value = q.option_c || '';
+  document.getElementById('qOptD').value = q.option_d || '';
+  document.getElementById('qCorrect').value = q.correct_answer || 'a';
+  document.getElementById('qImageUrl').value = q.image_url || '';
+  const prev = document.getElementById('qImagePreview');
+  const img  = document.getElementById('qImgPreviewEl');
+  if(q.image_url){ img.src=q.image_url; prev.style.display='block'; }
+  else { prev.style.display='none'; }
+  document.querySelector('#modalQuestion .modal-title').textContent = 'تعديل السؤال';
+  openModal('modalQuestion');
 }
 
 async function saveQuiz(){
@@ -1545,10 +1574,11 @@ async function uploadToStorage(file, bucket, statusEl){
     // بناء اسم الملف والـ path
     const ext = ct.split('/')[1].replace('jpeg','jpg');
     const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-    const path = `${bucket}/${filename}`;
+    // الصح: /storage/v1/object/{bucket}/{filename}
+    // bucket = اسم الـ bucket, filename = اسم الملف بس بدون bucket
     
     const res = await fetch(
-      `${MF_CONFIG.SUPABASE_URL}/storage/v1/object/${path}`,
+      `${MF_CONFIG.SUPABASE_URL}/storage/v1/object/${bucket}/${filename}`,
       {
         method: 'POST',
         headers: {
@@ -1570,7 +1600,7 @@ async function uploadToStorage(file, bucket, statusEl){
       return null;
     }
     
-    const publicUrl = `${MF_CONFIG.SUPABASE_URL}/storage/v1/object/public/${path}`;
+    const publicUrl = `${MF_CONFIG.SUPABASE_URL}/storage/v1/object/public/${bucket}/${filename}`;
     if(statusEl) statusEl.textContent = '✅ تم الرفع';
     return publicUrl;
     
