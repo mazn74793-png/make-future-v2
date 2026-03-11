@@ -1,0 +1,65 @@
+// ══════════════════════════════════════════════════
+// في admin.html — ابحث عن:
+//   async function uploadQImg(file)
+// واستبدل الـ function كاملة بالكود ده
+// ══════════════════════════════════════════════════
+
+async function uploadQImg(file) {
+  const statusEl  = document.getElementById('qImgUploadStatus');
+  const labelEl   = document.getElementById('qImgUploadLabel');
+  const previewEl = document.getElementById('qImagePreview');
+  const imgEl     = document.getElementById('qImgPreviewEl');
+
+  labelEl.textContent = '⏳ جاري تحضير الصورة...';
+  if (statusEl) statusEl.textContent = '⏳ جاري الرفع...';
+
+  try {
+    // ✅ خطوة 1: حوّل الصورة لـ base64 data URI
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload  = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('فشل قراءة الملف'));
+      reader.readAsDataURL(file);
+    });
+
+    labelEl.textContent = '⏳ جاري الرفع...';
+
+    const token = localStorage.getItem('mf_access_token');
+    const validToken = token && token !== 'null' && token.length > 20;
+
+    // ✅ خطوة 2: ابعت JSON مع base64 — مش raw binary
+    const res = await fetch(`${MF_CONFIG.FN}/upload-image`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': MF_CONFIG.ANON_KEY,
+        'Authorization': `Bearer ${validToken ? token : MF_CONFIG.ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        file: base64,
+        filename: file.name,
+        content_type: file.type,
+        image_type: 'quiz'
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.ok && data.url) {
+      document.getElementById('qImageUrl').value = data.url;
+      imgEl.src = data.url;
+      previewEl.style.display = 'block';
+      labelEl.textContent = '✅ ' + file.name;
+      if (statusEl) statusEl.textContent = '✅ تم الرفع بنجاح';
+      toast('تم رفع الصورة ✅', 'success');
+    } else {
+      labelEl.textContent = '❌ ' + (data.error || 'فشل الرفع');
+      if (statusEl) statusEl.textContent = '';
+      toast(data.error || 'فشل رفع الصورة', 'error');
+    }
+  } catch (e) {
+    labelEl.textContent = '❌ خطأ: ' + e.message;
+    if (statusEl) statusEl.textContent = '';
+    toast('فشل رفع الصورة: ' + e.message, 'error');
+  }
+}
