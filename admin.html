@@ -668,7 +668,7 @@ tr:hover td { background: rgba(124,58,237,0.04); }
           <div style="font-size:40px">📁</div>
           <div class="mt-2 font-bold">اسحب الفيديو هنا أو اضغط للاختيار</div>
           <div class="text-sm text-muted mt-1">MP4, MOV, AVI — بدون حد للحجم</div>
-          <input type="file" id="vidFile" accept="video/*" style="position:absolute;opacity:0;width:1px;height:1px;pointer-events:none" onchange="handleFileSelect(event)">
+          <input type="file" id="vidFile" accept="video/*" style="display:none" onchange="handleFileSelect(event)">
         </label>
         <div class="upload-progress-wrap" id="uploadProgressWrap">
           <div class="flex items-center justify-between mb-1"><span class="text-sm" id="uploadFileName">—</span><span class="text-sm" id="uploadPct">0%</span></div>
@@ -768,7 +768,7 @@ tr:hover td { background: rgba(124,58,237,0.04); }
         <label for="qImgFile" id="qImgUploadArea" style="display:block;border:2px dashed var(--border2);border-radius:12px;padding:14px;text-align:center;cursor:pointer;background:var(--bg3);transition:all .2s" ondragover="event.preventDefault();this.style.borderColor='var(--primary)'" ondragleave="this.style.borderColor='var(--border2)'" ondrop="handleQImgDrop(event)">
           <div id="qImgUploadLabel" style="color:var(--text2);font-size:13px">📷 اضغط لاختيار صورة من الجهاز أو التلفون</div>
           <div style="font-size:11px;color:#64748b;margin-top:4px">JPG / PNG / WEBP — حتى 5MB</div>
-          <input type="file" id="qImgFile" accept="image/*" style="position:absolute;opacity:0;width:1px;height:1px;pointer-events:none" onchange="handleQImgSelect(this.files[0])">
+          <input type="file" id="qImgFile" accept="image/*" style="display:none" onchange="handleQImgSelect(this.files[0])">
         </label>
         <!-- أو رابط URL -->
         <div style="display:flex;align-items:center;gap:8px;margin:8px 0">
@@ -1223,12 +1223,16 @@ let uploadFile=null;
 function handleFileSelect(e){
   uploadFile = e.target.files[0];
   if(uploadFile){
+    // نحدث النص الظاهر فقط — بدون ما نكسر الـ input
     const drop = document.getElementById('uploadDrop');
+    // احتفظ بالـ input كما هو
+    const input = drop.querySelector('input[type="file"]');
     drop.innerHTML = `
       <div style="font-size:32px">🎬</div>
       <div class="mt-2 font-bold">${uploadFile.name}</div>
-      <div class="text-sm text-muted mt-1">${(uploadFile.size/1024/1024).toFixed(1)} MB</div>
-      <input type="file" id="vidFile" accept="video/*" style="position:absolute;opacity:0;width:1px;height:1px;pointer-events:none" onchange="handleFileSelect(event)">`;
+      <div class="text-sm text-muted mt-1">${(uploadFile.size/1024/1024).toFixed(1)} MB — اضغط لتغيير الملف</div>`;
+    // أعد إضافة الـ input
+    if(input) drop.appendChild(input);
   }
 }
 
@@ -2325,12 +2329,12 @@ async function doResetPass(){
       </div>
       <div id="mcVidYtWrap" class="form-group"><label class="form-label">رابط يوتيوب</label><input type="text" class="form-input" id="mcVidYtUrl" placeholder="https://youtube.com/watch?v=..."></div>
       <div id="mcVidUpWrap" class="form-group hidden"><label class="form-label">ملف الفيديو</label>
-        <label for="mcVidFile" style="display:block;text-align:center;padding:24px;border:2px dashed var(--border2);border-radius:12px;cursor:pointer;background:var(--bg3);transition:border-color .2s" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border2)'">
+        <label for="mcVidFile" style="display:block;text-align:center;padding:24px;border:2px dashed var(--border2);border-radius:12px;cursor:pointer;background:var(--bg3);transition:border-color .2s">
           <div style="font-size:32px;margin-bottom:8px">🎬</div>
           <div id="mcVidFileName" style="color:var(--text2);font-size:13px">اضغط لاختيار فيديو</div>
           <div style="font-size:11px;color:#64748b;margin-top:4px">MP4 / MOV / AVI</div>
-          <input type="file" id="mcVidFile" accept="video/*" style="position:absolute;opacity:0;width:1px;height:1px;pointer-events:none" onchange="mcHandleFileSelect(this)">
-        </div>
+          <input type="file" id="mcVidFile" accept="video/*" style="display:none" onchange="mcHandleFileSelect(this)">
+        </label>
       </div>
       <div class="form-group"><label class="form-label">وصف (اختياري)</label><textarea class="form-textarea" id="mcVidDesc" rows="2"></textarea></div>
       <button class="btn btn-primary btn-block" onclick="mcSaveVideo()">💾 حفظ الفيديو</button>
