@@ -711,10 +711,8 @@ async function uploadToStorage(file, bucket, statusEl){
     // بناء اسم الملف والـ path
     const ext = ct.split('/')[1].replace('jpeg','jpg');
     const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-    const path = `${bucket}/${filename}`;
-    
     const res = await fetch(
-      `${MF_CONFIG.SUPABASE_URL}/storage/v1/object/${path}`,
+      `${MF_CONFIG.SUPABASE_URL}/storage/v1/object/${bucket}/${filename}`,
       {
         method: 'POST',
         headers: {
@@ -736,7 +734,7 @@ async function uploadToStorage(file, bucket, statusEl){
       return null;
     }
     
-    const publicUrl = `${MF_CONFIG.SUPABASE_URL}/storage/v1/object/public/${path}`;
+    const publicUrl = `${MF_CONFIG.SUPABASE_URL}/storage/v1/object/public/${bucket}/${filename}`;
     if(statusEl) statusEl.textContent = '✅ تم الرفع';
     return publicUrl;
     
