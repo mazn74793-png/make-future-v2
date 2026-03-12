@@ -1314,12 +1314,15 @@ async function saveVideo(){
   }
 }
 
-async function uploadToR2(file, courseId, title, videoId=null){
-  const pw  = document.getElementById('uploadProgressWrap'); pw.style.display='block';
-  const pb  = document.getElementById('uploadProgressBar');
-  const pp  = document.getElementById('uploadPct');
-  const spd = document.getElementById('uploadSpeed');
-  document.getElementById('uploadFileName').textContent = file.name;
+async function uploadToR2(file, courseId, title, videoId=null, progressEl=null){
+  // progressEl = {wrap, bar, pct, spd, name} — اختياري، لو مش موجود يدور على الـ superadmin elements
+  const pw  = progressEl?.wrap || document.getElementById('uploadProgressWrap');
+  const pb  = progressEl?.bar  || document.getElementById('uploadProgressBar');
+  const pp  = progressEl?.pct  || document.getElementById('uploadPct');
+  const spd = progressEl?.spd  || document.getElementById('uploadSpeed');
+  const nm  = progressEl?.name || document.getElementById('uploadFileName');
+  if(pw) pw.style.display='block';
+  if(nm) nm.textContent = file.name;
 
   // chunk صغير عشان base64 في JSON مش يكبر أوي
   const PART       = 3*1024*1024; // 3MB → base64 = ~4MB في الـ JSON body (تحت حد Supabase)
@@ -1327,7 +1330,7 @@ async function uploadToR2(file, courseId, title, videoId=null){
   const startTime  = Date.now();
 
   // ── Init ─────────────────────────────────────────────────
-  spd.textContent = '⏳ جاري التحضير...';
+  if(spd) spd.textContent = '⏳ جاري التحضير...';
   const initRes = await mfFetch('r2-multipart',{method:'POST',body:JSON.stringify({
     action:'init', course_id:courseId, filename:file.name, content_type:file.type||'video/mp4'
   })});
@@ -1380,7 +1383,7 @@ async function uploadToR2(file, courseId, title, videoId=null){
   }
 
   // ── رفع chunk بعد chunk (sequential — أكثر ثباتاً على الموبايل) ─
-  spd.textContent = '⏳ جاري الرفع...';
+  if(spd) spd.textContent = '⏳ جاري الرفع...';
   for(let i=0; i<totalParts; i++){
     try{
       await uploadChunk(i);
@@ -1393,7 +1396,7 @@ async function uploadToR2(file, courseId, title, videoId=null){
   }
 
   // ── Complete ──────────────────────────────────────────────
-  spd.textContent = '✅ جاري الإنهاء...';
+  if(spd) spd.textContent = '✅ جاري الإنهاء...';
   const sortedParts = parts.filter(Boolean).sort((a,b)=>a.PartNumber-b.PartNumber);
   const completeBody = {
     action:'complete', upload_id, key, parts:sortedParts,
@@ -1404,8 +1407,8 @@ async function uploadToR2(file, courseId, title, videoId=null){
   if(videoId) completeBody.video_id = videoId;
   const completeRes = await mfFetch('r2-multipart',{method:'POST',body:JSON.stringify(completeBody)});
   if(!completeRes.ok){ toast('فشل إكمال الرفع: '+(completeRes.error||''),'error'); throw new Error('complete failed'); }
-  pw.style.display='none';
-  spd.textContent='';
+  if(pw) pw.style.display='none';
+  if(spd) spd.textContent='';
 }
 
 async function deleteVideo(id){ if(!confirm('حذف الفيديو؟')) return; await mfFetch('course-videos',{method:'DELETE',body:JSON.stringify({id})}); toast('تم الحذف','success'); loadVideos(); }
@@ -2075,9 +2078,15 @@ async function mcSaveVideo(){
     } else if(type === 'upload'){
       if(mcFile){
         // ── رفع ملف جديد (أو استبدال) ──────────────────
-        // أظهر progress bar الـ admin
-        document.getElementById('uploadProgressWrap').style.display='block';
-        await uploadToR2(mcFile, mcActiveCourseId, title, editId ? parseInt(editId) : null);
+        // progress bar خاص بـ modalMcVideo
+        const mcProgress = {
+          wrap: document.getElementById('mcUploadProgressWrap'),
+          bar:  document.getElementById('mcUploadProgressBar'),
+          pct:  document.getElementById('mcUploadPct'),
+          spd:  document.getElementById('mcUploadSpeed'),
+          name: document.getElementById('mcUploadFileName')
+        };
+        await uploadToR2(mcFile, mcActiveCourseId, title, editId ? parseInt(editId) : null, mcProgress);
       } else {
         // ── تعديل بيانات فقط بدون ملف جديد ────────────
         const body = {id:parseInt(editId), course_id:mcActiveCourseId, title,
@@ -2346,6 +2355,16 @@ async function doResetPass(){
         </div>
       </div>
       <div class="form-group"><label class="form-label">وصف (اختياري)</label><textarea class="form-textarea" id="mcVidDesc" rows="2"></textarea></div>
+      <div id="mcUploadProgressWrap" style="display:none;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span class="text-sm" id="mcUploadFileName">—</span>
+          <span class="text-sm" id="mcUploadPct">0%</span>
+        </div>
+        <div style="background:var(--bg3);border-radius:8px;height:8px;overflow:hidden">
+          <div id="mcUploadProgressBar" style="height:100%;background:linear-gradient(90deg,#7c3aed,#06b6d4);width:0%;transition:width .3s"></div>
+        </div>
+        <div class="text-xs text-muted mt-1" id="mcUploadSpeed"></div>
+      </div>
       <button class="btn btn-primary btn-block" onclick="mcSaveVideo()">💾 حفظ الفيديو</button>
     </div>
   </div>
