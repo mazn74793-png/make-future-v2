@@ -651,11 +651,11 @@ tr:hover td { background: rgba(124,58,237,0.04); }
 <!-- Video Modal -->
 <div class="modal-overlay" id="modalVideo">
   <div class="modal-box">
-    <div class="modal-header"><h3 class="modal-title">إضافة فيديو</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalVideo')">✕</button></div>
+    <div class="modal-header"><h3 class="modal-title" id="modalVideoTitle">إضافة فيديو</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalVideo')">✕</button></div>
     <div class="modal-body">
       <input type="hidden" id="editVideoId">
       <div class="form-group"><label class="form-label">الكورس</label><select class="form-select" id="vidCourseId"></select></div>
-      <div class="form-group"><label class="form-label">عنوان الفيديو</label><input type="text" class="form-input" id="vidTitle"></div>
+      <div class="form-group"><label class="form-label">عنوان الفيديو</label><input type="text" class="form-input" id="vidTitle" placeholder="اسم الفيديو"></div>
       <div class="form-group"><label class="form-label">النوع</label>
         <div class="flex gap-3">
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="vidType" value="youtube" checked onchange="toggleVidType('youtube')"> YouTube</label>
@@ -663,23 +663,25 @@ tr:hover td { background: rgba(124,58,237,0.04); }
         </div>
       </div>
       <div id="ytSection" class="form-group"><label class="form-label">رابط YouTube</label><input type="url" class="form-input" id="vidYtUrl" placeholder="https://youtu.be/..."></div>
-      <div id="uploadSection" class="hidden">
-        <div class="upload-drop" id="uploadDrop" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event)">
-          <div style="font-size:40px">📁</div>
-          <div class="mt-2 font-bold">اضغط الزرار لاختيار فيديو</div>
-          <div class="text-sm text-muted mt-1">MP4, MOV, AVI</div>
-          <div style="margin-top:16px">
-            <input type="file" id="vidFile" accept="video/*" onchange="handleFileSelect(event)"
-              style="font-size:14px;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);cursor:pointer;width:100%">
-          </div>
+      <div id="uploadSection" style="display:none">
+        <div class="form-group">
+          <label class="form-label">📂 اختر ملف الفيديو</label>
+          <input type="file" id="vidFile" accept="video/*" onchange="handleFileSelect(event)"
+            style="width:100%;padding:10px;border:2px solid var(--border);border-radius:10px;background:var(--bg2);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;display:block">
+          <div id="vidFileInfo" style="font-size:12px;color:var(--success);margin-top:6px;font-weight:700"></div>
         </div>
-        <div class="upload-progress-wrap" id="uploadProgressWrap">
-          <div class="flex items-center justify-between mb-1"><span class="text-sm" id="uploadFileName">—</span><span class="text-sm" id="uploadPct">0%</span></div>
-          <div class="progress-wrap"><div class="upload-progress-bar" id="uploadProgressBar"></div></div>
-          <div class="text-xs text-muted mt-1" id="uploadSpeed"></div>
+        <div id="uploadProgressWrap" style="display:none;margin:8px 0 16px;background:var(--bg3);padding:12px;border-radius:12px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <span style="font-size:13px;font-weight:700" id="uploadFileName">—</span>
+            <span style="font-size:13px;font-weight:800;color:var(--primary-light)" id="uploadPct">0%</span>
+          </div>
+          <div style="background:var(--bg4);border-radius:8px;height:12px;overflow:hidden">
+            <div id="uploadProgressBar" style="height:100%;background:linear-gradient(90deg,#7c3aed,#06b6d4);width:0%;transition:width .3s;border-radius:8px"></div>
+          </div>
+          <div style="font-size:11px;color:var(--text2);margin-top:6px" id="uploadSpeed"></div>
         </div>
       </div>
-      <div class="form-group mt-3"><label class="form-label">وصف (اختياري)</label><textarea class="form-textarea" id="vidDesc"></textarea></div>
+      <div class="form-group mt-3"><label class="form-label">وصف (اختياري)</label><textarea class="form-textarea" id="vidDesc" rows="2"></textarea></div>
       <div class="form-group"><label class="form-label">الترتيب</label><input type="number" class="form-input" id="vidOrder" value="0" min="0"></div>
       <button class="btn btn-primary btn-block" id="btnSaveVideo" onclick="saveVideo()">💾 حفظ</button>
     </div>
@@ -1160,7 +1162,11 @@ async function saveSchedule(){
 async function deleteSched(id){ if(!confirm('حذف الموعد؟')) return; await mfFetch('admin-schedules',{method:'DELETE',body:JSON.stringify({id})}); toast('تم الحذف','success'); loadSchedules(); }
 
 // ─── VIDEOS ───────────────────────────
-function toggleVidType(type){ document.getElementById('ytSection').classList.toggle('hidden',type!=='youtube'); document.getElementById('uploadSection').classList.toggle('hidden',type!=='upload'); }
+function toggleVidType(type){
+  document.getElementById('ytSection').style.display     = type==='youtube' ? '' : 'none';
+  document.getElementById('uploadSection').style.display = type==='upload'  ? '' : 'none';
+  if(type==='youtube') document.getElementById('uploadProgressWrap').style.display='none';
+}
 
 async function loadVideos(){
   const cid=document.getElementById('vidCourseFilter')?.value;
@@ -1192,20 +1198,10 @@ function editVideo(v){
   toggleVidType(v.video_type||'youtube');
   
   uploadFile = null;
-  const vidFileEl = document.getElementById('vidFile');
-  if(vidFileEl) vidFileEl.value = '';
-  if(v.video_type === 'upload'){
-    const drop = document.getElementById('uploadDrop');
-    if(drop){
-      [...drop.children].forEach(el=>{ if(el.tagName!=='INPUT') el.remove(); });
-      const d1 = document.createElement('div'); d1.style.fontSize='28px'; d1.textContent='🎬';
-      const d2 = document.createElement('div'); d2.className='mt-2 font-bold';
-      d2.style.color='var(--success)'; d2.textContent='✅ محفوظ — اضغط لاستبداله';
-      drop.prepend(d2); drop.prepend(d1);
-    }
-  }
-  
-  document.querySelector('#modalVideo .modal-title').textContent = '✏️ تعديل فيديو';
+  const vidFileEl = document.getElementById('vidFile'); if(vidFileEl) vidFileEl.value='';
+  const info = document.getElementById('vidFileInfo');
+  if(info) info.textContent = v.video_type==='upload' ? '✅ فيديو محفوظ — اختر ملف جديد لاستبداله' : '';
+  document.getElementById('modalVideoTitle').textContent = '✏️ تعديل فيديو';
   openModal('modalVideo');
 }
 
@@ -1218,19 +1214,9 @@ function openAddVideoModal(){
   document.querySelector('input[name="vidType"][value="youtube"]').checked = true;
   toggleVidType('youtube');
   uploadFile = null;
-  // ريست النص فقط — بدون مسح الـ input
-  const vidFile = document.getElementById('vidFile');
-  if(vidFile) vidFile.value = '';
-  const drop = document.getElementById('uploadDrop');
-  if(drop){
-    // امسح كل حاجة ماعدا الـ input
-    [...drop.children].forEach(el=>{ if(el.tagName!=='INPUT') el.remove(); });
-    const d1 = document.createElement('div'); d1.style.fontSize='40px'; d1.textContent='📁';
-    const d2 = document.createElement('div'); d2.className='mt-2 font-bold'; d2.textContent='اضغط لاختيار فيديو';
-    const d3 = document.createElement('div'); d3.className='text-sm text-muted mt-1'; d3.textContent='MP4, MOV, AVI';
-    drop.prepend(d3); drop.prepend(d2); drop.prepend(d1);
-  }
-  document.querySelector('#modalVideo .modal-title').textContent = 'إضافة فيديو';
+  const f = document.getElementById('vidFile'); if(f) f.value='';
+  const i = document.getElementById('vidFileInfo'); if(i) i.textContent='';
+  document.getElementById('modalVideoTitle').textContent = 'إضافة فيديو';
   openModal('modalVideo');
 }
 
@@ -1238,15 +1224,8 @@ let uploadFile=null;
 function handleFileSelect(e){
   uploadFile = e.target.files[0];
   if(uploadFile){
-    const drop = document.getElementById('uploadDrop');
-    if(drop){
-      [...drop.children].forEach(el=>{ if(el.tagName!=='INPUT') el.remove(); });
-      const d1 = document.createElement('div'); d1.style.fontSize='32px'; d1.textContent='🎬';
-      const d2 = document.createElement('div'); d2.className='mt-2 font-bold'; d2.textContent=uploadFile.name;
-      const d3 = document.createElement('div'); d3.className='text-sm text-muted mt-1';
-      d3.textContent=(uploadFile.size/1024/1024).toFixed(1)+' MB — اضغط لتغيير الملف';
-      drop.prepend(d3); drop.prepend(d2); drop.prepend(d1);
-    }
+    const info = document.getElementById('vidFileInfo');
+    if(info) info.textContent = '✅ '+uploadFile.name+' ('+(uploadFile.size/1024/1024).toFixed(1)+' MB)';
   }
 }
 
@@ -1258,7 +1237,7 @@ function mcHandleFileSelect(input){
     fn.style.color  = 'var(--success)';
   }
 }
-function handleDrop(e){ e.preventDefault(); document.getElementById('uploadDrop').classList.remove('drag-over'); const files=e.dataTransfer.files; if(files[0]) { uploadFile=files[0]; handleFileSelect({target:{files}}); } }
+function handleDrop(e){ e.preventDefault(); const files=e.dataTransfer.files; if(files[0]){ const input=document.getElementById('vidFile'); uploadFile=files[0]; const info=document.getElementById('vidFileInfo'); if(info) info.textContent='✅ '+uploadFile.name+' ('+(uploadFile.size/1024/1024).toFixed(1)+' MB)'; } }
 
 async function saveVideo(){
   const id    = document.getElementById('editVideoId').value;  // موجود = edit، فاضي = add
@@ -2446,5 +2425,6 @@ async function doResetPass(){
   </div>
 </div>
 
+  <!-- File input خارج الـ modals عشان iOS يشتغل معاه -->
 </body>
 </html>
