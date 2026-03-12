@@ -1191,16 +1191,18 @@ function editVideo(v){
   document.querySelector(`input[name="vidType"][value="${v.video_type||'youtube'}"]`).checked = true;
   toggleVidType(v.video_type||'youtube');
   
-  // لو نوعه upload — بيّن اسم الفيديو الحالي وإشعار إن الرفع اختياري
+  uploadFile = null;
+  const vidFileEl = document.getElementById('vidFile');
+  if(vidFileEl) vidFileEl.value = '';
   if(v.video_type === 'upload'){
-    uploadFile = null;  // reset أي ملف محدد سابقاً
     const drop = document.getElementById('uploadDrop');
-    if(drop) drop.innerHTML = `
-      <div style="font-size:28px">🎬</div>
-      <div class="mt-2 font-bold" style="color:var(--success)">✅ فيديو محفوظ: ${v.title}</div>
-      <div class="text-sm text-muted mt-1">اضغط لاستبدال الفيديو أو اتركه كما هو</div>`;
-  } else {
-    uploadFile = null;
+    if(drop){
+      [...drop.children].forEach(el=>{ if(el.tagName!=='INPUT') el.remove(); });
+      const d1 = document.createElement('div'); d1.style.fontSize='28px'; d1.textContent='🎬';
+      const d2 = document.createElement('div'); d2.className='mt-2 font-bold';
+      d2.style.color='var(--success)'; d2.textContent='✅ محفوظ — اضغط لاستبداله';
+      drop.prepend(d2); drop.prepend(d1);
+    }
   }
   
   document.querySelector('#modalVideo .modal-title').textContent = '✏️ تعديل فيديو';
@@ -1208,7 +1210,6 @@ function editVideo(v){
 }
 
 function openAddVideoModal(){
-  // ريست كل حاجة
   document.getElementById('editVideoId').value = '';
   document.getElementById('vidTitle').value    = '';
   document.getElementById('vidDesc').value     = '';
@@ -1217,8 +1218,18 @@ function openAddVideoModal(){
   document.querySelector('input[name="vidType"][value="youtube"]').checked = true;
   toggleVidType('youtube');
   uploadFile = null;
+  // ريست النص فقط — بدون مسح الـ input
+  const vidFile = document.getElementById('vidFile');
+  if(vidFile) vidFile.value = '';
   const drop = document.getElementById('uploadDrop');
-  if(drop) drop.innerHTML = `<div style="font-size:32px">🎬</div><div class="mt-2 text-muted">اسحب الفيديو هنا أو اضغط للاختيار</div>`;
+  if(drop){
+    // امسح كل حاجة ماعدا الـ input
+    [...drop.children].forEach(el=>{ if(el.tagName!=='INPUT') el.remove(); });
+    const d1 = document.createElement('div'); d1.style.fontSize='40px'; d1.textContent='📁';
+    const d2 = document.createElement('div'); d2.className='mt-2 font-bold'; d2.textContent='اضغط لاختيار فيديو';
+    const d3 = document.createElement('div'); d3.className='text-sm text-muted mt-1'; d3.textContent='MP4, MOV, AVI';
+    drop.prepend(d3); drop.prepend(d2); drop.prepend(d1);
+  }
   document.querySelector('#modalVideo .modal-title').textContent = 'إضافة فيديو';
   openModal('modalVideo');
 }
@@ -1228,15 +1239,14 @@ function handleFileSelect(e){
   uploadFile = e.target.files[0];
   if(uploadFile){
     const drop = document.getElementById('uploadDrop');
-    const input = drop.querySelector('input[type="file"]');
-    // حدّث النص بدون ما تمسح الـ input
-    const textNodes = [...drop.childNodes].filter(n=>n.nodeType===1 && n.tagName!=='INPUT');
-    textNodes.forEach(n=>n.remove());
-    const d1 = document.createElement('div'); d1.style.fontSize='32px'; d1.textContent='🎬';
-    const d2 = document.createElement('div'); d2.className='mt-2 font-bold'; d2.textContent=uploadFile.name;
-    const d3 = document.createElement('div'); d3.className='text-sm text-muted mt-1';
-    d3.textContent=(uploadFile.size/1024/1024).toFixed(1)+' MB — اضغط لتغيير الملف';
-    drop.prepend(d3); drop.prepend(d2); drop.prepend(d1);
+    if(drop){
+      [...drop.children].forEach(el=>{ if(el.tagName!=='INPUT') el.remove(); });
+      const d1 = document.createElement('div'); d1.style.fontSize='32px'; d1.textContent='🎬';
+      const d2 = document.createElement('div'); d2.className='mt-2 font-bold'; d2.textContent=uploadFile.name;
+      const d3 = document.createElement('div'); d3.className='text-sm text-muted mt-1';
+      d3.textContent=(uploadFile.size/1024/1024).toFixed(1)+' MB — اضغط لتغيير الملف';
+      drop.prepend(d3); drop.prepend(d2); drop.prepend(d1);
+    }
   }
 }
 
