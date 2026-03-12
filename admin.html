@@ -839,7 +839,19 @@ async function mfFetch(endpoint, options = {}, _retry = false) {
       window.location.href = 'login.html';
       return { ok: false, error: 'انتهت الجلسة' };
     }
-    const data = await res.json();
+    // Safe JSON parse — handle empty/HTML/invalid responses
+    const ct = res.headers.get('content-type') || '';
+    let data;
+    if (ct.includes('application/json')) {
+      try { data = await res.json(); }
+      catch(e) { return { ok: false, error: 'invalid JSON from server' }; }
+    } else {
+      const txt = await res.text().catch(() => '');
+      // إذا الـ response مش JSON — اعتبره error
+      if (!res.ok) return { ok: false, error: txt.slice(0, 120) || `HTTP ${res.status}` };
+      try { data = JSON.parse(txt); }
+      catch(e) { return { ok: false, error: txt.slice(0, 120) || `HTTP ${res.status}` }; }
+    }
     return data;
   } catch (e) {
     return { ok: false, error: e.message };
@@ -942,6 +954,12 @@ function fmtDateTime(d) {
 
 // ─── Number Format ────────────────────
 function fmtNum(n) { return Number(n || 0).toLocaleString('ar-EG'); }
+
+// ─── Safe HTML escape (XSS protection) ──
+function escapeHtml(s){
+  if(s==null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
 
 // ─── Debounce ─────────────────────────
 function debounce(fn, ms = 300) {
@@ -1048,8 +1066,8 @@ async function loadDashboard(){
     <div class="glass-sm">${payments.map(p=>`
       <div class="payment-row">
         <div style="flex:1">
-          <div class="font-bold text-sm">${p.full_name||'—'}</div>
-          <div class="text-xs text-muted">${p.course_title||''} — ${p.method||''}</div>
+          <div class="font-bold text-sm">${escapeHtml(p.full_name||'—')}</div>
+          <div class="text-xs text-muted">${escapeHtml(p.course_title||'')} — ${escapeHtml(p.method||'')}</div>
           <div class="text-xs text-muted">${fmtNum(p.final_amount||p.amount)} جنيه — ${fmtDate(p.created_at)}</div>
         </div>
         <span class="badge ${p.status==='approved'?'badge-success':p.status==='rejected'?'badge-danger':'badge-warn'}">${p.status==='approved'?'مقبول':p.status==='rejected'?'مرفوض':'معلق'}</span>
@@ -1059,8 +1077,8 @@ async function loadDashboard(){
   document.getElementById('dashUsers').innerHTML = users2.length?`
     <div class="glass-sm">${users2.map(u=>`
       <div class="payment-row">
-        <div><div class="font-bold text-sm">${u.full_name}</div><div class="text-xs text-muted">${u.phone_student||''} — ${gradeLabel(u.grade)}</div></div>
-        <span class="badge badge-primary">${u.role}</span>
+        <div><div class="font-bold text-sm">${escapeHtml(u.full_name||'—')}</div><div class="text-xs text-muted">${escapeHtml(u.phone_student||'')} — ${gradeLabel(u.grade)}</div></div>
+        <span class="badge badge-primary">${escapeHtml(u.role||'')}</span>
       </div>`).join('')}</div>`:'<div class="empty-state"><p>لا يوجد</p></div>';
 }
 
@@ -1076,8 +1094,8 @@ async function loadCourses(){
   if(!allCourses.length){ tbody.innerHTML='<tr><td colspan="7" class="text-center text-muted p-4">لا توجد كورسات</td></tr>'; return; }
   tbody.innerHTML = allCourses.map(c=>`
     <tr>
-      <td><div class="font-bold">${c.title}</div><div class="text-xs text-muted">${c.subject||''}</div></td>
-      <td>${c.teacher_name}</td>
+      <td><div class="font-bold">${escapeHtml(c.title)}</div><div class="text-xs text-muted">${escapeHtml(c.subject||'')}</div></td>
+      <td>${escapeHtml(c.teacher_name)}</td>
       <td>${gradeLabel(c.grade)}</td>
       <td>${fmtNum(c.price)} جنيه</td>
       <td><span class="badge badge-info">${c.enrolled_count||0}</span></td>
@@ -1098,7 +1116,7 @@ function populateCourseSelects(courses){
     if(!el) return;
     const val = el.value;
     const first = id.endsWith('Filter')?'<option value="">اختر كورس</option>':'<option value="">اختر كورس</option>';
-    el.innerHTML = first + courses.map(c=>`<option value="${c.id}">${c.title}</option>`).join('');
+    el.innerHTML = first + courses.map(c=>`<option value="${c.id}">${escapeHtml(c.title)}</option>`).join('');
     if(val) el.value=val;
   });
 }
@@ -1427,7 +1445,7 @@ async function uploadToR2(file, courseId, title, videoId=null, progressEl=null, 
   setTimeout(() => { show(pw, 'none'); set(spd, ''); }, 2000);
 }
 
-async function deleteVideo(id){ if(!confirm('حذف الفيديو؟')) return; await mfFetch('course-videos',{method:'DELETE',body:JSON.stringify({id})}); toast('تم الحذف','success'); loadVideos(); }
+async function deleteVideo(id){ if(!confirm('حذف الفيديو؟')) return; try{ const res=await mfFetch('course-videos',{method:'DELETE',body:JSON.stringify({id})}); if(!res.ok){ toast(res.error||'فشل الحذف','error'); return; } toast('تم الحذف','success'); loadVideos(); }catch(e){ toast('فشل الحذف','error'); } }
 
 // ─── PAYMENTS ─────────────────────────
 let selectedPayments=new Set();
@@ -1447,23 +1465,23 @@ async function loadPayments(status, btn){
       ${status==='pending'?`<input type="checkbox" onchange="toggleSelect(${p.id},this)" style="margin-top:4px">`:''}
       <div style="flex:1">
         <div class="flex items-center gap-2 flex-wrap">
-          <span class="font-bold">${p.full_name||'—'}</span>
-          ${p.phone_student?`<a href="https://wa.me/2${p.phone_student}" target="_blank" style="color:#25d366;text-decoration:none;font-size:11px">💬 ${p.phone_student}</a>`:''}
+          <span class="font-bold">${escapeHtml(p.full_name||'—')}</span>
+          ${p.phone_student?`<a href="https://wa.me/2${escapeHtml(p.phone_student)}" target="_blank" style="color:#25d366;text-decoration:none;font-size:11px">💬 ${escapeHtml(p.phone_student)}</a>`:''}
           <span class="badge badge-primary">${gradeLabel(p.grade||'')}</span>
         </div>
-        <div class="text-sm mt-1">📚 ${p.course_title||''} — 👨‍🏫 ${p.teacher_name||''}</div>
-        <div class="text-sm mt-1">💰 ${fmtNum(p.final_amount||p.amount)} جنيه — 📱 ${p.method||''}</div>
-        ${p.transaction_id?`<div class="text-xs text-muted mt-1">🔢 رقم العملية: ${p.transaction_id}</div>`:''}
-        ${p.receipt_note?`<div class="text-xs text-muted">📝 ${p.receipt_note}</div>`:''}
+        <div class="text-sm mt-1">📚 ${escapeHtml(p.course_title||'')} — 👨‍🏫 ${escapeHtml(p.teacher_name||'')}</div>
+        <div class="text-sm mt-1">💰 ${fmtNum(p.final_amount||p.amount)} جنيه — 📱 ${escapeHtml(p.method||'')}</div>
+        ${p.transaction_id?`<div class="text-xs text-muted mt-1">🔢 رقم العملية: ${escapeHtml(p.transaction_id)}</div>`:''}
+        ${p.receipt_note?`<div class="text-xs text-muted">📝 ${escapeHtml(p.receipt_note)}</div>`:''}
         ${p.receipt_image_url?`
         <div style="margin-top:8px">
-          <img src="${p.receipt_image_url}" alt="إيصال الدفع"
+          <img src="${escapeHtml(p.receipt_image_url)}" alt="إيصال الدفع"
             style="max-width:180px;max-height:120px;border-radius:10px;cursor:pointer;border:1px solid var(--border2);object-fit:cover"
-            onclick="window.open('${p.receipt_image_url}','_blank')"
+            onclick="window.open('${escapeHtml(p.receipt_image_url)}','_blank')"
             title="اضغط لعرض الصورة كاملة">
           <div class="text-xs text-muted" style="margin-top:3px">📸 صورة الإيصال — اضغط للتكبير</div>
         </div>`:'<div class="text-xs" style="color:#f59e0b;margin-top:4px">⚠️ لا توجد صورة إيصال</div>'}
-        ${p.teacher_payment_info?`<div class="text-xs" style="color:var(--accent);margin-top:4px">🏦 دفع المدرس: ${p.teacher_payment_info}</div>`:''}
+        ${p.teacher_payment_info?`<div class="text-xs" style="color:var(--accent);margin-top:4px">🏦 دفع المدرس: ${escapeHtml(p.teacher_payment_info)}</div>`:''}
         <div class="text-xs text-muted mt-1">${fmtDateTime(p.created_at)}</div>
         ${status==='pending'?`<div class="payment-actions">
           <button class="btn btn-sm btn-success" onclick="approvePayment(${p.id},this)">✅ قبول</button>
@@ -1498,11 +1516,13 @@ async function bulkApprove(){
   if(!selectedPayments.size){ toast('لم يتم تحديد طلبات','warn'); return; }
   if(!confirm(`قبول ${selectedPayments.size} طلبات؟`)) return;
   showLoading(true);
+  let approvedCount = 0;
   for(const id of selectedPayments){
-    await mfFetch('admin-payments',{method:'POST',body:JSON.stringify({id,action:'approve'})});
-    document.getElementById('prow-'+id)?.remove();
+    try{
+      const res=await mfFetch('admin-payments',{method:'POST',body:JSON.stringify({id,action:'approve'})});
+      if(res.ok){ document.getElementById('prow-'+id)?.remove(); approvedCount++; }
+    }catch(e){}
   }
-  const approvedCount = selectedPayments.size;
   showLoading(false); selectedPayments.clear();
   toast('تم قبول '+approvedCount+' طلبات ✅','success');
 }
@@ -1515,7 +1535,7 @@ async function loadCoupons(){
   const tbody=document.getElementById('couponsTable');
   if(!coupons.length){ tbody.innerHTML='<tr><td colspan="6" class="text-center text-muted p-4">لا توجد كوبونات</td></tr>'; return; }
   tbody.innerHTML=coupons.map(c=>`<tr>
-    <td><strong style="font-family:monospace;font-size:15px;color:var(--primary-light)">${c.code}</strong></td>
+    <td><strong style="font-family:monospace;font-size:15px;color:var(--primary-light)">${escapeHtml(c.code)}</strong></td>
     <td>${c.discount_value}${c.discount_type==='percent'?'%':' جنيه'}</td>
     <td>${c.used_count}/${c.max_uses}</td>
     <td>${c.expires_at?fmtDate(c.expires_at):'بلا حد'}</td>
@@ -1536,8 +1556,8 @@ async function saveCoupon(){
   if(!res.ok){ toast(res.error,'error'); return; }
   toast('تم الإنشاء ✅','success'); closeModal('modalCoupon'); loadCoupons();
 }
-async function toggleCoupon(id,active){ await mfFetch('coupons',{method:'POST',body:JSON.stringify({action:'toggle',id,is_active:active})}); loadCoupons(); }
-async function deleteCoupon(id){ if(!confirm('حذف الكوبون؟')) return; await mfFetch('coupons',{method:'POST',body:JSON.stringify({action:'delete',id})}); toast('تم الحذف','success'); loadCoupons(); }
+async function toggleCoupon(id,active){ try{ const res=await mfFetch('coupons',{method:'POST',body:JSON.stringify({action:'toggle',id,is_active:active})}); if(!res.ok){ toast(res.error||'فشل التحديث','error'); return; } loadCoupons(); }catch(e){ toast('فشل التحديث','error'); } }
+async function deleteCoupon(id){ if(!confirm('حذف الكوبون؟')) return; try{ const res=await mfFetch('coupons',{method:'POST',body:JSON.stringify({action:'delete',id})}); if(!res.ok){ toast(res.error||'فشل الحذف','error'); return; } toast('تم الحذف','success'); loadCoupons(); }catch(e){ toast('فشل الحذف','error'); } }
 
 // ─── COMMENTS ─────────────────────────
 async function loadAdminComments(){
@@ -1555,23 +1575,23 @@ async function loadAdminComments(){
   list.innerHTML=allComments.map(c=>`
     <div class="glass-sm p-4 mb-3">
       <div class="flex items-center justify-between mb-2">
-        <div><span class="font-bold">${c.user_name||'—'}</span> <span class="text-xs text-muted">في "${c.video_title}"</span></div>
+        <div><span class="font-bold">${escapeHtml(c.user_name||'—')}</span> <span class="text-xs text-muted">في "${escapeHtml(c.video_title)}"</span></div>
         <div class="flex gap-2">
           <button class="btn btn-sm btn-secondary" onclick="pinComment(${c.id},${!c.is_pinned})">${c.is_pinned?'📌 إلغاء التثبيت':'📌 تثبيت'}</button>
-          <button class="btn btn-sm btn-primary" data-cid="${c.id}" data-msg="${(c.message||'').replace(/"/g,'&quot;')}" onclick="openReply(this.dataset.cid, this.dataset.msg)">↩️ رد</button>
+          <button class="btn btn-sm btn-primary" data-cid="${c.id}" data-msg="${escapeHtml(c.message||'')}" onclick="openReply(this.dataset.cid, this.dataset.msg)">↩️ رد</button>
           <button class="btn btn-sm btn-danger" onclick="deleteComment(${c.id})">🗑️</button>
         </div>
       </div>
-      <div class="text-sm">${c.message}</div>
-      ${c.reply?`<div class="comment-reply mt-2"><strong>ردك:</strong> ${c.reply}</div>`:''}
+      <div class="text-sm">${escapeHtml(c.message)}</div>
+      ${c.reply?`<div class="comment-reply mt-2"><strong>ردك:</strong> ${escapeHtml(c.reply)}</div>`:''}
       <div class="text-xs text-muted mt-2">${fmtDateTime(c.created_at)}</div>
     </div>`).join('');
 }
 
 function openReply(id,msg){ document.getElementById('replyCommentId').value=id; document.getElementById('replyOriginal').textContent=msg; document.getElementById('replyText').value=''; openModal('modalReply'); }
 async function submitReply(){ const id=document.getElementById('replyCommentId').value; const reply=document.getElementById('replyText').value.trim(); if(!reply){ toast('اكتب الرد','warn'); return; } const res=await mfFetch('video-comments',{method:'POST',body:JSON.stringify({action:'reply',id:parseInt(id),reply})}); if(!res.ok){ toast(res.error,'error'); return; } toast('تم إرسال الرد ✅','success'); closeModal('modalReply'); loadAdminComments(); }
-async function pinComment(id,pinned){ await mfFetch('video-comments',{method:'POST',body:JSON.stringify({action:'pin',id,pinned})}); loadAdminComments(); }
-async function deleteComment(id){ if(!confirm('حذف التعليق؟')) return; await mfFetch('video-comments',{method:'POST',body:JSON.stringify({action:'delete',id})}); toast('تم الحذف','success'); loadAdminComments(); }
+async function pinComment(id,pinned){ try{ const res=await mfFetch('video-comments',{method:'POST',body:JSON.stringify({action:'pin',id,pinned})}); if(!res.ok){ toast(res.error||'فشل التثبيت','error'); return; } loadAdminComments(); }catch(e){ toast('فشل التثبيت','error'); } }
+async function deleteComment(id){ if(!confirm('حذف التعليق؟')) return; try{ const res=await mfFetch('video-comments',{method:'POST',body:JSON.stringify({action:'delete',id})}); if(!res.ok){ toast(res.error||'فشل الحذف','error'); return; } toast('تم الحذف','success'); loadAdminComments(); }catch(e){ toast('فشل الحذف','error'); } }
 
 // ─── USERS ────────────────────────────
 let allUsers=[];
@@ -1612,12 +1632,15 @@ function renderManagedCoursesList(selected=[]){
 }
 
 async function saveUserRole(){
+  if(isCourseAdmin){ toast('ليس لديك صلاحية','error'); return; }
   const id=document.getElementById('editUserId').value;
   const role=document.getElementById('editUserRole').value;
   const managed_courses=role==='course_admin'?[...document.querySelectorAll('#managedCoursesList input:checked')].map(i=>parseInt(i.value)):[];
-  const res=await mfFetch('admin-users',{method:'POST',body:JSON.stringify({user_id:id,role,managed_courses})});
-  if(!res.ok){ toast(res.error,'error'); return; }
-  toast('تم التحديث ✅','success'); closeModal('modalUserRole'); loadUsers();
+  try{
+    const res=await mfFetch('admin-users',{method:'POST',body:JSON.stringify({user_id:id,role,managed_courses})});
+    if(!res.ok){ toast(res.error||'فشل التحديث','error'); return; }
+    toast('تم التحديث ✅','success'); closeModal('modalUserRole'); loadUsers();
+  }catch(e){ toast('فشل التحديث','error'); }
 }
 
 function resetPass(userId, name, phone){ openResetPass(userId, name, phone||''); }
@@ -1837,8 +1860,8 @@ async function saveQuestion(){
   toast('تم إضافة السؤال ✅','success'); closeModal('modalQuestion'); loadQuizQuestions(quizId);
 }
 
-async function deleteQuestion(id,quizId){ if(!confirm('حذف السؤال؟')) return; await mfFetch('quizzes',{method:'DELETE',body:JSON.stringify({id,type:'question'})}); toast('تم الحذف','success'); loadQuizQuestions(quizId); }
-async function deleteQuiz(id){ if(!confirm('حذف الكويز وكل أسئلته؟')) return; await mfFetch('quizzes',{method:'DELETE',body:JSON.stringify({id})}); toast('تم الحذف','success'); loadQuizzes(); }
+async function deleteQuestion(id,quizId){ if(!confirm('حذف السؤال؟')) return; try{ const res=await mfFetch('quizzes',{method:'DELETE',body:JSON.stringify({id,type:'question'})}); if(!res.ok){ toast(res.error||'فشل الحذف','error'); return; } toast('تم الحذف','success'); loadQuizQuestions(quizId); }catch(e){ toast('فشل الحذف','error'); } }
+async function deleteQuiz(id){ if(!confirm('حذف الكويز وكل أسئلته؟')) return; try{ const res=await mfFetch('quizzes',{method:'DELETE',body:JSON.stringify({id})}); if(!res.ok){ toast(res.error||'فشل الحذف','error'); return; } toast('تم الحذف','success'); loadQuizzes(); }catch(e){ toast('فشل الحذف','error'); } }
 
 // ─── INIT ─────────────────────────────
 console.log('🟢 Admin init started');
@@ -2331,7 +2354,13 @@ async function doResetPass(){
 
   const btn = document.getElementById('btnDoReset');
   btn.disabled = true; btn.textContent = '⏳ جاري التغيير...';
-  const res = await mfFetch('admin-reset-password',{method:'POST',body:JSON.stringify({user_id:_resetUserId,new_password:np,admin_id:user.id})});
+  let res;
+  try{
+    res = await mfFetch('admin-reset-password',{method:'POST',body:JSON.stringify({user_id:_resetUserId,new_password:np,admin_id:user.id})});
+  }catch(e){
+    btn.disabled = false; btn.textContent = '✅ حفظ كلمة المرور';
+    errEl.textContent = '❌ فشل الاتصال'; return;
+  }
   btn.disabled = false; btn.textContent = '✅ حفظ كلمة المرور';
 
   if(!res.ok){ errEl.textContent = '❌ ' + (res.error||'فشل التغيير'); return; }
@@ -2434,7 +2463,7 @@ async function doResetPass(){
     </div>
     <div class="modal-body">
       <div style="background:var(--bg3);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--text2)">
-        👤 <span id="resetPassName" style="font-weight:700;color:var(--text1)"></span>
+        👤 <span id="resetPassName" style="font-weight:700;color:var(--text)"></span>
       </div>
 
       <div class="form-group">
