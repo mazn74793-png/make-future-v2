@@ -664,12 +664,14 @@ tr:hover td { background: rgba(124,58,237,0.04); }
       </div>
       <div id="ytSection" class="form-group"><label class="form-label">رابط YouTube</label><input type="url" class="form-input" id="vidYtUrl" placeholder="https://youtu.be/..."></div>
       <div id="uploadSection" class="hidden">
-        <div class="upload-drop" id="uploadDrop" style="position:relative;cursor:pointer" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event)">
+        <div class="upload-drop" id="uploadDrop" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event)">
           <div style="font-size:40px">📁</div>
-          <div class="mt-2 font-bold">اسحب الفيديو هنا أو اضغط للاختيار</div>
-          <div class="text-sm text-muted mt-1">MP4, MOV, AVI — بدون حد للحجم</div>
-          <input type="file" id="vidFile" accept="video/*" onchange="handleFileSelect(event)"
-            style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0">
+          <div class="mt-2 font-bold">اضغط الزرار لاختيار فيديو</div>
+          <div class="text-sm text-muted mt-1">MP4, MOV, AVI</div>
+          <div style="margin-top:16px">
+            <input type="file" id="vidFile" accept="video/*" onchange="handleFileSelect(event)"
+              style="font-size:14px;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);cursor:pointer;width:100%">
+          </div>
         </div>
         <div class="upload-progress-wrap" id="uploadProgressWrap">
           <div class="flex items-center justify-between mb-1"><span class="text-sm" id="uploadFileName">—</span><span class="text-sm" id="uploadPct">0%</span></div>
@@ -2328,12 +2330,11 @@ async function doResetPass(){
       </div>
       <div id="mcVidYtWrap" class="form-group"><label class="form-label">رابط يوتيوب</label><input type="text" class="form-input" id="mcVidYtUrl" placeholder="https://youtube.com/watch?v=..."></div>
       <div id="mcVidUpWrap" class="form-group hidden"><label class="form-label">ملف الفيديو</label>
-        <div style="position:relative;text-align:center;padding:24px;border:2px dashed var(--border2);border-radius:12px;cursor:pointer;background:var(--bg3)">
+        <div style="text-align:center;padding:16px;border:2px dashed var(--border2);border-radius:12px;background:var(--bg3)">
           <div style="font-size:32px;margin-bottom:8px">🎬</div>
-          <div id="mcVidFileName" style="color:var(--text2);font-size:13px">اضغط لاختيار فيديو</div>
-          <div style="font-size:11px;color:#64748b;margin-top:4px">MP4 / MOV / AVI</div>
+          <div id="mcVidFileName" style="color:var(--text2);font-size:13px;margin-bottom:12px">اختر ملف فيديو من جهازك</div>
           <input type="file" id="mcVidFile" accept="video/*" onchange="mcHandleFileSelect(this)"
-            style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0">
+            style="font-size:14px;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);cursor:pointer;width:100%">
         </div>
       </div>
       <div class="form-group"><label class="form-label">وصف (اختياري)</label><textarea class="form-textarea" id="mcVidDesc" rows="2"></textarea></div>
