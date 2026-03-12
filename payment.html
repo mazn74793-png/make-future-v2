@@ -429,7 +429,7 @@ tr:hover td { background: rgba(124,58,237,0.04); }
       <!-- صورة الإيصال -->
       <div class="form-group">
         <label class="form-label">📸 صورة الإيصال <span style="color:var(--danger)">*</span></label>
-        <div id="receiptDropArea" onclick="document.getElementById('receiptFile').click()"
+        <div id="receiptDropArea"
           style="border:2px dashed var(--border2);border-radius:14px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg3)">
           <div id="receiptPlaceholder">
             <div style="font-size:32px;margin-bottom:8px">📷</div>
@@ -437,8 +437,11 @@ tr:hover td { background: rgba(124,58,237,0.04); }
             <div style="font-size:11px;color:var(--text2);margin-top:4px">JPG / PNG / WEBP — حتى 5 ميجا</div>
           </div>
           <img id="receiptPreview" src="" style="max-width:100%;max-height:200px;border-radius:10px;display:none;object-fit:contain">
+          <div style="margin-top:12px">
+            <input type="file" id="receiptFile" accept="image/*" onchange="previewReceipt(this)"
+              style="font-size:13px;padding:6px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);cursor:pointer;width:100%">
+          </div>
         </div>
-        <input type="file" id="receiptFile" accept="image/*" style="display:none" onchange="previewReceipt(this)">
         <div id="receiptStatus" style="font-size:11px;margin-top:6px;color:var(--text2)"></div>
       </div>
 
