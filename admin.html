@@ -1380,7 +1380,14 @@ async function uploadToR2(file, courseId, title, videoId=null, progressEl=null, 
           `${FN}?action=part&upload_id=${encodeURIComponent(upload_id)}&key=${encodeURIComponent(key)}&part=${partNum}`,
           {
             method: 'PUT',
-            headers: { 'apikey': MF_CONFIG.ANON_KEY, 'Authorization': 'Bearer '+auth },
+            headers: {
+              'apikey': MF_CONFIG.ANON_KEY,
+              'Authorization': 'Bearer '+auth,
+              'x-upload-id': String(upload_id),
+              'x-key': String(key),
+              'x-part-number': String(partNum),
+              // NO Content-Type — binary blob
+            },
             body: chunk,   // ← binary مباشرة، مفيش base64
           }
         );
