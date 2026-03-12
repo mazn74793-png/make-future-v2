@@ -811,7 +811,7 @@ const MF_CONFIG = {
   FN: 'https://pjskzfyjzvibqglhdykc.supabase.co/functions/v1',
   WA_ADMIN: '201210575530',
   PAYMENT_PHONE: '01210575530',
-  BOOTSTRAP_SECRET: 'MF_BOOTSTRAP_2025_SECRET'
+  // BOOTSTRAP_SECRET removed from client-side for security
 };
 
 // ─── API Helper ───────────────────────
@@ -1083,7 +1083,7 @@ async function loadCourses(){
       <td>
         <div class="flex gap-2">
           <button class="btn btn-sm btn-secondary" onclick="editCourse(${JSON.stringify(c).replace(/"/g,'&quot;')})">✏️</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteCourse(${c.id}, this)">🗑️</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteCourse(${c.id}, '${(c.title||c.name||'كورس').replace(/'/g,"\\'")}')">🗑️</button>
         </div>
       </td>
     </tr>`).join('');
@@ -1314,8 +1314,7 @@ async function saveVideo(){
   }
 }
 
-async function uploadToR2(file, courseId, title, videoId=null, progressEl=null){
-  // progressEl = {wrap, bar, pct, spd, name} — اختياري، لو مش موجود يدور على الـ superadmin elements
+async function uploadToR2(file, courseId, title, videoId=null, progressEl=null, extraData=null){
   const pw  = progressEl?.wrap || document.getElementById('uploadProgressWrap');
   const pb  = progressEl?.bar  || document.getElementById('uploadProgressBar');
   const pp  = progressEl?.pct  || document.getElementById('uploadPct');
@@ -1324,39 +1323,45 @@ async function uploadToR2(file, courseId, title, videoId=null, progressEl=null){
   if(pw) pw.style.display='block';
   if(nm) nm.textContent = file.name;
 
-  // chunk صغير عشان base64 في JSON مش يكبر أوي
-  const PART       = 3*1024*1024; // 3MB → base64 = ~4MB في الـ JSON body (تحت حد Supabase)
-  const totalParts = Math.ceil(file.size/PART);
-  const startTime  = Date.now();
+  const PART      = 3*1024*1024;
+  const startTime = Date.now();
 
-  // ── Init ─────────────────────────────────────────────────
+  // ── اقرأ الملف كله في الذاكرة أول حاجة ─────────────────
+  if(spd) spd.textContent = '⏳ جاري قراءة الملف...';
+  let arrayBuf;
+  try{ arrayBuf = await file.arrayBuffer(); }
+  catch(e){ toast('فشل قراءة الملف: '+e.message,'error'); if(pw) pw.style.display='none'; throw e; }
+
+  const totalBytes = arrayBuf.byteLength;
+  const totalParts = Math.ceil(totalBytes/PART);
+
+  // ── Init ──────────────────────────────────────────────────
   if(spd) spd.textContent = '⏳ جاري التحضير...';
   const initRes = await mfFetch('r2-multipart',{method:'POST',body:JSON.stringify({
     action:'init', course_id:courseId, filename:file.name, content_type:file.type||'video/mp4'
   })});
-  if(!initRes.ok){ toast('فشل بدء الرفع: '+(initRes.error||''),'error'); throw new Error(initRes.error||'init failed'); }
+  if(!initRes.ok){ toast('فشل بدء الرفع: '+(initRes.error||''),'error'); if(pw) pw.style.display='none'; throw new Error(initRes.error||'init failed'); }
   const {upload_id, key} = initRes;
 
-  const parts = [];
-  let uploaded = 0;
-
-  // ── دالة تحويل chunk لـ base64 ───────────────────────────
-  function chunkToBase64(chunk){
-    return new Promise((resolve, reject)=>{
-      const reader = new FileReader();
-      reader.onload  = ()=> resolve(reader.result.split(',')[1]);
-      reader.onerror = ()=> reject(reader.error);
-      reader.readAsDataURL(chunk);
-    });
+  // ── تحويل buffer slice لـ base64 بدون FileReader ─────────
+  function bufToBase64(buf){
+    const bytes = new Uint8Array(buf);
+    let bin = '';
+    for(let i=0;i<bytes.byteLength;i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
   }
 
-  // ── رفع chunk عبر Supabase كـ POST+base64 ───────────────
-  async function uploadChunk(i){
-    const chunk = file.slice(i*PART, (i+1)*PART);
-    const pn    = i+1;
-    const b64   = await chunkToBase64(chunk);
+  // ── رفع الـ chunks واحدة واحدة ───────────────────────────
+  if(spd) spd.textContent = '⏳ جاري الرفع...';
+  const parts = [];
 
-    let lastErr;
+  for(let i=0; i<totalParts; i++){
+    const start = i*PART;
+    const end   = Math.min(start+PART, totalBytes);
+    const b64   = bufToBase64(arrayBuf.slice(start, end));
+    const pn    = i+1;
+
+    let ok=false, lastErr='';
     for(let attempt=1; attempt<=3; attempt++){
       try{
         const res = await mfFetch('r2-multipart',{method:'POST',body:JSON.stringify({
@@ -1364,49 +1369,41 @@ async function uploadToR2(file, courseId, title, videoId=null, progressEl=null){
           part_number:pn, data:b64, content_type:file.type||'video/mp4'
         })});
         if(res.ok){
-          parts[i] = {PartNumber:pn, ETag: res.etag||`"${pn}"`};
-          uploaded++;
-          const pct  = Math.round(uploaded/totalParts*100);
-          pb.style.width=pct+'%'; pp.textContent=pct+'%';
-          const sec  = (Date.now()-startTime)/1000;
-          const mbUp = (PART*uploaded/1024/1024).toFixed(1);
-          const spds = sec>0?(PART*uploaded/1024/1024/sec).toFixed(1):'...';
-          spd.textContent = `${mbUp} MB / ${(file.size/1024/1024).toFixed(1)} MB — ${spds} MB/s`;
-          return;
+          parts[i] = {PartNumber:pn, ETag: res.etag||'"'+pn+'"'};
+          const pct  = Math.round((i+1)/totalParts*100);
+          if(pb) pb.style.width=pct+'%';
+          if(pp) pp.textContent=pct+'%';
+          const sec  = (Date.now()-startTime)/1000||1;
+          const mbUp = ((i+1)*PART/1024/1024).toFixed(1);
+          const spds = ((i+1)*PART/1024/1024/sec).toFixed(1);
+          if(spd) spd.textContent = mbUp+' MB / '+(totalBytes/1024/1024).toFixed(1)+' MB — '+spds+' MB/s';
+          ok=true; break;
         }
-        lastErr = res.error||'فشل الرفع';
-      }catch(e){ lastErr = e.message; }
-      spd.textContent = `⚠️ جزء ${pn}: ${lastErr} — محاولة ${attempt+1}...`;
-      await new Promise(r=>setTimeout(r, 2000*attempt));
+        lastErr = res.error||'فشل';
+      }catch(e){ lastErr=e.message; }
+      if(spd) spd.textContent='⚠️ جزء '+pn+' محاولة '+(attempt+1)+'...';
+      await new Promise(r=>setTimeout(r,2000*attempt));
     }
-    throw new Error(`فشل رفع الجزء ${pn}: ${lastErr}`);
-  }
-
-  // ── رفع chunk بعد chunk (sequential — أكثر ثباتاً على الموبايل) ─
-  if(spd) spd.textContent = '⏳ جاري الرفع...';
-  for(let i=0; i<totalParts; i++){
-    try{
-      await uploadChunk(i);
-    }catch(e){
-      toast(e.message,'error');
+    if(!ok){
+      toast('فشل رفع الجزء '+pn+': '+lastErr,'error');
       mfFetch('r2-multipart',{method:'POST',body:JSON.stringify({action:'abort',upload_id,key})}).catch(()=>{});
-      pw.style.display='none';
-      throw e;
+      if(pw) pw.style.display='none';
+      throw new Error('فشل رفع الجزء '+pn);
     }
   }
 
   // ── Complete ──────────────────────────────────────────────
   if(spd) spd.textContent = '✅ جاري الإنهاء...';
-  const sortedParts = parts.filter(Boolean).sort((a,b)=>a.PartNumber-b.PartNumber);
   const completeBody = {
-    action:'complete', upload_id, key, parts:sortedParts,
+    action:'complete', upload_id, key,
+    parts: parts.filter(Boolean).sort((a,b)=>a.PartNumber-b.PartNumber),
     course_id:parseInt(courseId), title,
-    description:document.getElementById('vidDesc')?.value||null,
-    order_index:parseInt(document.getElementById('vidOrder')?.value)||0
+    description: extraData?.description ?? document.getElementById('vidDesc')?.value ?? null,
+    order_index: extraData?.order_index ?? parseInt(document.getElementById('vidOrder')?.value) ?? 0
   };
   if(videoId) completeBody.video_id = videoId;
   const completeRes = await mfFetch('r2-multipart',{method:'POST',body:JSON.stringify(completeBody)});
-  if(!completeRes.ok){ toast('فشل إكمال الرفع: '+(completeRes.error||''),'error'); throw new Error('complete failed'); }
+  if(!completeRes.ok){ toast('فشل إكمال الرفع: '+(completeRes.error||''),'error'); if(pw) pw.style.display='none'; throw new Error('complete failed'); }
   if(pw) pw.style.display='none';
   if(spd) spd.textContent='';
 }
@@ -1486,8 +1483,9 @@ async function bulkApprove(){
     await mfFetch('admin-payments',{method:'POST',body:JSON.stringify({id,action:'approve'})});
     document.getElementById('prow-'+id)?.remove();
   }
+  const approvedCount = selectedPayments.size;
   showLoading(false); selectedPayments.clear();
-  toast(`تم قبول ${selectedPayments.size} طلبات ✅`,'success');
+  toast('تم قبول '+approvedCount+' طلبات ✅','success');
 }
 
 // ─── COUPONS ──────────────────────────
@@ -1541,7 +1539,7 @@ async function loadAdminComments(){
         <div><span class="font-bold">${c.user_name||'—'}</span> <span class="text-xs text-muted">في "${c.video_title}"</span></div>
         <div class="flex gap-2">
           <button class="btn btn-sm btn-secondary" onclick="pinComment(${c.id},${!c.is_pinned})">${c.is_pinned?'📌 إلغاء التثبيت':'📌 تثبيت'}</button>
-          <button class="btn btn-sm btn-primary" data-cid="${c.id}" data-msg="${(c.message||'').replace(/"/g,'&quot;')}" onclick="openReplyBtn(this)">↩️ رد</button>
+          <button class="btn btn-sm btn-primary" data-cid="${c.id}" data-msg="${(c.message||'').replace(/"/g,'&quot;')}" onclick="openReply(this.dataset.cid, this.dataset.msg)">↩️ رد</button>
           <button class="btn btn-sm btn-danger" onclick="deleteComment(${c.id})">🗑️</button>
         </div>
       </div>
@@ -1577,7 +1575,7 @@ function renderUsers(users){
     <td><span class="badge ${u.role==='superadmin'?'badge-danger':u.role==='admin'?'badge-warn':u.role==='course_admin'?'badge-info':'badge-primary'}">${u.role}</span></td>
     <td><div class="flex gap-2">
       ${user.role==='superadmin'||user.role==='admin'?`<button class="btn btn-sm btn-secondary" onclick="openUserRole(${JSON.stringify(u).replace(/"/g,'&quot;')})">🔐 صلاحيات</button>`:''}
-      <button class="btn btn-sm btn-secondary" data-uid="${u.id}" data-name="${u.full_name}" onclick="resetPassBtn(this)">🔑 باسورد</button>
+      <button class="btn btn-sm btn-secondary" data-uid="${u.id}" data-name="${u.full_name||''}" data-phone="${u.phone_student||''}" onclick="resetPassBtn(this)">🔑 باسورد</button>
     </div></td>
   </tr>`).join('');
 }
@@ -1604,7 +1602,7 @@ async function saveUserRole(){
 }
 
 function resetPass(userId, name, phone){ openResetPass(userId, name, phone||''); }
-function resetPassBtn(el){ resetPass(el.dataset.uid, el.dataset.name); }
+function resetPassBtn(el){ resetPass(el.dataset.uid, el.dataset.name, el.dataset.phone||""); }
 
 // ─── QUIZZES ──────────────────────────
 async function loadQuizzes(){
@@ -2086,7 +2084,11 @@ async function mcSaveVideo(){
           spd:  document.getElementById('mcUploadSpeed'),
           name: document.getElementById('mcUploadFileName')
         };
-        await uploadToR2(mcFile, mcActiveCourseId, title, editId ? parseInt(editId) : null, mcProgress);
+        const mcExtra = {
+          description: document.getElementById('mcVidDesc')?.value || null,
+          order_index: parseInt(document.getElementById('mcVidOrder')?.value) || 0
+        };
+        await uploadToR2(mcFile, mcActiveCourseId, title, editId ? parseInt(editId) : null, mcProgress, mcExtra);
       } else {
         // ── تعديل بيانات فقط بدون ملف جديد ────────────
         const body = {id:parseInt(editId), course_id:mcActiveCourseId, title,
@@ -2113,6 +2115,7 @@ async function mcDeleteVideo(id){
 
 // ── SCHEDULES ───────────────────────────────
 async function mcLoadSchedules(){
+  if(!mcActiveCourseId){ return; }
   const el = document.getElementById('mcSchedulesList');
   el.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>جاري التحميل...</p></div>';
   const res = await mfFetch(`admin-schedules?course_id=${mcActiveCourseId}`);
@@ -2130,7 +2133,7 @@ async function mcLoadSchedules(){
       <td style="padding:8px 10px;font-weight:700">${s.day_of_week||''}</td>
       <td style="padding:8px 10px;text-align:center;direction:ltr">${s.start_time||''}</td>
       <td style="padding:8px 10px;text-align:center;direction:ltr">${s.end_time||''}</td>
-      <td style="padding:8px 10px;color:var(--text2)">${s.note||'—'}</td>
+      <td style="padding:8px 10px;color:var(--text2)">${s.notes||'—'}</td>
       <td style="padding:8px 10px;text-align:center">
         <button class="btn btn-sm btn-danger" onclick="mcDeleteSchedule(${s.id})" style="background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.3)">🗑️</button>
       </td>
