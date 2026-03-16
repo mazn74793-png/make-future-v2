@@ -1313,9 +1313,9 @@ async function saveVideo(){
 
 async function uploadToR2(file, courseId, title, videoId=null, progressEl=null, extraData=null){
   // ════════════════════════════════════════════════════════
-  //  الرفع الحقيقي — binary مباشر لـ r2-upload function
-  //  مفيش base64، مفيش تحويل، مفيش proxy ثقيل
-  //  progress حقيقي بعد كل chunk
+  //  r2-upload v3 — Presigned URL: Browser → R2 مباشرة
+  //  مفيش proxy، مفيش multipart، مفيش chunks
+  //  الـ browser يرفع الفيديو كاملاً لـ R2 بـ PUT واحد
   // ════════════════════════════════════════════════════════
   const pw  = progressEl?.wrap || document.getElementById('uploadProgressWrap');
   const pb  = progressEl?.bar  || document.getElementById('uploadProgressBar');
@@ -1331,28 +1331,29 @@ async function uploadToR2(file, courseId, title, videoId=null, progressEl=null, 
   set(nm, file.name);
   set(pp, '0%');
   pct(pb, 0);
+  set(spd, '⏳ جاري التحضير…');
 
-  // 10MB chunk — مناسب لـ Supabase Function (حد 6MB للـ JSON، بس binary أكبر)
-  // بنستخدم 5MB عشان Supabase Function body limit آمن
-  const CHUNK = 5 * 1024 * 1024;
-  const total = file.size;
-  const parts_count = Math.max(1, Math.ceil(total / CHUNK));
-  const t0 = Date.now();
-
-  const FN = MF_CONFIG.FN + '/r2-upload';
-  const tok = localStorage.getItem('mf_access_token') || '';
+  const FN   = MF_CONFIG.FN + '/r2-upload';
+  const tok  = localStorage.getItem('mf_access_token') || '';
   const auth = tok && tok.length > 20 ? tok : MF_CONFIG.ANON_KEY;
+  const ct   = file.type || 'video/mp4';
 
   const desc  = extraData?.description ?? document.getElementById('vidDesc')?.value ?? null;
   const order = extraData?.order_index  ?? parseInt(document.getElementById('vidOrder')?.value || '0') ?? 0;
 
-  set(spd, '⏳ جاري التحضير…');
-
-  // ─── 1. INIT ────────────────────────────────────────────
-  const initR = await fetch(
-    `${FN}?action=init&course_id=${courseId}&title=${encodeURIComponent(title)}&ct=${encodeURIComponent(file.type||'video/mp4')}&order=${order}${videoId?'&video_id='+videoId:''}${desc?'&desc='+encodeURIComponent(desc):''}`,
-    { method: 'POST', headers: { 'apikey': MF_CONFIG.ANON_KEY, 'Authorization': 'Bearer '+auth } }
-  ).then(r => r.json()).catch(e => ({ ok: false, error: e.message }));
+  // ─── 1. INIT — احصل على presigned URL ───────────────────
+  let initR;
+  try {
+    const res = await fetch(
+      `${FN}?action=init&course_id=${courseId}&title=${encodeURIComponent(title)}&ct=${encodeURIComponent(ct)}&order=${order}${videoId?'&video_id='+videoId:''}${desc?'&desc='+encodeURIComponent(desc):''}`,
+      { method: 'POST', headers: { 'apikey': MF_CONFIG.ANON_KEY, 'Authorization': 'Bearer '+auth } }
+    );
+    initR = await res.json();
+  } catch(e) {
+    show(pw, 'none');
+    toast('فشل الاتصال بالسيرفر: ' + e.message, 'error');
+    throw e;
+  }
 
   if (!initR.ok) {
     show(pw, 'none');
@@ -1360,96 +1361,81 @@ async function uploadToR2(file, courseId, title, videoId=null, progressEl=null, 
     throw new Error(initR.error);
   }
 
-  const { upload_id, key, video_id: newVidId } = initR;
-  const parts = [];
-  let uploaded = 0;
+  const { upload_url, key, video_id: newVidId } = initR;
+  const finalVidId = newVidId || videoId;
 
-  // ─── 2. PARTS — binary PUT مباشر ────────────────────────
-  for (let i = 0; i < parts_count; i++) {
-    const partNum = i + 1;
-    const start   = i * CHUNK;
-    const end     = Math.min(start + CHUNK, total);
-    const chunk   = file.slice(start, end); // Blob slice — مش بيحمّل في RAM
+  // ─── 2. PUT الفيديو مباشرة لـ R2 بـ presigned URL ───────
+  set(spd, `⬆️ جاري الرفع… (${(file.size/1048576).toFixed(1)} MB)`);
+  pct(pb, 10);
 
-    set(spd, `⬆️ جزء ${partNum}/${parts_count} — ${((end-start)/1048576).toFixed(1)} MB`);
+  // XHR بدل fetch — بيدعم progress events حقيقية
+  await new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    const t0  = Date.now();
 
-    let ok = false, etag = '';
-    for (let attempt = 1; attempt <= 3 && !ok; attempt++) {
-      try {
-        const r = await fetch(
-          `${FN}?action=part&upload_id=${encodeURIComponent(upload_id)}&key=${encodeURIComponent(key)}&part=${partNum}`,
-          {
-            method: 'PUT',
-            headers: {
-              'apikey': MF_CONFIG.ANON_KEY,
-              'Authorization': 'Bearer '+auth,
-              'x-upload-id': String(upload_id),
-              'x-key': String(key),
-              'x-part-number': String(partNum),
-              // NO Content-Type — binary blob
-            },
-            body: chunk,   // ← binary مباشرة، مفيش base64
-          }
-        );
-        if (r.ok) {
-          const d = await r.json();
-          etag = d.ETag || '"p' + partNum + '"';
-          ok = true;
-        } else {
-          const t = await r.text().catch(() => '');
-          console.warn(`Part ${partNum} attempt ${attempt} failed:`, r.status, t);
-        }
-      } catch(e) {
-        console.warn(`Part ${partNum} attempt ${attempt} error:`, e.message);
+    xhr.upload.addEventListener('progress', (e) => {
+      if (!e.lengthComputable) return;
+      const p   = Math.min(95, Math.round(e.loaded / e.total * 100));
+      const sec = (Date.now() - t0) / 1000 || 0.1;
+      const mbs = (e.loaded / 1048576 / sec).toFixed(1);
+      pct(pb, p);
+      set(pp, p + '%');
+      set(spd, `${(e.loaded/1048576).toFixed(1)} / ${(e.total/1048576).toFixed(1)} MB — ${mbs} MB/s`);
+    });
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status === 200 || xhr.status === 204) {
+        resolve(null);
+      } else {
+        reject(new Error(`R2 رفض الرفع: HTTP ${xhr.status} — ${xhr.responseText?.slice(0,200)}`));
       }
-      if (!ok && attempt < 3) await new Promise(r => setTimeout(r, 1500 * attempt));
-    }
+    });
 
-    if (!ok) {
-      fetch(FN, { method: 'POST',
-        headers: { 'apikey': MF_CONFIG.ANON_KEY, 'Authorization': 'Bearer '+auth, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action:'abort', upload_id, key, video_id: newVidId })
-      }).catch(() => {});
-      show(pw, 'none');
-      throw new Error('فشل رفع الجزء ' + partNum);
-    }
+    xhr.addEventListener('error', () => reject(new Error('خطأ في الشبكة أثناء الرفع')));
+    xhr.addEventListener('abort', () => reject(new Error('تم إلغاء الرفع')));
+    xhr.addEventListener('timeout', () => reject(new Error('انتهى وقت الرفع')));
 
-    parts.push({ PartNumber: partNum, ETag: etag });
-    uploaded = end;
+    xhr.open('PUT', upload_url);
+    xhr.setRequestHeader('Content-Type', ct);
+    xhr.timeout = 30 * 60 * 1000; // 30 دقيقة كحد أقصى
+    xhr.send(file);
+  }).catch(async (e) => {
+    fetch(FN, {
+      method: 'POST',
+      headers: { 'apikey': MF_CONFIG.ANON_KEY, 'Authorization': 'Bearer '+auth, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'abort', video_id: finalVidId })
+    }).catch(() => {});
+    show(pw, 'none');
+    toast('فشل الرفع: ' + e.message, 'error');
+    throw e;
+  });
 
-    // progress حقيقي بعد كل chunk
-    const p = Math.min(98, Math.round(uploaded / total * 100));
-    pct(pb, p);
-    set(pp, p + '%');
-    const sec = (Date.now() - t0) / 1000 || 0.1;
-    set(spd, `${(uploaded/1048576).toFixed(1)} / ${(total/1048576).toFixed(1)} MB — ${(uploaded/1048576/sec).toFixed(1)} MB/s`);
-  }
-
-  // ─── 3. DONE ─────────────────────────────────────────────
-  set(spd, '✅ جاري الإنهاء…');
+  // ─── 3. DONE — فعّل الفيديو في DB ───────────────────────
+  set(spd, '✅ جاري الحفظ…');
   pct(pb, 99);
 
-  const doneR = await fetch(FN, {
-    method: 'POST',
-    headers: { 'apikey': MF_CONFIG.ANON_KEY, 'Authorization': 'Bearer '+auth, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      action: 'done',
-      upload_id, key,
-      video_id: newVidId || videoId,
-      parts: parts.sort((a,b) => a.PartNumber - b.PartNumber)
-    })
-  }).then(r => r.json()).catch(e => ({ ok: false, error: e.message }));
+  let doneR;
+  try {
+    const res = await fetch(FN, {
+      method: 'POST',
+      headers: { 'apikey': MF_CONFIG.ANON_KEY, 'Authorization': 'Bearer '+auth, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'done', key, video_id: finalVidId })
+    });
+    doneR = await res.json();
+  } catch(e) {
+    doneR = { ok: false, error: e.message };
+  }
 
   if (!doneR.ok) {
     show(pw, 'none');
-    toast('فشل إكمال الرفع: ' + (doneR.error || ''), 'error');
-    throw new Error('complete failed');
+    toast('الرفع نجح لكن فشل الحفظ: ' + (doneR.error || ''), 'error');
+    throw new Error('done failed');
   }
 
   pct(pb, 100);
   set(pp, '100%');
   set(spd, '🎉 اكتمل الرفع!');
-  setTimeout(() => { show(pw, 'none'); set(spd, ''); }, 2000);
+  setTimeout(() => { show(pw, 'none'); set(spd, ''); }, 2500);
 }
 
 async function deleteVideo(id){ if(!confirm('حذف الفيديو؟')) return; try{ const res=await mfFetch('course-videos',{method:'DELETE',body:JSON.stringify({id})}); if(!res.ok){ toast(res.error||'فشل الحذف','error'); return; } toast('تم الحذف','success'); loadVideos(); }catch(e){ toast('فشل الحذف','error'); } }
