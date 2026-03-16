@@ -1396,14 +1396,15 @@ async function uploadToR2(file, courseId, title, videoId=null, progressEl=null, 
     xhr.addEventListener('timeout', () => reject(new Error('انتهى وقت الرفع')));
 
     xhr.open('PUT', upload_url);
-    xhr.setRequestHeader('Content-Type', ct);
+    // لا نبعت Content-Type — الـ presigned URL موقّع بـ host فقط
+    // لو بعتنا Content-Type هيرجع 403 SignatureDoesNotMatch
     xhr.timeout = 30 * 60 * 1000; // 30 دقيقة كحد أقصى
     xhr.send(file);
   }).catch(async (e) => {
-    fetch(FN, {
+    fetch(`${FN}?action=abort`, {
       method: 'POST',
       headers: { 'apikey': MF_CONFIG.ANON_KEY, 'Authorization': 'Bearer '+auth, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'abort', video_id: finalVidId })
+      body: JSON.stringify({ video_id: finalVidId })
     }).catch(() => {});
     show(pw, 'none');
     toast('فشل الرفع: ' + e.message, 'error');
@@ -1416,10 +1417,10 @@ async function uploadToR2(file, courseId, title, videoId=null, progressEl=null, 
 
   let doneR;
   try {
-    const res = await fetch(FN, {
+    const res = await fetch(`${FN}?action=done`, {
       method: 'POST',
       headers: { 'apikey': MF_CONFIG.ANON_KEY, 'Authorization': 'Bearer '+auth, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'done', key, video_id: finalVidId })
+      body: JSON.stringify({ key, video_id: finalVidId })
     });
     doneR = await res.json();
   } catch(e) {
