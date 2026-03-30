@@ -1,793 +1,280 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl" data-theme="dark">
+<!doctype html>
+<html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Make Future Center — لوحة الطالب</title>
-<link rel="manifest" href="manifest.json">
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Make Future | الطالب</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
-/* ═══════════════════════════════════════
-   Make Future Center V2 — Global Styles
-   ═══════════════════════════════════════ */
+:root{--bg:#07091a;--card:rgba(255,255,255,.055);--border:rgba(255,255,255,.1);--text:#eef0ff;--muted:rgba(238,240,255,.5);--grad:linear-gradient(135deg,#7c3aed,#06b6d4);--r:18px;color-scheme:dark}
+[data-theme=light]{--bg:#f2f4ff;--card:rgba(255,255,255,.8);--border:rgba(0,0,0,.09);--text:#0d1230;--muted:rgba(13,18,48,.5);color-scheme:light}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background .35s,color .35s}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 55% at 10% 10%,rgba(124,58,237,.08),transparent 55%),radial-gradient(ellipse 55% 45% at 88% 88%,rgba(6,182,212,.06),transparent 55%);pointer-events:none;z-index:0}
+@keyframes up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.a0{opacity:0;animation:up .55s ease forwards}.a1{animation-delay:.08s}.a2{animation-delay:.16s}.a3{animation-delay:.24s}.a4{animation-delay:.32s}
+nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(22px);background:rgba(7,9,26,.84);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;justify-content:space-between;align-items:center;animation:fi .4s ease}
+[data-theme=light] nav{background:rgba(242,244,255,.9)}
+.nav-logo{font-size:18px;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-row{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.nb{cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text);padding:7px 13px;border-radius:11px;text-decoration:none;font-weight:700;font-size:13px;font-family:'Cairo',sans-serif;transition:all .2s}
+.nb:hover{background:rgba(124,58,237,.18);border-color:#7c3aed77}
+.thbtn{cursor:pointer;border:1px solid var(--border);background:var(--card);width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-size:15px;transition:all .25s}
+.thbtn:hover{transform:rotate(22deg) scale(1.12)}
+.wrap{max-width:1100px;margin:0 auto;padding:22px 18px;position:relative;z-index:1}
+.hero{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;backdrop-filter:blur(12px);display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.hero-avatar{width:56px;height:56px;border-radius:50%;background:var(--grad);display:grid;place-items:center;font-size:22px;font-weight:900;color:#fff;flex-shrink:0}
+.hero-name{font-size:20px;font-weight:900}
+.hero-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.grade-badge{display:inline-block;background:var(--grad);color:#fff;padding:3px 12px;border-radius:999px;font-size:11px;font-weight:800;margin-top:6px}
+/* Stats row */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:center;backdrop-filter:blur(8px)}
+.stat-num{font-size:28px;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-label{font-size:11px;color:var(--muted);margin-top:2px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:720px){.grid2{grid-template-columns:1fr}}
+.box{background:rgba(0,0,0,.22);border:1px solid var(--border);border-radius:16px;padding:16px}
+[data-theme=light] .box{background:rgba(255,255,255,.55)}
+.pill{display:inline-flex;gap:5px;align-items:center;border:1px solid var(--border);padding:4px 11px;border-radius:999px;font-size:12px;font-weight:700}
+.muted{color:var(--muted);font-size:13px;line-height:1.75}
+.sel-card{background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.3);border-radius:16px;padding:16px}
+.price-badge{background:var(--grad);color:#fff;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:900}
+.course-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-top:12px;transition:all .25s;backdrop-filter:blur(8px)}
+.course-card:hover{border-color:#7c3aed66;transform:translateY(-2px);box-shadow:0 12px 40px rgba(124,58,237,.15)}
+.course-title{font-size:15px;font-weight:800;margin-bottom:6px}
+.tag-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.tag{background:rgba(255,255,255,.07);border:1px solid var(--border);padding:3px 10px;border-radius:999px;font-size:12px}
+[data-theme=light] .tag{background:rgba(0,0,0,.05)}
+.sch-item{padding:7px 12px;border-radius:11px;border:1px solid var(--border);background:rgba(0,0,0,.18);font-size:12px;margin-top:5px}
+[data-theme=light] .sch-item{background:rgba(0,0,0,.04)}
+.notif{padding:10px 14px;border-radius:12px;border:1px solid rgba(124,58,237,.2);background:rgba(124,58,237,.08);font-size:13px;margin-top:8px}
+.notif.unread{border-color:rgba(124,58,237,.45);background:rgba(124,58,237,.15)}
+.btn{cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text);padding:9px 14px;border-radius:12px;font-weight:800;font-size:13px;font-family:'Cairo',sans-serif;transition:all .2s}
+.btn:hover{background:rgba(255,255,255,.12);transform:translateY(-1px)}
+.btn-grad{border:none;background:var(--grad);color:#fff;box-shadow:0 4px 18px rgba(124,58,237,.35)}
+.btn-open{border:none;background:linear-gradient(135deg,#06b6d4,#7c3aed);color:#fff;padding:8px 16px;border-radius:11px;font-weight:800;font-size:13px;font-family:'Cairo',sans-serif;cursor:pointer;transition:all .2s;text-decoration:none;display:inline-block}
+.btn-open:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(6,182,212,.4)}
+.pending-tag{background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.3);color:#fbbf24;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800}
+/* Progress mini bar */
+.mini-prog{background:rgba(255,255,255,.07);border-radius:999px;height:5px;margin-top:8px;overflow:hidden}
+.mini-prog-fill{height:100%;background:var(--grad);border-radius:999px;transition:width .4s}
+/* Cert card */
+.cert-card{background:linear-gradient(135deg,rgba(124,58,237,.15),rgba(6,182,212,.1));border:1px solid rgba(124,58,237,.3);border-radius:14px;padding:14px;margin-top:10px;display:flex;align-items:center;gap:12px}
+.spin{width:36px;height:36px;border-radius:50%;border:3px solid var(--border);border-top-color:#7c3aed;animation:spin 1s linear infinite;margin:20px auto}
 
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Tajawal:wght@300;400;500;700;800&display=swap');
-
-/* ─── CSS Variables ─────────────────── */
-:root {
-  --primary: #7c3aed;
-  --primary-light: #9d5ff5;
-  --primary-dark: #5b21b6;
-  --secondary: #06b6d4;
-  --secondary-light: #22d3ee;
-  --accent: #f59e0b;
-  --danger: #ef4444;
-  --success: #10b981;
-  --warn: #f59e0b;
-
-  --grad: linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%);
-  --grad-soft: linear-gradient(135deg, rgba(124,58,237,0.15) 0%, rgba(6,182,212,0.15) 100%);
-
-  /* Dark Theme (default) */
-  --bg: #0a0f1e;
-  --bg2: #0f172a;
-  --bg3: #1e293b;
-  --bg4: #263147;
-  --surface: rgba(30,41,59,0.8);
-  --surface2: rgba(38,49,71,0.9);
-  --border: rgba(124,58,237,0.2);
-  --border2: rgba(255,255,255,0.06);
-  --text: #f1f5f9;
-  --text2: #94a3b8;
-  --text3: #64748b;
-  --shadow: 0 8px 32px rgba(0,0,0,0.4);
-  --shadow-lg: 0 20px 60px rgba(0,0,0,0.5);
-  --glow: 0 0 40px rgba(124,58,237,0.3);
+@media(max-width:480px){
+  input,select,textarea{font-size:16px!important}
+  .hero{padding:14px}
+  .hero-name{font-size:17px}
+  .nb{padding:6px 10px;font-size:12px}
 }
-
-[data-theme="light"] {
-  --bg: #f8fafc;
-  --bg2: #f1f5f9;
-  --bg3: #e2e8f0;
-  --bg4: #cbd5e1;
-  --surface: rgba(255,255,255,0.9);
-  --surface2: rgba(248,250,252,0.95);
-  --border: rgba(124,58,237,0.2);
-  --border2: rgba(0,0,0,0.06);
-  --text: #0f172a;
-  --text2: #475569;
-  --text3: #94a3b8;
-  --shadow: 0 4px 20px rgba(0,0,0,0.08);
-  --shadow-lg: 0 20px 60px rgba(0,0,0,0.12);
-  --glow: 0 0 40px rgba(124,58,237,0.15);
-}
-
-/* ─── Reset & Base ──────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-html { scroll-behavior: smooth; }
-
-body {
-  font-family: 'Cairo', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  direction: rtl;
-  min-height: 100vh;
-  line-height: 1.6;
-  overflow-x: hidden;
-  transition: background 0.3s, color 0.3s;
-}
-
-/* ─── Scrollbar ─────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--bg2); }
-::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 3px; }
-
-/* ─── Typography ────────────────────── */
-h1,h2,h3,h4,h5,h6 { font-weight: 700; line-height: 1.3; }
-a { color: inherit; text-decoration: none; }
-img { max-width: 100%; }
-
-/* ─── Background Mesh ───────────────── */
-.bg-mesh {
-  position: fixed; inset: 0; z-index: -1; pointer-events: none;
-  background:
-    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(124,58,237,0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(6,182,212,0.08) 0%, transparent 60%),
-    var(--bg);
-}
-
-/* ─── Glass Card ────────────────────── */
-.glass {
-  background: var(--surface);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  box-shadow: var(--shadow);
-}
-.glass-sm {
-  background: var(--surface2);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border2);
-  border-radius: 12px;
-}
-
-/* ─── Buttons ───────────────────────── */
-.btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 10px 24px; border-radius: 12px; font-family: 'Cairo', sans-serif;
-  font-size: 14px; font-weight: 600; cursor: pointer; border: none;
-  transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1); white-space: nowrap;
-  user-select: none; position: relative; overflow: hidden;
-}
-.btn::after {
-  content: ''; position: absolute; inset: 0; background: rgba(255,255,255,0);
-  transition: background 0.2s;
-}
-.btn:hover::after { background: rgba(255,255,255,0.08); }
-.btn:active { transform: scale(0.97); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
-
-.btn-primary { background: var(--grad); color: #fff; box-shadow: 0 4px 20px rgba(124,58,237,0.4); }
-.btn-primary:hover { box-shadow: 0 8px 30px rgba(124,58,237,0.5); transform: translateY(-1px); }
-.btn-secondary { background: var(--bg3); color: var(--text); border: 1px solid var(--border2); }
-.btn-secondary:hover { background: var(--bg4); }
-.btn-danger { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
-.btn-danger:hover { background: rgba(239,68,68,0.25); }
-.btn-success { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
-.btn-success:hover { background: rgba(16,185,129,0.25); }
-.btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 8px; }
-.btn-lg { padding: 14px 32px; font-size: 16px; border-radius: 14px; }
-.btn-block { width: 100%; }
-.btn-icon { padding: 8px; border-radius: 8px; aspect-ratio: 1; }
-
-/* ─── Form Inputs ───────────────────── */
-.form-group { margin-bottom: 16px; }
-.form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 8px; }
-.form-input, .form-select, .form-textarea {
-  width: 100%; padding: 12px 16px; background: var(--bg3);
-  border: 1px solid var(--border2); border-radius: 12px;
-  color: var(--text); font-family: 'Cairo', sans-serif; font-size: 14px;
-  transition: all 0.2s; outline: none;
-}
-.form-input:focus, .form-select:focus, .form-textarea:focus {
-  border-color: var(--primary); box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
-  background: var(--bg2);
-}
-.form-input::placeholder { color: var(--text3); }
-.form-textarea { resize: vertical; min-height: 80px; }
-.form-select { cursor: pointer; }
-
-/* ─── Badges ────────────────────────── */
-.badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
-}
-.badge-primary { background: rgba(124,58,237,0.2); color: var(--primary-light); }
-.badge-success { background: rgba(16,185,129,0.15); color: #10b981; }
-.badge-danger { background: rgba(239,68,68,0.15); color: #ef4444; }
-.badge-warn { background: rgba(245,158,11,0.15); color: #f59e0b; }
-.badge-info { background: rgba(6,182,212,0.15); color: #06b6d4; }
-
-/* ─── Stat Cards ────────────────────── */
-.stat-card {
-  padding: 24px; border-radius: 20px; position: relative; overflow: hidden;
-  background: var(--surface); border: 1px solid var(--border);
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-.stat-card:hover { transform: translateY(-4px); box-shadow: var(--glow); }
-.stat-card .stat-icon { font-size: 32px; margin-bottom: 12px; }
-.stat-card .stat-value { font-size: 32px; font-weight: 800; color: var(--text); line-height: 1; }
-.stat-card .stat-label { font-size: 13px; color: var(--text2); margin-top: 6px; }
-.stat-card::before {
-  content: ''; position: absolute; inset: 0;
-  background: var(--grad-soft); opacity: 0.5; z-index: 0;
-}
-.stat-card > * { position: relative; z-index: 1; }
-
-/* ─── Progress Bar ──────────────────── */
-.progress-wrap { background: var(--bg3); border-radius: 999px; overflow: hidden; height: 6px; }
-.progress-bar { height: 100%; background: var(--grad); border-radius: 999px; transition: width 0.6s ease; }
-
-/* ─── Progress Ring ─────────────────── */
-.progress-ring { position: relative; display: inline-flex; align-items: center; justify-content: center; }
-.progress-ring svg { transform: rotate(-90deg); }
-.progress-ring .ring-text { position: absolute; font-size: 13px; font-weight: 800; color: var(--text); }
-
-/* ─── Tabs ──────────────────────────── */
-.tabs { display: flex; gap: 4px; background: var(--bg2); border-radius: 14px; padding: 4px; flex-wrap: wrap; }
-.tab-btn {
-  padding: 8px 16px; border-radius: 10px; font-family: 'Cairo', sans-serif;
-  font-size: 13px; font-weight: 600; cursor: pointer; border: none;
-  background: transparent; color: var(--text2); transition: all 0.2s; white-space: nowrap;
-}
-.tab-btn.active { background: var(--grad); color: #fff; box-shadow: 0 4px 12px rgba(124,58,237,0.3); }
-.tab-pane { display: none; }
-.tab-pane.active { display: block; animation: fadeIn 0.3s ease; }
-
-/* ─── Table ─────────────────────────── */
-.table-wrap { overflow-x: auto; border-radius: 16px; border: 1px solid var(--border2); }
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th { padding: 14px 16px; background: var(--bg3); color: var(--text2); font-weight: 600; text-align: right; white-space: nowrap; }
-td { padding: 12px 16px; border-top: 1px solid var(--border2); color: var(--text); }
-tr:hover td { background: rgba(124,58,237,0.04); }
-
-/* ─── Modal ─────────────────────────── */
-.modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
-  z-index: 1000; display: flex; align-items: center; justify-content: center;
-  padding: 16px; opacity: 0; pointer-events: none; transition: opacity 0.25s;
-}
-.modal-overlay.open { opacity: 1; pointer-events: auto; }
-.modal-box {
-  background: var(--bg2); border: 1px solid var(--border); border-radius: 24px;
-  width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto;
-  transform: scale(0.9) translateY(20px); transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
-  box-shadow: var(--shadow-lg);
-}
-.modal-overlay.open .modal-box { transform: scale(1) translateY(0); }
-.modal-header { padding: 24px 24px 0; display: flex; align-items: center; justify-content: space-between; }
-.modal-body { padding: 20px 24px 24px; }
-.modal-title { font-size: 18px; font-weight: 700; }
-
-/* ─── Navbar ────────────────────────── */
-.navbar {
-  position: sticky; top: 0; z-index: 100;
-  background: rgba(10,15,30,0.85); backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border2); padding: 0 24px;
-  display: flex; align-items: center; justify-content: space-between; height: 64px;
-  transition: background 0.3s;
-}
-[data-theme="light"] .navbar { background: rgba(248,250,252,0.9); }
-.nav-logo { font-size: 18px; font-weight: 800; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.nav-actions { display: flex; align-items: center; gap: 8px; }
-
-/* ─── Notification Badge ────────────── */
-.notif-dot {
-  position: absolute; top: -2px; right: -2px; width: 8px; height: 8px;
-  background: var(--danger); border-radius: 50%; border: 2px solid var(--bg);
-  animation: pulse 2s infinite;
-}
-
-/* ─── Animations ────────────────────── */
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.8; } }
-@keyframes shimmer { to { background-position: 200% center; } }
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-
-.fade-up { animation: fadeUp 0.5s ease both; }
-.fade-up-1 { animation-delay: 0.1s; }
-.fade-up-2 { animation-delay: 0.2s; }
-.fade-up-3 { animation-delay: 0.3s; }
-.fade-up-4 { animation-delay: 0.4s; }
-
-/* ─── Skeleton Loading ──────────────── */
-.skeleton {
-  background: linear-gradient(90deg, var(--bg3) 25%, var(--bg4) 50%, var(--bg3) 75%);
-  background-size: 200% auto;
-  animation: shimmer 1.5s infinite;
-  border-radius: 8px;
-}
-
-/* ─── Grid ──────────────────────────── */
-.grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; }
-.grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
-.grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
-@media (max-width: 900px) { .grid-4,.grid-3 { grid-template-columns: repeat(2,1fr); } }
-@media (max-width: 600px) { .grid-4,.grid-3,.grid-2 { grid-template-columns: 1fr; } }
-
-/* ─── Utility ───────────────────────── */
-.flex { display: flex; }
-.flex-col { flex-direction: column; }
-.items-center { align-items: center; }
-.justify-between { justify-content: space-between; }
-.justify-center { justify-content: center; }
-.gap-2 { gap: 8px; }
-.gap-3 { gap: 12px; }
-.gap-4 { gap: 16px; }
-.w-full { width: 100%; }
-.text-center { text-align: center; }
-.text-sm { font-size: 13px; }
-.text-xs { font-size: 11px; }
-.text-muted { color: var(--text2); }
-.text-primary { color: var(--primary-light); }
-.text-success { color: var(--success); }
-.text-danger { color: var(--danger); }
-.text-warn { color: var(--warn); }
-.font-bold { font-weight: 700; }
-.font-black { font-weight: 900; }
-.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mt-1 { margin-top: 4px; } .mt-2 { margin-top: 8px; } .mt-3 { margin-top: 12px; } .mt-4 { margin-top: 16px; }
-.mb-1 { margin-bottom: 4px; } .mb-2 { margin-bottom: 8px; } .mb-3 { margin-bottom: 12px; } .mb-4 { margin-bottom: 16px; }
-.p-3 { padding: 12px; } .p-4 { padding: 16px; } .p-5 { padding: 20px; } .p-6 { padding: 24px; }
-.rounded { border-radius: 8px; } .rounded-lg { border-radius: 14px; } .rounded-xl { border-radius: 20px; }
-.hidden { display: none !important; }
-.pointer { cursor: pointer; }
-
-/* ─── Theme Toggle ──────────────────── */
-.theme-toggle {
-  width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border2);
-  background: var(--bg3); cursor: pointer; display: flex; align-items: center; justify-content: center;
-  font-size: 18px; transition: all 0.2s;
-}
-.theme-toggle:hover { background: var(--bg4); transform: scale(1.05); }
-
-/* ─── Empty State ───────────────────── */
-.empty-state { text-align: center; padding: 60px 20px; color: var(--text2); }
-.empty-state .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
-.empty-state p { font-size: 14px; }
-
-/* ─── Container ─────────────────────── */
-.container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
-.page-content { padding: 24px 0; }
-
-/* ─── Section Header ────────────────── */
-.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-.section-title { font-size: 18px; font-weight: 700; }
-
-/* ─── Divider ───────────────────────── */
-.divider { height: 1px; background: var(--border2); margin: 16px 0; }
-
-/* ─── Scrollable List ───────────────── */
-.scroll-list { max-height: 400px; overflow-y: auto; }
-
-/* ─── PWA Install Banner ────────────── */
-#pwa-banner {
-  position: fixed; bottom: 80px; left: 16px; right: 16px;
-  background: var(--grad); color: #fff; border-radius: 16px; padding: 14px 20px;
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  box-shadow: 0 8px 32px rgba(124,58,237,0.4); z-index: 500; animation: slideDown 0.5s ease;
-}
-
-</style>
-<style>
-.hero-card { padding: 28px; border-radius: 24px; background: var(--grad); position: relative; overflow: hidden; margin-bottom: 24px; }
-.hero-card::before { content: ''; position: absolute; top: -40px; left: -40px; width: 200px; height: 200px; background: rgba(255,255,255,0.08); border-radius: 50%; }
-.hero-card::after { content: ''; position: absolute; bottom: -60px; right: -20px; width: 160px; height: 160px; background: rgba(255,255,255,0.06); border-radius: 50%; }
-.hero-card * { position: relative; z-index: 1; color: #fff !important; }
-.hero-name { font-size: 24px; font-weight: 900; }
-.hero-grade { font-size: 14px; opacity: 0.85; }
-.course-card { border-radius: 20px; overflow: hidden; border: 1px solid var(--border); background: var(--surface); transition: all 0.3s; }
-.course-card:hover { transform: translateY(-4px); box-shadow: var(--glow); border-color: var(--primary); }
-.course-card-body { padding: 16px; }
-.course-card-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
-.course-card-teacher { font-size: 12px; color: var(--text2); }
-.course-card-footer { padding: 12px 16px; border-top: 1px solid var(--border2); display: flex; align-items: center; justify-content: space-between; }
-.course-status { font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; }
-.status-enrolled { background: rgba(16,185,129,0.15); color: #10b981; }
-.status-pending { background: rgba(245,158,11,0.15); color: #f59e0b; }
-.status-available { background: rgba(124,58,237,0.15); color: var(--primary-light); }
-.notif-panel { position: fixed; top: 64px; left: 16px; right: 16px; max-width: 380px; margin-right: auto; z-index: 200; }
-@media(min-width:600px){ .notif-panel { left: auto; right: 24px; width: 380px; } }
-.notif-item { display: flex; gap: 12px; padding: 12px; border-radius: 12px; margin-bottom: 8px; background: var(--bg3); border: 1px solid var(--border2); animation: slideDown 0.3s ease; cursor: pointer; }
-.notif-item:hover { background: var(--bg4); }
-.notif-item.unread { border-color: var(--primary); background: rgba(124,58,237,0.08); }
-.notif-dot-item { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
-.sched-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; background: var(--bg3); margin-bottom: 8px; }
-.sched-day { font-size: 12px; font-weight: 700; color: var(--primary-light); min-width: 80px; }
-.sched-time { font-size: 12px; color: var(--text2); }
-.cert-card { padding: 16px; border-radius: 16px; background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(6,182,212,0.1)); border: 1px solid rgba(16,185,129,0.2); }
-.filter-wrap { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
-.filter-chip { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border2); background: var(--bg3); color: var(--text2); font-family: 'Cairo',sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-.filter-chip.active { background: rgba(124,58,237,0.2); border-color: var(--primary); color: var(--primary-light); }
 </style>
 </head>
 <body>
-<div class="bg-mesh"></div>
-
-<!-- Navbar -->
-<nav class="navbar">
-  <span class="nav-logo">🎓 Make Future</span>
-  <div class="nav-actions">
-    <button class="theme-toggle" onclick="onToggleTheme()" id="themeBtn">🌙</button>
-    <button class="btn btn-sm glass-sm" style="position:relative" onclick="toggleNotifs()" id="notifBtn">
-      🔔
-      <span class="notif-dot hidden" id="notifDot"></span>
-    </button>
-    <button class="btn btn-sm btn-danger" onclick="logout()">خروج</button>
+<nav>
+  <div class="nav-logo">MF — Make Future</div>
+  <div class="nav-row">
+    <a href="payment.html" class="nb">💳 الدفع</a>
+    <a href="change-password.html" class="nb">🔑 الباسورد</a>
+    <a href="https://wa.me/201210575530" target="_blank" class="nb">💬 واتساب</a>
+    <div class="thbtn" id="thb" onclick="toggleTheme()">🌙</div>
+    <button class="nb" onclick="logout()">خروج</button>
   </div>
 </nav>
-
-<!-- Notification Panel -->
-<div class="notif-panel hidden" id="notifPanel">
-  <div class="glass p-4">
-    <div class="flex items-center justify-between mb-3">
-      <span class="font-bold">الإشعارات</span>
-      <button class="btn btn-sm btn-secondary" onclick="markAllRead()">قراءة الكل</button>
-    </div>
-    <div id="notifList"><div class="text-center text-muted p-4">لا توجد إشعارات</div></div>
-  </div>
-</div>
-
-<div class="container page-content">
-
+<div class="wrap">
   <!-- Hero -->
-  <div class="hero-card fade-up" id="heroCard">
-    <div class="hero-name" id="heroName">👋 أهلاً!</div>
-    <div class="hero-grade" id="heroGrade"></div>
-    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
-      <a href="change-password.html" style="background:rgba(255,255,255,0.2);padding:6px 14px;border-radius:8px;font-size:12px;color:#fff">🔒 تغيير كلمة المرور</a>
+  <div class="hero a0 a1" style="margin-bottom:14px">
+    <div class="hero-avatar" id="hAvatar">؟</div>
+    <div>
+      <div class="hero-name" id="hName">أهلاً 👋</div>
+      <div class="hero-sub" id="hSub"></div>
+      <div id="hBadge"></div>
     </div>
   </div>
 
   <!-- Stats -->
-  <div class="grid-4 fade-up fade-up-1" id="statsGrid">
-    <div class="stat-card"><div class="stat-icon">📚</div><div class="stat-value" id="sMyCourses">0</div><div class="stat-label">كورساتي</div></div>
-    <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value" id="sCompleted">0</div><div class="stat-label">فيديوهات مكتملة</div></div>
-    <div class="stat-card"><div class="stat-icon">🏆</div><div class="stat-value" id="sCerts">0</div><div class="stat-label">شهاداتي</div></div>
-    <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-value" id="sPending">0</div><div class="stat-label">قيد المراجعة</div></div>
+  <div class="stats-row a0 a2" style="margin-bottom:14px">
+    <div class="stat-card"><div class="stat-num" id="stCourses">—</div><div class="stat-label">كورساتي</div></div>
+    <div class="stat-card"><div class="stat-num" id="stVids">—</div><div class="stat-label">فيديو اتمكملهم</div></div>
+    <div class="stat-card"><div class="stat-num" id="stCerts">—</div><div class="stat-label">شهاداتي</div></div>
+    <div class="stat-card"><div class="stat-num" id="stPending">—</div><div class="stat-label">قيد المراجعة</div></div>
   </div>
 
-  <!-- My Enrolled Courses -->
-  <div id="enrolledSection" class="mt-4 hidden">
-    <div class="section-header fade-up fade-up-2">
-      <h2 class="section-title">📖 كورساتي</h2>
+  <!-- Pending Banner -->
+  <div id="pendingBanner" style="display:none;margin-bottom:14px" class="a0 a2">
+    <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="font-size:28px">⏳</div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:800;color:#fbbf24">طلب اشتراكك قيد المراجعة</div>
+      <div id="pendingDetail" class="muted"></div></div>
+      <span class="pending-tag">Pending</span>
     </div>
-    <div class="grid-3" id="enrolledGrid"></div>
   </div>
 
-  <!-- Available Courses -->
-  <div class="mt-4">
-    <div class="section-header fade-up fade-up-2">
-      <h2 class="section-title">🌟 الكورسات المتاحة</h2>
+  <!-- Grid: selected + notifs -->
+  <div class="grid2 a0 a3" style="margin-bottom:14px">
+    <div class="sel-card">
+      <div class="pill" style="margin-bottom:10px">✅ الكورس المختار</div>
+      <div id="selBox" class="muted">—</div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-grad" onclick="goPay()">💳 ادفع الآن</button>
+        <button id="btnOpen" class="btn-open" style="display:none">▶️ افتح الكورس</button>
+      </div>
+      <div class="muted" style="margin-top:8px">Vodafone Cash / InstaPay: <b>01210575530</b></div>
     </div>
-    <div class="filter-wrap fade-up fade-up-3" id="subjectFilters">
-      <button class="filter-chip active" data-subject="" onclick="filterCourses(this,'')">الكل</button>
-    </div>
-    <div class="grid-3" id="coursesGrid">
-      <div class="skeleton" style="height:200px;border-radius:20px"></div>
-      <div class="skeleton" style="height:200px;border-radius:20px"></div>
-      <div class="skeleton" style="height:200px;border-radius:20px"></div>
+    <div class="box">
+      <div class="pill" style="margin-bottom:10px">🔔 الإشعارات</div>
+      <div id="notifsList" class="muted">جاري التحميل…</div>
     </div>
   </div>
 
   <!-- Certificates -->
-  <div id="certsSection" class="mt-4 hidden">
-    <div class="section-header fade-up">
-      <h2 class="section-title">🏅 شهاداتي</h2>
+  <div id="certsSection" style="display:none" class="a0 a4">
+    <div class="box" style="margin-bottom:14px">
+      <div class="pill" style="margin-bottom:10px">🏆 شهاداتي</div>
+      <div id="certsList"></div>
     </div>
-    <div class="grid-3" id="certsGrid"></div>
   </div>
 
+  <!-- Courses -->
+  <div class="a0 a4">
+    <div class="box">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div class="pill">🎓 الكورسات المتاحة</div>
+        <button class="btn" onclick="loadCourses()">🔄 تحديث</button>
+      </div>
+      <div id="coursesList" style="margin-top:10px"><div class="spin"></div></div>
+    </div>
+  </div>
 </div>
 
 <script>
-// ═══════════════════════════════════════
-// Make Future Center V2 — Global Config
-// ═══════════════════════════════════════
+(function(){var t=localStorage.getItem('mf_theme')||'dark';if(t==='light')document.documentElement.setAttribute('data-theme','light');document.getElementById('thb').textContent=t==='light'?'☀️':'🌙';})();
+function toggleTheme(){var c=document.documentElement.getAttribute('data-theme')||'dark',n=c==='light'?'dark':'light';document.documentElement.setAttribute('data-theme',n);localStorage.setItem('mf_theme',n);document.getElementById('thb').textContent=n==='light'?'☀️':'🌙';}
 
-const MF_CONFIG = {
-  SUPABASE_URL: 'https://pjskzfyjzvibqglhdykc.supabase.co',
-  ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqc2t6ZnlqenZpYnFnbGhkeWtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNjU4NTcsImV4cCI6MjA4ODY0MTg1N30.AqdIBX-6tP9nMRVao4X7A1aV5L4J7mTiNC1RWeWf7LI',
-  FN: 'https://pjskzfyjzvibqglhdykc.supabase.co/functions/v1',
-  WA_ADMIN: '201210575530',
-  PAYMENT_PHONE: '01210575530',
-  BOOTSTRAP_SECRET: 'MF_BOOTSTRAP_2025_SECRET'
-};
+const FN='https://anlstahxxpbbfnwrwulu.supabase.co/functions/v1';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFubHN0YWh4eHBiYmZud3J3dWx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDQzMTIsImV4cCI6MjA4ODEyMDMxMn0.4RQxQ4AZZCVCswTRdJoZ7Jz9qNwQq0fPs7vitnMJ3A4';
+const GRADE_MAP={'3prep':'3 إعدادي','1sec':'1 ثانوي','2sec':'2 ثانوي','3sec':'3 ثانوي'};
 
-// ─── API Helper ───────────────────────
-async function refreshToken() {
-  const refresh = localStorage.getItem('mf_refresh_token');
-  if(!refresh || refresh === 'null') return false;
-  try {
-    const res = await fetch('https://pjskzfyjzvibqglhdykc.supabase.co/auth/v1/token?grant_type=refresh_token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': MF_CONFIG.ANON_KEY },
-      body: JSON.stringify({ refresh_token: refresh })
+function logout(){['mf_user','mf_access_token','mf_refresh_token','mf_selected_course'].forEach(k=>localStorage.removeItem(k));location.href='login.html';}
+function esc(s){return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');}
+async function apiFetch(fn,qs){try{const r=await fetch(FN+'/'+fn+(qs||''),{headers:{apikey:KEY}});return await r.json();}catch(e){return{ok:false};}}
+
+const me=JSON.parse(localStorage.getItem('mf_user')||'null');
+if(!me||(me.id&&!me.phone)){['mf_user','mf_access_token','mf_refresh_token'].forEach(k=>localStorage.removeItem(k));location.href='login.html';throw new Error('r');}
+
+const nameInitial=(me.name||'؟')[0];
+document.getElementById('hAvatar').textContent=nameInitial;
+document.getElementById('hName').textContent='أهلاً، '+(me.name||'طالب')+'! 👋';
+document.getElementById('hSub').textContent='📱 '+esc(me.phone||'');
+document.getElementById('hBadge').innerHTML='<span class="grade-badge">'+esc(GRADE_MAP[me.grade]||me.grade)+'</span>';
+
+let selC=JSON.parse(localStorage.getItem('mf_selected_course')||'null');
+function renderSel(){
+  const box=document.getElementById('selBox'),btn=document.getElementById('btnOpen');
+  if(!selC){box.innerHTML='—';btn.style.display='none';return;}
+  box.innerHTML='<b>'+esc(selC.title)+'</b><br><span class="tag">'+esc(selC.subject)+'</span> <span class="price-badge">'+(selC.price||0)+' جنيه</span>';
+  apiFetch('check-enrollment','?user_id='+me.id+'&course_id='+selC.id).then(function(d){
+    if(d.enrolled){btn.style.display='inline-block';btn.onclick=()=>openCourse(selC.id,selC.title,selC.subject,selC.price||0);}
+  });
+}
+renderSel();
+function goPay(){if(!selC){alert('اختار كورس الأول');return;}location.href='payment.html';}
+
+async function loadNotifs(){
+  const el=document.getElementById('notifsList');
+  const d=await apiFetch('user-notifications','?user_id='+me.id);
+  if(!d.ok||!d.notifications||!d.notifications.length){el.textContent='لا توجد إشعارات';return;}
+  el.innerHTML=d.notifications.map(function(n){return '<div class="notif '+(n.is_read?'':'unread')+'"><b>'+esc(n.title)+'</b><br><span class="muted">'+esc(n.message)+'</span></div>';}).join('');
+}
+
+async function loadPaymentStatus(){
+  const d=await apiFetch('student-payments','?user_id='+me.id);
+  if(!d.ok||!d.payments)return;
+  const pending=d.payments.filter(function(p){return p.status==='pending';});
+  document.getElementById('stPending').textContent=pending.length;
+  if(!pending.length)return;
+  const p=pending[0];
+  document.getElementById('pendingBanner').style.display='block';
+  document.getElementById('pendingDetail').textContent='كورس: '+(p.course_title||'')+' — '+p.method+' — '+(p.amount||0)+' ج';
+}
+
+async function loadCerts(){
+  const d=await apiFetch('certificates','?user_id='+me.id);
+  if(!d.ok||!d.certificates||!d.certificates.length){document.getElementById('stCerts').textContent='0';return;}
+  document.getElementById('stCerts').textContent=d.certificates.length;
+  document.getElementById('certsSection').style.display='block';
+  document.getElementById('certsList').innerHTML=d.certificates.map(function(c){
+    return '<div class="cert-card"><div style="font-size:32px">🏆</div>'
+      +'<div style="flex:1"><div style="font-size:14px;font-weight:800">'+esc(c.course_title||'')+'</div>'
+      +'<div class="muted">'+esc(c.subject||'')+' · '+esc(c.teacher||'')+'</div></div>'
+      +'<button class="btn-open" style="font-size:12px;padding:6px 12px" onclick="openCourse('+c.course_id+',\''+escA(c.course_title||'')+'\',\''+escA(c.subject||'')+'\',0)">🏆 عرض</button></div>';
+  }).join('');
+}
+
+async function loadCourses(){
+  const el=document.getElementById('coursesList');
+  el.innerHTML='<div class="spin"></div>';
+  const d=await apiFetch('student-courses','?grade='+encodeURIComponent(me.grade||'')+'&user_id='+me.id);
+  if(!d.ok||!d.courses||!d.courses.length){
+    el.innerHTML='<div class="muted" style="padding:20px;text-align:center">مفيش كورسات لسنتك لسه 📭</div>';
+    return;
+  }
+  const enrolled=d.courses.filter(function(c){return c.enrolled;});
+  document.getElementById('stCourses').textContent=enrolled.length;
+  // sum completed vids across courses (needs progress per course - show placeholder)
+  document.getElementById('stVids').textContent='—';
+
+  el.innerHTML='';
+  d.courses.forEach(function(c){
+    const isEnrolled=c.enrolled;
+    const isPending=c.payment_status==='pending';
+    var schHtml='';
+    if(c.schedules&&c.schedules.length){
+      c.schedules.forEach(function(s){schHtml+='<div class="sch-item">🗓️ <b>'+esc(s.day_of_week)+'</b> — '+esc(s.start_time)+' → '+esc(s.end_time)+(s.notes?' ('+esc(s.notes)+')':'')+'</div>';});
+    } else {schHtml='<div class="muted" style="font-size:11px;margin-top:4px">مواعيد لسه ما اتحطتش</div>';}
+    var actionBtns='';
+    if(isEnrolled) actionBtns+='<button class="btn-open" onclick="openCourse('+c.id+',\''+escA(c.title)+'\',\''+escA(c.subject)+'\','+(c.price||0)+')">▶️ فتح الكورس</button>';
+    if(isPending)  actionBtns+='<span class="pending-tag">⏳ قيد المراجعة</span>';
+    var div=document.createElement('div');
+    div.className='course-card';
+    div.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">'
+      +'<div class="course-title">'+esc(c.title)+'</div>'
+      +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="price-badge">'+(c.price||0)+' جنيه</span>'+actionBtns+'</div>'
+      +'</div>'
+      +'<div class="tag-row"><span class="tag">👨‍🏫 '+esc(c.teacher_name)+'</span>'
+      +'<span class="tag">📘 '+esc(c.subject)+'</span>'
+      +'<span class="tag">'+(isEnrolled?'✅ مسجل':isPending?'⏳ انتظار':'🔓 غير مسجل')+'</span></div>'
+      +schHtml
+      +'<div style="margin-top:10px"><button class="btn" id="sel_'+c.id+'">اختيار هذا الكورس</button></div>';
+    el.appendChild(div);
+    document.getElementById('sel_'+c.id).addEventListener('click',function(){
+      selCourse(c.id,c.title||'',c.subject||'',c.price||0);
     });
-    const data = await res.json();
-    if (data.access_token) {
-      localStorage.setItem('mf_access_token', data.access_token);
-      localStorage.setItem('mf_refresh_token', data.refresh_token);
-      return true;
-    }
-  } catch(e) {}
-  return false;
-}
-
-async function mfFetch(endpoint, options = {}, _retry = false) {
-  const token = localStorage.getItem('mf_access_token');
-  const validToken = token && token !== 'null' && token !== 'undefined' && token.length > 20;
-  const headers = {
-    'Content-Type': 'application/json',
-    'apikey': MF_CONFIG.ANON_KEY,
-    'Authorization': `Bearer ${validToken ? token : MF_CONFIG.ANON_KEY}`,
-    ...(options.headers || {})
-  };
-  try {
-    const res = await fetch(`${MF_CONFIG.FN}/${endpoint}`, { ...options, headers });
-    if (res.status === 401 && !_retry) {
-      const refreshed = await refreshToken();
-      if (refreshed) return mfFetch(endpoint, options, true);
-      localStorage.removeItem('mf_access_token');
-      localStorage.removeItem('mf_refresh_token');
-      localStorage.removeItem('mf_user');
-      window.location.href = 'login.html';
-      return { ok: false, error: 'انتهت الجلسة' };
-    }
-    const data = await res.json();
-    return data;
-  } catch (e) {
-    return { ok: false, error: e.message };
-  }
-}
-
-// ─── Auth Helpers ─────────────────────
-function getUser() {
-  try { return JSON.parse(localStorage.getItem('mf_user') || 'null'); } catch { return null; }
-}
-function getToken() { return localStorage.getItem('mf_access_token'); }
-function logout() {
-  ['mf_user','mf_access_token','mf_refresh_token','mf_selected_course'].forEach(k => localStorage.removeItem(k));
-  window.location.href = 'login.html';
-}
-function requireAuth(allowedRoles = []) {
-  const user = getUser();
-  if (!user) { window.location.href = 'login.html'; return null; }
-  if (allowedRoles.length && !allowedRoles.includes(user.role)) {
-    if (user.role === 'student') window.location.href = 'student.html';
-    else window.location.href = 'admin.html';
-    return null;
-  }
-  return user;
-}
-function isAdmin(user) { return ['admin','superadmin','course_admin'].includes(user?.role); }
-function isSuperAdmin(user) { return user?.role === 'superadmin'; }
-
-// ─── Toast Notifications ──────────────
-function toast(msg, type = 'info', duration = 3500) {
-  const colors = { success: '#10b981', error: '#ef4444', info: '#7c3aed', warn: '#f59e0b' };
-  const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️' };
-  const el = document.createElement('div');
-  el.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:${colors[type]};color:#fff;padding:12px 24px;border-radius:14px;font-size:14px;font-family:Cairo,sans-serif;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.3);transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);max-width:90vw;text-align:center;direction:rtl;`;
-  el.textContent = icons[type] + ' ' + msg;
-  document.body.appendChild(el);
-  requestAnimationFrame(() => { el.style.transform = 'translateX(-50%) translateY(0)'; });
-  setTimeout(() => { el.style.transform = 'translateX(-50%) translateY(100px)'; setTimeout(() => el.remove(), 300); }, duration);
-}
-
-// ─── Loading Overlay ──────────────────
-function showLoading(show = true) {
-  let ov = document.getElementById('mf-loading');
-  if (show && !ov) {
-    ov = document.createElement('div');
-    ov.id = 'mf-loading';
-    ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.7);backdrop-filter:blur(4px);z-index:9998;display:flex;align-items:center;justify-content:center;';
-    ov.innerHTML = '<div style="width:48px;height:48px;border:3px solid rgba(124,58,237,0.3);border-top-color:#7c3aed;border-radius:50%;animation:spin 0.8s linear infinite;"></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
-    document.body.appendChild(ov);
-  } else if (!show && ov) ov.remove();
-}
-
-// ─── Dark Mode ────────────────────────
-function initTheme() {
-  const saved = localStorage.getItem('mf_theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', saved);
-  return saved;
-}
-function toggleTheme() {
-  const cur = document.documentElement.getAttribute('data-theme');
-  const next = cur === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('mf_theme', next);
-  return next;
-}
-
-// ─── Grade Labels ─────────────────────
-const GRADE_LABELS = { '3prep':'الثالث الإعدادي','1sec':'الأول الثانوي','2sec':'الثاني الثانوي','3sec':'الثالث الثانوي' };
-const GRADE_OPTIONS = Object.entries(GRADE_LABELS).map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
-function gradeLabel(g) { return GRADE_LABELS[g] || g; }
-
-// ─── Date Formatting ──────────────────
-function fmtDate(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' });
-}
-function fmtDateTime(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleString('ar-EG', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
-}
-
-// ─── Number Format ────────────────────
-function fmtNum(n) { return Number(n || 0).toLocaleString('ar-EG'); }
-
-// ─── Debounce ─────────────────────────
-function debounce(fn, ms = 300) {
-  let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
-}
-
-</script>
-<script>
-function updateThemeBtn(){ 
-  const btn = document.getElementById('themeBtn');
-  if(btn) btn.textContent = document.documentElement.getAttribute('data-theme')==='dark'?'☀️':'🌙'; 
-}
-function onToggleTheme(){ toggleTheme(); updateThemeBtn(); }
-
-initTheme();
-updateThemeBtn();
-
-const user = requireAuth(['student','admin','superadmin','course_admin']);
-if(!user) throw new Error('no user');
-
-document.getElementById('heroName').textContent = '👋 أهلاً، ' + (user.full_name || user.name || '');
-document.getElementById('heroGrade').textContent = gradeLabel(user.grade) || user.grade || '';
-
-let allCourses = [], enrolledCourses = [], paymentsData = [];
-let notifOpen = false;
-
-// ─── Load All Data ────────────────────
-async function loadAll(){
-  const gradeParam = user.grade && user.grade !== 'admin' ? `&grade=${user.grade}` : '';
-  const [coursesRes, certsRes, paymentsRes, notifsRes] = await Promise.all([
-    mfFetch(`student-courses?user_id=${user.id}${gradeParam}`),
-    mfFetch(`certificates?user_id=${user.id}`),
-    mfFetch(`create-payment?user_id=${user.id}`),
-    mfFetch(`user-notifications?user_id=${user.id}`)
-  ]);
-
-  allCourses = coursesRes.courses || [];
-  paymentsData = paymentsRes.payments || [];
-  renderCourses(allCourses);
-  renderCerts(certsRes.certificates || []);
-  renderNotifs(notifsRes.notifications || []);
-  renderStats();
-  buildSubjectFilters(allCourses);
-}
-
-function renderStats(){
-  const enrolled = allCourses.filter(c=>c.enrolled).length;
-  const pending = paymentsData.filter(p=>p.status==='pending').length;
-  document.getElementById('sMyCourses').textContent = enrolled;
-  document.getElementById('sPending').textContent = pending;
-}
-
-function buildSubjectFilters(courses){
-  const subjects = [...new Set(courses.map(c=>c.subject).filter(Boolean))];
-  const wrap = document.getElementById('subjectFilters');
-  subjects.forEach(s=>{
-    const btn = document.createElement('button');
-    btn.className = 'filter-chip';
-    btn.dataset.subject = s;
-    btn.textContent = s;
-    btn.onclick = ()=>filterCourses(btn,s);
-    wrap.appendChild(btn);
   });
 }
 
-function filterCourses(btn, subject){
-  document.querySelectorAll('.filter-chip').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  const filtered = subject ? allCourses.filter(c=>c.subject===subject) : allCourses;
-  renderCourses(filtered);
+function selCourse(id,title,subject,price){
+  selC={id,title,subject,price};
+  localStorage.setItem('mf_selected_course',JSON.stringify(selC));
+  renderSel();
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
-function renderCourses(courses){
-  const grid = document.getElementById('coursesGrid');
-  const enrolledGrid = document.getElementById('enrolledGrid');
-  const enrolledArr = courses.filter(c=>c.enrolled);
-  const availableArr = courses.filter(c=>!c.enrolled);
+// تهريب الـ strings عشان تتحط في onclick attributes
+function escA(s){return String(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');}
 
-  // Enrolled section
-  if(enrolledArr.length){
-    document.getElementById('enrolledSection').classList.remove('hidden');
-    enrolledGrid.innerHTML = enrolledArr.map(c=>courseCardHTML(c,true)).join('');
-  }
-
-  // Stats
-  document.getElementById('sMyCourses').textContent = enrolledArr.length;
-
-  // Available
-  if(!availableArr.length){ grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">📚</div><p>لا توجد كورسات متاحة لصفك حالياً</p></div>'; return; }
-  grid.innerHTML = availableArr.map(c=>courseCardHTML(c,false)).join('');
+// فتح الكورس — بيحفظ في localStorage الأول ثم بينتقل
+function openCourse(id,title,subject,price){
+  localStorage.setItem('mf_selected_course',JSON.stringify({id,title,subject,price:price||0}));
+  location.href='course.html';
 }
 
-function courseCardHTML(c, enrolled){
-  const status = enrolled ? 'enrolled' : (c.payment_status==='pending' ? 'pending' : 'available');
-  const statusLabel = enrolled ? '✅ مشترك' : (status==='pending' ? '⏳ قيد المراجعة' : '💳 اشتراك');
-  const statusClass = enrolled ? 'status-enrolled' : (status==='pending' ? 'status-pending' : 'status-available');
-  const sched = (c.schedules||[]).slice(0,2).map(s=>`${s.day_of_week} ${s.start_time}`).join(' | ');
-
-  // Progress
-  const progress = c.progress_percent || 0;
-  let progressHTML = '';
-  if(enrolled && progress !== undefined){
-    progressHTML = `<div class="mt-2"><div class="flex items-center justify-between mb-1"><span class="text-xs text-muted">التقدم</span><span class="text-xs font-bold text-primary">${progress}%</span></div><div class="progress-wrap"><div class="progress-bar" style="width:${progress}%"></div></div></div>`;
-  }
-
-  const priceHTML = !enrolled && c.price > 0 ? `<span class="badge badge-warn">${fmtNum(c.price)} جنيه</span>` : (c.price===0?'<span class="badge badge-success">مجاني</span>':'');
-
-  const safeTitle = encodeURIComponent(c.title||'');
-  const safeTeacher = encodeURIComponent(c.teacher_name||'');
-  const safeSubject = encodeURIComponent(c.subject||'');
-  
-  let actionBtn = '';
-  if(enrolled) {
-    actionBtn = '<button class="btn btn-primary btn-sm" onclick="openCourse(' + c.id + ')">▶️ فتح</button>';
-  } else if(status === 'available') {
-    actionBtn = '<button class="btn btn-primary btn-sm" onclick="goPay(' + c.id + ')">💳 اشتراك</button>';
-  } else {
-    actionBtn = '<span class="text-xs text-muted">جاري المراجعة</span>';
-  }
-
-  return `<div class="course-card">
-    <div class="course-card-body">
-      <div class="flex items-center justify-between mb-2">
-        <span class="badge badge-primary">${c.subject||''}</span>
-        ${priceHTML}
-      </div>
-      <div class="course-card-title">${c.title}</div>
-      <div class="course-card-teacher">👨‍🏫 ${c.teacher_name}</div>
-      ${sched ? '<div class="text-xs text-muted mt-2">📅 ' + sched + '</div>' : ''}
-      ${progressHTML}
-    </div>
-    <div class="course-card-footer">
-      <span class="course-status ${statusClass}">${statusLabel}</span>
-      ${actionBtn}
-    </div>
-  </div>`;
-}
-
-function openCourse(id){
-  const c = allCourses.find(x=>x.id===id);
-  if(c) localStorage.setItem('mf_selected_course', JSON.stringify({id:c.id,title:c.title,subject:c.subject,teacher_name:c.teacher_name,price:c.price||0}));
-  window.location.href = 'course.html';
-}
-function goPay(id){
-  const c = allCourses.find(x=>x.id===id);
-  if(c) localStorage.setItem('mf_selected_course', JSON.stringify({id:c.id,title:c.title,subject:c.subject,teacher_name:c.teacher_name,price:c.price||0}));
-  window.location.href = 'payment.html';
-}
-
-function renderCerts(certs){
-  document.getElementById('sCerts').textContent = certs.length;
-  if(!certs.length) return;
-  document.getElementById('certsSection').classList.remove('hidden');
-  document.getElementById('certsGrid').innerHTML = certs.map(c=>`
-    <div class="cert-card fade-up">
-      <div class="text-center mb-3" style="font-size:40px">🏅</div>
-      <div class="font-bold text-center">${c.course_title||'كورس'}</div>
-      <div class="text-sm text-muted text-center mt-1">${c.subject||''} — ${c.teacher||''}</div>
-      <div class="text-xs text-muted text-center mt-2">${fmtDate(c.issued_at)}</div>
-      <div class="text-center mt-2"><span class="badge badge-success"># ${c.cert_code}</span></div>
-    </div>`).join('');
-}
-
-// ─── Notifications ────────────────────
-let notifData = [];
-function renderNotifs(notifs){
-  notifData = notifs;
-  const unread = notifs.filter(n=>!n.is_read).length;
-  document.getElementById('notifDot').classList.toggle('hidden', !unread);
-  const list = document.getElementById('notifList');
-  if(!notifs.length){ list.innerHTML = '<div class="text-center text-muted p-4 text-sm">لا توجد إشعارات</div>'; return; }
-  list.innerHTML = notifs.map(n=>`
-    <div class="notif-item ${n.is_read?'':'unread'}">
-      ${!n.is_read?'<div class="notif-dot-item"></div>':'<div style="width:8px"></div>'}
-      <div><div class="text-sm font-bold">${n.title}</div><div class="text-xs text-muted mt-1">${n.message}</div><div class="text-xs text-muted mt-1">${fmtDateTime(n.created_at)}</div></div>
-    </div>`).join('');
-}
-
-function toggleNotifs(){
-  notifOpen = !notifOpen;
-  document.getElementById('notifPanel').classList.toggle('hidden', !notifOpen);
-}
-function markAllRead(){
-  document.getElementById('notifDot').classList.add('hidden');
-  document.querySelectorAll('.notif-item').forEach(el=>el.classList.remove('unread'));
-  document.querySelectorAll('.notif-dot-item').forEach(el=>el.remove());
-}
-
-// Close notifs on outside click
-document.addEventListener('click',e=>{
-  if(notifOpen && !document.getElementById('notifPanel').contains(e.target) && !document.getElementById('notifBtn').contains(e.target)){
-    notifOpen=false; document.getElementById('notifPanel').classList.add('hidden');
-  }
-});
-
-loadAll();
+loadNotifs();
+loadPaymentStatus();
+loadCerts();
+loadCourses();
 </script>
 </body>
 </html>
