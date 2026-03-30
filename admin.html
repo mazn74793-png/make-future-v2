@@ -1,2493 +1,804 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl" data-theme="dark">
+<!doctype html>
+<html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Make Future Center — لوحة الإدارة</title>
-<link rel="manifest" href="manifest.json">
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Make Future | لوحة الأدمن</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
-/* ═══════════════════════════════════════
-   Make Future Center V2 — Global Styles
-   ═══════════════════════════════════════ */
+:root{--bg:#07091a;--bg2:#0d1230;--card:rgba(255,255,255,.055);--border:rgba(255,255,255,.1);--text:#eef0ff;--muted:rgba(238,240,255,.5);--grad:linear-gradient(135deg,#7c3aed,#06b6d4);--r:18px;color-scheme:dark}
+[data-theme=light]{--bg:#f2f4ff;--bg2:#e6eaff;--card:rgba(255,255,255,.8);--border:rgba(0,0,0,.09);--text:#0d1230;--muted:rgba(13,18,48,.5);color-scheme:light}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background .35s,color .35s}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 65% 50% at 10% 10%,rgba(124,58,237,.07) 0%,transparent 55%),radial-gradient(ellipse 50% 40% at 88% 88%,rgba(6,182,212,.05) 0%,transparent 55%);pointer-events:none;z-index:0}
+@keyframes up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.a0{opacity:0;animation:up .5s ease forwards}.a1{animation-delay:.07s}.a2{animation-delay:.14s}.a3{animation-delay:.21s}.a4{animation-delay:.28s}
+nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(22px);background:rgba(7,9,26,.84);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;justify-content:space-between;align-items:center;animation:fi .4s ease}
+[data-theme=light] nav{background:rgba(242,244,255,.9)}
+.nav-logo{font-size:18px;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-row{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.nb{cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text);padding:7px 13px;border-radius:11px;text-decoration:none;font-weight:700;font-size:13px;font-family:'Cairo',sans-serif;transition:all .2s}
+.nb:hover{background:rgba(124,58,237,.18);border-color:#7c3aed77;transform:translateY(-1px)}
+.thbtn{cursor:pointer;border:1px solid var(--border);background:var(--card);width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-size:15px;transition:all .25s}
+.thbtn:hover{transform:rotate(22deg) scale(1.12)}
+.wrap{max-width:1250px;margin:0 auto;padding:20px 18px;position:relative;z-index:1}
+.box{background:rgba(0,0,0,.2);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:14px}
+[data-theme=light] .box{background:rgba(255,255,255,.6)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:740px){.grid2{grid-template-columns:1fr}}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pill{display:inline-flex;gap:5px;align-items:center;border:1px solid var(--border);padding:4px 11px;border-radius:999px;font-size:12px;font-weight:700}
+.hr{height:1px;background:linear-gradient(to right,transparent,var(--border),transparent);margin:14px 0}
+.muted{color:var(--muted);font-size:13px;line-height:1.75}
+input,select,textarea{width:100%;padding:9px 13px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);font-size:13px;font-family:'Cairo',sans-serif;outline:none;transition:all .2s}
+[data-theme=light] input,[data-theme=light] select,[data-theme=light] textarea{background:rgba(0,0,0,.04)}
+input:focus,select:focus,textarea:focus{border-color:#7c3aed88}
+select option{background:var(--bg2)}
+textarea{min-height:72px;resize:vertical}
+.flabel{font-size:12px;color:var(--muted);margin-bottom:5px;display:block}
+.field{margin-bottom:12px}
+.btn{cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text);padding:9px 14px;border-radius:12px;font-weight:800;font-size:13px;font-family:'Cairo',sans-serif;transition:all .2s}
+.btn:hover{background:rgba(255,255,255,.12);transform:translateY(-1px)}
+.bsm{padding:6px 11px;border-radius:10px;font-size:12px}
+.bok{border:none;background:linear-gradient(135deg,#16a34a,#06b6d4);color:#fff}
+.bbad{border:none;background:linear-gradient(135deg,#dc2626,#7c3aed);color:#fff}
+.bwarn{border:none;background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff}
+.bgrad{border:none;background:var(--grad);color:#fff}
+/* Tabs */
+.tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
+.tbtn{cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--muted);padding:9px 16px;border-radius:13px;font-weight:700;font-size:13px;font-family:'Cairo',sans-serif;transition:all .22s}
+.tbtn:hover{background:rgba(124,58,237,.14);color:var(--text)}
+.tbtn.on{background:rgba(124,58,237,.2);border-color:#7c3aed88;color:#c4b5fd}
+.tpane{display:none;animation:up .35s ease}.tpane.on{display:block}
+.msgbar{padding:10px 14px;border-radius:13px;font-size:13px;display:none;margin:10px 0}
+.msgbar.show{display:block}.msgbar.ok{background:#064e3b;border:1px solid #047857}.msgbar.err{background:#7f1d1d;border:1px solid #991b1b}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{border-bottom:1px solid var(--border);padding:10px 8px;font-size:13px;vertical-align:top}
+th{text-align:right;color:var(--muted);font-weight:600}
+.spin{width:36px;height:36px;border-radius:50%;border:3px solid var(--border);border-top-color:#7c3aed;animation:spin 1s linear infinite;margin:20px auto}
+/* Stats */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:10px}
+.stat-item{background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.2);border-radius:14px;padding:14px;text-align:center}
+.stat-num{font-size:28px;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-label{font-size:12px;color:var(--muted);margin-top:4px}
+/* Video items */
+.vid-item{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px;margin-top:8px;display:flex;gap:10px;align-items:flex-start;transition:all .22s}
+.vid-item:hover{border-color:#7c3aed55}
+.vid-num{width:30px;height:30px;flex-shrink:0;border-radius:9px;background:var(--grad);display:grid;place-items:center;font-weight:900;font-size:12px;color:#fff}
+.vid-meta{flex:1;min-width:0}
+.vid-meta h4{font-size:14px;font-weight:700;margin-bottom:3px}
+.vid-meta p{font-size:12px;color:var(--muted)}
 
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Tajawal:wght@300;400;500;700;800&display=swap');
-
-/* ─── CSS Variables ─────────────────── */
-:root {
-  --primary: #7c3aed;
-  --primary-light: #9d5ff5;
-  --primary-dark: #5b21b6;
-  --secondary: #06b6d4;
-  --secondary-light: #22d3ee;
-  --accent: #f59e0b;
-  --danger: #ef4444;
-  --success: #10b981;
-  --warn: #f59e0b;
-
-  --grad: linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%);
-  --grad-soft: linear-gradient(135deg, rgba(124,58,237,0.15) 0%, rgba(6,182,212,0.15) 100%);
-
-  /* Dark Theme (default) */
-  --bg: #0a0f1e;
-  --bg2: #0f172a;
-  --bg3: #1e293b;
-  --bg4: #263147;
-  --surface: rgba(30,41,59,0.8);
-  --surface2: rgba(38,49,71,0.9);
-  --border: rgba(124,58,237,0.2);
-  --border2: rgba(255,255,255,0.06);
-  --text: #f1f5f9;
-  --text2: #94a3b8;
-  --text3: #64748b;
-  --shadow: 0 8px 32px rgba(0,0,0,0.4);
-  --shadow-lg: 0 20px 60px rgba(0,0,0,0.5);
-  --glow: 0 0 40px rgba(124,58,237,0.3);
+@media(max-width:480px){
+  input,select,textarea{font-size:16px!important}
+  .wrap{padding:10px}
+  .tabbar{gap:4px}
+  .tbtn{padding:8px 10px;font-size:11px}
 }
-
-[data-theme="light"] {
-  --bg: #f8fafc;
-  --bg2: #f1f5f9;
-  --bg3: #e2e8f0;
-  --bg4: #cbd5e1;
-  --surface: rgba(255,255,255,0.9);
-  --surface2: rgba(248,250,252,0.95);
-  --border: rgba(124,58,237,0.2);
-  --border2: rgba(0,0,0,0.06);
-  --text: #0f172a;
-  --text2: #475569;
-  --text3: #94a3b8;
-  --shadow: 0 4px 20px rgba(0,0,0,0.08);
-  --shadow-lg: 0 20px 60px rgba(0,0,0,0.12);
-  --glow: 0 0 40px rgba(124,58,237,0.15);
-}
-
-/* ─── Reset & Base ──────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-html { scroll-behavior: smooth; }
-
-body {
-  font-family: 'Cairo', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  direction: rtl;
-  min-height: 100vh;
-  line-height: 1.6;
-  overflow-x: hidden;
-  transition: background 0.3s, color 0.3s;
-}
-
-/* ─── Scrollbar ─────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--bg2); }
-::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 3px; }
-
-/* ─── Typography ────────────────────── */
-h1,h2,h3,h4,h5,h6 { font-weight: 700; line-height: 1.3; }
-a { color: inherit; text-decoration: none; }
-img { max-width: 100%; }
-
-/* ─── Background Mesh ───────────────── */
-.bg-mesh {
-  position: fixed; inset: 0; z-index: -1; pointer-events: none;
-  background:
-    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(124,58,237,0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(6,182,212,0.08) 0%, transparent 60%),
-    var(--bg);
-}
-
-/* ─── Glass Card ────────────────────── */
-.glass {
-  background: var(--surface);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  box-shadow: var(--shadow);
-}
-.glass-sm {
-  background: var(--surface2);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border2);
-  border-radius: 12px;
-}
-
-/* ─── Buttons ───────────────────────── */
-.btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 10px 24px; border-radius: 12px; font-family: 'Cairo', sans-serif;
-  font-size: 14px; font-weight: 600; cursor: pointer; border: none;
-  transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1); white-space: nowrap;
-  user-select: none; position: relative; overflow: hidden;
-}
-.btn::after {
-  content: ''; position: absolute; inset: 0; background: rgba(255,255,255,0);
-  transition: background 0.2s;
-}
-.btn:hover::after { background: rgba(255,255,255,0.08); }
-.btn:active { transform: scale(0.97); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
-
-.btn-primary { background: var(--grad); color: #fff; box-shadow: 0 4px 20px rgba(124,58,237,0.4); }
-.btn-primary:hover { box-shadow: 0 8px 30px rgba(124,58,237,0.5); transform: translateY(-1px); }
-.btn-secondary { background: var(--bg3); color: var(--text); border: 1px solid var(--border2); }
-.btn-secondary:hover { background: var(--bg4); }
-.btn-danger { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
-.btn-danger:hover { background: rgba(239,68,68,0.25); }
-.btn-success { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
-.btn-success:hover { background: rgba(16,185,129,0.25); }
-.btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 8px; }
-.btn-lg { padding: 14px 32px; font-size: 16px; border-radius: 14px; }
-.btn-block { width: 100%; }
-.btn-icon { padding: 8px; border-radius: 8px; aspect-ratio: 1; }
-
-/* ─── Form Inputs ───────────────────── */
-.form-group { margin-bottom: 16px; }
-.form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 8px; }
-.form-input, .form-select, .form-textarea {
-  width: 100%; padding: 12px 16px; background: var(--bg3);
-  border: 1px solid var(--border2); border-radius: 12px;
-  color: var(--text); font-family: 'Cairo', sans-serif; font-size: 14px;
-  transition: all 0.2s; outline: none;
-}
-.form-input:focus, .form-select:focus, .form-textarea:focus {
-  border-color: var(--primary); box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
-  background: var(--bg2);
-}
-.form-input::placeholder { color: var(--text3); }
-.mc-stab { flex:1; min-width:80px; padding:7px 10px; border-radius:7px; border:none; background:transparent; color:var(--text2); font-size:12px; font-weight:700; cursor:pointer; font-family:Cairo,sans-serif; transition:all .2s; }
-.mc-stab.active { background:var(--bg2); color:var(--primary); box-shadow:0 2px 8px rgba(0,0,0,.2); }
-.mc-stab:hover:not(.active) { background:var(--bg4); }
-.form-textarea { resize: vertical; min-height: 80px; }
-.form-select { cursor: pointer; }
-
-/* ─── Badges ────────────────────────── */
-.badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
-}
-.badge-primary { background: rgba(124,58,237,0.2); color: var(--primary-light); }
-.badge-success { background: rgba(16,185,129,0.15); color: #10b981; }
-.badge-danger { background: rgba(239,68,68,0.15); color: #ef4444; }
-.badge-warn { background: rgba(245,158,11,0.15); color: #f59e0b; }
-.badge-info { background: rgba(6,182,212,0.15); color: #06b6d4; }
-
-/* ─── Stat Cards ────────────────────── */
-.stat-card {
-  padding: 24px; border-radius: 20px; position: relative; overflow: hidden;
-  background: var(--surface); border: 1px solid var(--border);
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-.stat-card:hover { transform: translateY(-4px); box-shadow: var(--glow); }
-.stat-card .stat-icon { font-size: 32px; margin-bottom: 12px; }
-.stat-card .stat-value { font-size: 32px; font-weight: 800; color: var(--text); line-height: 1; }
-.stat-card .stat-label { font-size: 13px; color: var(--text2); margin-top: 6px; }
-.stat-card::before {
-  content: ''; position: absolute; inset: 0;
-  background: var(--grad-soft); opacity: 0.5; z-index: 0;
-}
-.stat-card > * { position: relative; z-index: 1; }
-
-/* ─── Progress Bar ──────────────────── */
-.progress-wrap { background: var(--bg3); border-radius: 999px; overflow: hidden; height: 6px; }
-.progress-bar { height: 100%; background: var(--grad); border-radius: 999px; transition: width 0.6s ease; }
-
-/* ─── Progress Ring ─────────────────── */
-.progress-ring { position: relative; display: inline-flex; align-items: center; justify-content: center; }
-.progress-ring svg { transform: rotate(-90deg); }
-.progress-ring .ring-text { position: absolute; font-size: 13px; font-weight: 800; color: var(--text); }
-
-/* ─── Tabs ──────────────────────────── */
-.tabs { display: flex; gap: 4px; background: var(--bg2); border-radius: 14px; padding: 4px; flex-wrap: wrap; }
-.tab-btn {
-  padding: 8px 16px; border-radius: 10px; font-family: 'Cairo', sans-serif;
-  font-size: 13px; font-weight: 600; cursor: pointer; border: none;
-  background: transparent; color: var(--text2); transition: all 0.2s; white-space: nowrap;
-}
-.tab-btn.active { background: var(--grad); color: #fff; box-shadow: 0 4px 12px rgba(124,58,237,0.3); }
-.tab-pane { display: none; }
-.tab-pane.active { display: block; animation: fadeIn 0.3s ease; }
-
-/* ─── Table ─────────────────────────── */
-.table-wrap { overflow-x: auto; border-radius: 16px; border: 1px solid var(--border2); }
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th { padding: 14px 16px; background: var(--bg3); color: var(--text2); font-weight: 600; text-align: right; white-space: nowrap; }
-td { padding: 12px 16px; border-top: 1px solid var(--border2); color: var(--text); }
-tr:hover td { background: rgba(124,58,237,0.04); }
-
-/* ─── Modal ─────────────────────────── */
-.modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
-  z-index: 1000; display: flex; align-items: center; justify-content: center;
-  padding: 16px; opacity: 0; pointer-events: none; transition: opacity 0.25s;
-}
-.modal-overlay.open { opacity: 1; pointer-events: auto; }
-.modal-box {
-  background: var(--bg2); border: 1px solid var(--border); border-radius: 24px;
-  width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto;
-  transform: scale(0.9) translateY(20px); transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
-  box-shadow: var(--shadow-lg);
-}
-.modal-overlay.open .modal-box { transform: scale(1) translateY(0); }
-.modal-header { padding: 24px 24px 0; display: flex; align-items: center; justify-content: space-between; }
-.modal-body { padding: 20px 24px 24px; }
-.modal-title { font-size: 18px; font-weight: 700; }
-
-/* ─── Navbar ────────────────────────── */
-.navbar {
-  position: sticky; top: 0; z-index: 100;
-  background: rgba(10,15,30,0.85); backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border2); padding: 0 24px;
-  display: flex; align-items: center; justify-content: space-between; height: 64px;
-  transition: background 0.3s;
-}
-[data-theme="light"] .navbar { background: rgba(248,250,252,0.9); }
-.nav-logo { font-size: 18px; font-weight: 800; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.nav-actions { display: flex; align-items: center; gap: 8px; }
-
-/* ─── Notification Badge ────────────── */
-.notif-dot {
-  position: absolute; top: -2px; right: -2px; width: 8px; height: 8px;
-  background: var(--danger); border-radius: 50%; border: 2px solid var(--bg);
-  animation: pulse 2s infinite;
-}
-
-/* ─── Animations ────────────────────── */
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.8; } }
-@keyframes shimmer { to { background-position: 200% center; } }
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-
-.fade-up { animation: fadeUp 0.5s ease both; }
-.fade-up-1 { animation-delay: 0.1s; }
-.fade-up-2 { animation-delay: 0.2s; }
-.fade-up-3 { animation-delay: 0.3s; }
-.fade-up-4 { animation-delay: 0.4s; }
-
-/* ─── Skeleton Loading ──────────────── */
-.skeleton {
-  background: linear-gradient(90deg, var(--bg3) 25%, var(--bg4) 50%, var(--bg3) 75%);
-  background-size: 200% auto;
-  animation: shimmer 1.5s infinite;
-  border-radius: 8px;
-}
-
-/* ─── Grid ──────────────────────────── */
-.grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; }
-.grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
-.grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
-@media (max-width: 900px) { .grid-4,.grid-3 { grid-template-columns: repeat(2,1fr); } }
-@media (max-width: 600px) { .grid-4,.grid-3,.grid-2 { grid-template-columns: 1fr; } }
-
-/* ─── Utility ───────────────────────── */
-.flex { display: flex; }
-.flex-col { flex-direction: column; }
-.items-center { align-items: center; }
-.justify-between { justify-content: space-between; }
-.justify-center { justify-content: center; }
-.gap-2 { gap: 8px; }
-.gap-3 { gap: 12px; }
-.gap-4 { gap: 16px; }
-.w-full { width: 100%; }
-.text-center { text-align: center; }
-.text-sm { font-size: 13px; }
-.text-xs { font-size: 11px; }
-.text-muted { color: var(--text2); }
-.text-primary { color: var(--primary-light); }
-.text-success { color: var(--success); }
-.text-danger { color: var(--danger); }
-.text-warn { color: var(--warn); }
-.font-bold { font-weight: 700; }
-.font-black { font-weight: 900; }
-.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mt-1 { margin-top: 4px; } .mt-2 { margin-top: 8px; } .mt-3 { margin-top: 12px; } .mt-4 { margin-top: 16px; }
-.mb-1 { margin-bottom: 4px; } .mb-2 { margin-bottom: 8px; } .mb-3 { margin-bottom: 12px; } .mb-4 { margin-bottom: 16px; }
-.p-3 { padding: 12px; } .p-4 { padding: 16px; } .p-5 { padding: 20px; } .p-6 { padding: 24px; }
-.rounded { border-radius: 8px; } .rounded-lg { border-radius: 14px; } .rounded-xl { border-radius: 20px; }
-.hidden { display: none !important; }
-.pointer { cursor: pointer; }
-
-/* ─── Theme Toggle ──────────────────── */
-.theme-toggle {
-  width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border2);
-  background: var(--bg3); cursor: pointer; display: flex; align-items: center; justify-content: center;
-  font-size: 18px; transition: all 0.2s;
-}
-.theme-toggle:hover { background: var(--bg4); transform: scale(1.05); }
-
-/* ─── Empty State ───────────────────── */
-.empty-state { text-align: center; padding: 60px 20px; color: var(--text2); }
-.empty-state .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
-.empty-state p { font-size: 14px; }
-
-/* ─── Container ─────────────────────── */
-.container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
-.page-content { padding: 24px 0; }
-
-/* ─── Section Header ────────────────── */
-.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-.section-title { font-size: 18px; font-weight: 700; }
-
-/* ─── Divider ───────────────────────── */
-.divider { height: 1px; background: var(--border2); margin: 16px 0; }
-
-/* ─── Scrollable List ───────────────── */
-.scroll-list { max-height: 400px; overflow-y: auto; }
-
-/* ─── PWA Install Banner ────────────── */
-#pwa-banner {
-  position: fixed; bottom: 80px; left: 16px; right: 16px;
-  background: var(--grad); color: #fff; border-radius: 16px; padding: 14px 20px;
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  box-shadow: 0 8px 32px rgba(124,58,237,0.4); z-index: 500; animation: slideDown 0.5s ease;
-}
-
-</style>
-<style>
-.admin-layout { display: grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 64px); }
-@media(max-width:800px){ .admin-layout { grid-template-columns: 1fr; } .admin-sidebar { display: none; } .admin-sidebar.open { display: flex; position: fixed; inset: 0; top: 64px; z-index: 200; background: var(--bg2); flex-direction: column; overflow-y: auto; } }
-.admin-sidebar { background: var(--bg2); border-left: 1px solid var(--border2); padding: 16px 0; display: flex; flex-direction: column; }
-.side-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text2); transition: all 0.2s; border-right: 3px solid transparent; }
-.side-item:hover { color: var(--text); background: rgba(124,58,237,0.06); }
-.side-item.active { color: var(--primary-light); background: rgba(124,58,237,0.1); border-right-color: var(--primary); }
-.side-item .side-icon { font-size: 18px; }
-.admin-content { overflow-y: auto; padding: 24px; }
-.tab-panel { display: none; }
-.tab-panel.active { display: block; animation: fadeIn 0.3s ease; }
-.hamburger { display: none; }
-@media(max-width:800px){ .hamburger { display: flex; } }
-
-/* Upload area */
-.upload-drop { border: 2px dashed var(--border); border-radius: 16px; padding: 32px; text-align: center; cursor: pointer; transition: all 0.2s; }
-.upload-drop:hover, .upload-drop.drag-over { border-color: var(--primary); background: rgba(124,58,237,0.06); }
-.upload-progress-wrap { margin-top: 12px; display: none; }
-.upload-progress-bar { height: 8px; background: var(--grad); border-radius: 999px; transition: width 0.3s; width: 0%; }
-
-/* Payment row */
-.payment-row { padding: 14px 16px; border-bottom: 1px solid var(--border2); display: flex; align-items: flex-start; gap: 12px; }
-.payment-row:hover { background: rgba(124,58,237,0.04); }
-.payment-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
-
-/* Drag handle */
-.drag-handle { cursor: grab; color: var(--text3); padding: 4px; }
-.sortable-ghost { opacity: 0.4; background: rgba(124,58,237,0.1) !important; }
-
-/* quiz builder */
-.question-builder { padding: 16px; border-radius: 14px; background: var(--bg3); border: 1px solid var(--border2); margin-bottom: 12px; position: relative; }
 </style>
 </head>
 <body>
-<div class="bg-mesh"></div>
-
-<nav class="navbar">
-  <div class="flex items-center gap-2">
-    <button class="hamburger btn btn-sm btn-secondary" onclick="toggleSidebar()">☰</button>
-    <span class="nav-logo">⚙️ Make Future Admin</span>
-  </div>
-  <div class="nav-actions">
-    <span class="text-sm text-muted hidden" id="adminRoleBadge" style="display:inline-block"></span>
-    <button class="theme-toggle" onclick="onToggleTheme()" id="themeBtn">🌙</button>
-    <a href="student.html" class="btn btn-sm btn-secondary">👨‍🎓 طالب</a>
-    <button class="btn btn-sm btn-danger" onclick="logout()">خروج</button>
+<nav>
+  <div class="nav-logo">MF — لوحة الأدمن</div>
+  <div class="nav-row">
+    <a href="student.html" class="nb">👁️ طالب</a>
+    <a href="change-password.html" class="nb">🔑 الباسورد</a>
+    <div class="thbtn" id="thb" onclick="toggleTheme()">🌙</div>
+    <button class="nb" onclick="logout()">خروج</button>
   </div>
 </nav>
 
-<div class="admin-layout">
-  <!-- Sidebar -->
-  <aside class="admin-sidebar" id="adminSidebar">
-    <div id="sideItems"></div>
-  </aside>
+<div class="wrap">
+  <div id="msgbar" class="msgbar a0 a1"></div>
 
-  <!-- Content -->
-  <main class="admin-content">
-    <!-- DASHBOARD -->
-    <div class="tab-panel active" id="panel-dashboard">
-      <h2 class="section-title mb-4">📊 لوحة التحكم</h2>
-      <div class="grid-4" id="dashStats">
-        <div class="stat-card skeleton" style="height:120px"></div>
-        <div class="stat-card skeleton" style="height:120px"></div>
-        <div class="stat-card skeleton" style="height:120px"></div>
-        <div class="stat-card skeleton" style="height:120px"></div>
-      </div>
-      <div class="grid-2 mt-4">
-        <div>
-          <h3 class="section-title mb-3">💳 آخر المدفوعات</h3>
-          <div id="dashPayments"><div class="skeleton" style="height:200px;border-radius:16px"></div></div>
-        </div>
-        <div>
-          <h3 class="section-title mb-3">👥 آخر المستخدمين</h3>
-          <div id="dashUsers"><div class="skeleton" style="height:200px;border-radius:16px"></div></div>
-        </div>
-      </div>
+  <div class="tabs a0 a2">
+    <button class="tbtn on" onclick="openTab('dash',this)">📊 Dashboard</button>
+    <button class="tbtn" onclick="openTab('courses',this)">🎓 الكورسات</button>
+    <button class="tbtn" onclick="openTab('sched',this)">🗓️ المواعيد</button>
+    <button class="tbtn" onclick="openTab('videos',this)">🎬 الفيديوهات</button>
+    <button class="tbtn" onclick="openTab('pay',this)">💳 الدفع</button>
+    <button class="tbtn" onclick="openTab('coupons',this)">🎟️ الكوبونات</button>
+    <button class="tbtn" onclick="openTab('comments',this)">💬 التعليقات</button>
+    <button class="tbtn" onclick="openTab('users',this)">👥 المستخدمين</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dash" class="tpane on">
+    <div class="box a0 a3">
+      <div class="pill">📊 إحصائيات سريعة</div>
+      <div id="statGrid" class="stat-grid"><div class="spin"></div></div>
+      <button class="btn bsm" style="margin-top:12px" onclick="loadStats()">🔄 تحديث</button>
     </div>
-
-    <!-- COURSES -->
-    <div class="tab-panel" id="panel-courses">
-      <div class="section-header">
-        <h2 class="section-title">📚 الكورسات</h2>
-        <button class="btn btn-primary btn-sm" onclick="openModal('modalCourse')">+ إضافة كورس</button>
+    <div class="grid2">
+      <div class="box a0 a4">
+        <div class="pill">🧾 آخر مدفوعات</div>
+        <div id="latestPay" class="muted" style="margin-top:8px">…</div>
       </div>
-      <div class="flex gap-2 mb-4 flex-wrap">
-        <select class="form-select" style="width:auto" id="filterGrade" onchange="loadCourses()"><option value="">كل الصفوف</option><option value="3prep">الإعدادي</option><option value="1sec">أول ثانوي</option><option value="2sec">ثاني ثانوي</option><option value="3sec">ثالث ثانوي</option></select>
+      <div class="box a0 a4" style="animation-delay:.35s">
+        <div class="pill">🧑‍🎓 آخر تسجيلات</div>
+        <div id="latestUsers" class="muted" style="margin-top:8px">…</div>
       </div>
-      <div class="table-wrap"><table>
-        <thead><tr><th>الكورس</th><th>المدرس</th><th>الصف</th><th>السعر</th><th>المشتركين</th><th>الحالة</th><th>إجراءات</th></tr></thead>
-        <tbody id="coursesTable"><tr><td colspan="7" class="text-center text-muted p-4">جاري التحميل...</td></tr></tbody>
-      </table></div>
-    </div>
-
-    <!-- SCHEDULES -->
-    <div class="tab-panel" id="panel-schedules">
-      <div class="section-header">
-        <h2 class="section-title">📅 المواعيد</h2>
-        <button class="btn btn-primary btn-sm" onclick="openModal('modalSchedule')">+ إضافة موعد</button>
-      </div>
-      <div class="flex gap-2 mb-4">
-        <select class="form-select" style="width:auto" id="schedCourseFilter" onchange="loadSchedules()"><option value="">اختر كورس</option></select>
-      </div>
-      <div class="table-wrap"><table>
-        <thead><tr><th>اليوم</th><th>من</th><th>إلى</th><th>ملاحظة</th><th>إجراءات</th></tr></thead>
-        <tbody id="schedulesTable"><tr><td colspan="5" class="text-center text-muted p-4">اختر كورس أولاً</td></tr></tbody>
-      </table></div>
-    </div>
-
-    <!-- VIDEOS -->
-    <div class="tab-panel" id="panel-videos">
-      <div class="section-header">
-        <h2 class="section-title">🎬 الفيديوهات</h2>
-        <button class="btn btn-primary btn-sm" onclick="openAddVideoModal()">+ إضافة فيديو</button>
-      </div>
-      <div class="flex gap-2 mb-4">
-        <select class="form-select" style="width:auto" id="vidCourseFilter" onchange="loadVideos()"><option value="">اختر كورس</option></select>
-      </div>
-      <div id="videosList"><div class="empty-state"><div class="empty-icon">🎬</div><p>اختر كورس لعرض فيديوهاته</p></div></div>
-    </div>
-
-    <!-- PAYMENTS -->
-    <div class="tab-panel" id="panel-payments">
-      <div class="section-header">
-        <h2 class="section-title">💳 المدفوعات</h2>
-        <div class="flex gap-2">
-          <button class="btn btn-sm btn-success" onclick="bulkApprove()" id="bulkApproveBtn">✅ قبول المحددين</button>
-        </div>
-      </div>
-      <div class="tabs mb-4">
-        <button class="tab-btn active" onclick="loadPayments('pending',this)">⏳ قيد المراجعة</button>
-        <button class="tab-btn" onclick="loadPayments('approved',this)">✅ مقبول</button>
-        <button class="tab-btn" onclick="loadPayments('rejected',this)">❌ مرفوض</button>
-      </div>
-      <div id="paymentsList"><div class="text-center text-muted p-6">جاري التحميل...</div></div>
-    </div>
-
-    <!-- COUPONS -->
-    <div class="tab-panel" id="panel-coupons">
-      <div class="section-header">
-        <h2 class="section-title">🎫 الكوبونات</h2>
-        <button class="btn btn-primary btn-sm" onclick="openModal('modalCoupon')">+ إنشاء كوبون</button>
-      </div>
-      <div class="table-wrap"><table>
-        <thead><tr><th>الكود</th><th>الخصم</th><th>الاستخدام</th><th>تنتهي</th><th>الحالة</th><th>إجراءات</th></tr></thead>
-        <tbody id="couponsTable"><tr><td colspan="6" class="text-center text-muted p-4">جاري التحميل...</td></tr></tbody>
-      </table></div>
-    </div>
-
-    <!-- COMMENTS -->
-    <div class="tab-panel" id="panel-comments">
-      <div class="section-header">
-        <h2 class="section-title">💬 التعليقات</h2>
-      </div>
-      <div class="flex gap-2 mb-4">
-        <select class="form-select" style="width:auto" id="commentCourseFilter" onchange="loadAdminComments()"><option value="">اختر كورس</option></select>
-      </div>
-      <div id="adminCommentsList"><div class="empty-state"><div class="empty-icon">💬</div><p>اختر كورس لعرض تعليقاته</p></div></div>
-    </div>
-
-    <!-- USERS -->
-    <div class="tab-panel" id="panel-users">
-      <div class="section-header">
-        <h2 class="section-title">👥 المستخدمين</h2>
-      </div>
-      <div class="flex gap-2 mb-4">
-        <input type="text" class="form-input" style="max-width:300px" id="userSearch" placeholder="🔍 بحث باسم أو موبايل..." oninput="filterUsers()">
-      </div>
-      <div class="table-wrap"><table>
-        <thead><tr><th>الاسم</th><th>الموبايل</th><th>الصف</th><th>الدور</th><th>إجراءات</th></tr></thead>
-        <tbody id="usersTable"><tr><td colspan="5" class="text-center text-muted p-4">جاري التحميل...</td></tr></tbody>
-      </table></div>
-    </div>
-
-    <!-- QUIZZES -->
-    <div class="tab-panel" id="panel-quizzes">
-      <div class="section-header">
-        <h2 class="section-title">📝 الكويزات</h2>
-        <button class="btn btn-primary btn-sm" onclick="openModal('modalQuiz')">+ إنشاء كويز</button>
-      </div>
-      <div class="flex gap-2 mb-4">
-        <select class="form-select" style="width:auto" id="quizCourseFilter" onchange="loadQuizzes()"><option value="">اختر كورس</option></select>
-      </div>
-      <div id="quizzesList"><div class="empty-state"><div class="empty-icon">📝</div><p>اختر كورس لعرض كويزاته</p></div></div>
-    </div>
-
-    <!-- ══ MYCOURSE PANEL (course_admin — full management) ══ -->
-    <div class="tab-panel" id="panel-mycourse">
-
-      <!-- Course selector (لو عنده أكتر من كورس) -->
-      <div id="mcCourseBar" style="padding:0 0 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <div style="font-size:13px;font-weight:700;color:var(--text2)">الكورس:</div>
-        <div id="mcCourseChips" style="display:flex;gap:8px;flex-wrap:wrap"></div>
-      </div>
-
-      <!-- Sub-tabs -->
-      <div style="display:flex;gap:4px;margin-bottom:16px;background:var(--bg3);padding:4px;border-radius:10px;flex-wrap:wrap" id="mcSubTabs">
-        <button class="mc-stab active" onclick="mcSwitch('videos',this)">🎬 فيديوهات</button>
-        <button class="mc-stab" onclick="mcSwitch('schedules',this)">📅 مواعيد</button>
-        <button class="mc-stab" onclick="mcSwitch('quizzes',this)">📝 كويزات</button>
-        <button class="mc-stab" onclick="mcSwitch('students',this)">👥 الطلاب</button>
-        <button class="mc-stab" onclick="mcSwitch('payments',this)">💳 اشتراكات</button>
-      </div>
-
-      <!-- Videos sub-panel -->
-      <div id="mc-panel-videos">
-        <div class="section-header">
-          <h2 class="section-title">🎬 فيديوهات الكورس</h2>
-          <button class="btn btn-primary btn-sm" onclick="openMcVideoModal()">+ إضافة فيديو</button>
-        </div>
-        <div id="mcVideosList"><div class="empty-state"><div class="empty-icon">🎬</div><p>لا توجد فيديوهات</p></div></div>
-      </div>
-
-      <!-- Schedules sub-panel -->
-      <div id="mc-panel-schedules" class="hidden">
-        <div class="section-header">
-          <h2 class="section-title">📅 مواعيد الكورس</h2>
-          <button class="btn btn-primary btn-sm" onclick="openMcScheduleModal()">+ إضافة موعد</button>
-        </div>
-        <div id="mcSchedulesList"><div class="empty-state"><div class="empty-icon">📅</div><p>لا توجد مواعيد</p></div></div>
-      </div>
-
-      <!-- Quizzes sub-panel -->
-      <div id="mc-panel-quizzes" class="hidden">
-        <div class="section-header">
-          <h2 class="section-title">📝 كويزات الكورس</h2>
-          <button class="btn btn-primary btn-sm" onclick="openMcQuizModal()">+ إنشاء كويز</button>
-        </div>
-        <div id="mcQuizzesList"><div class="empty-state"><div class="empty-icon">📝</div><p>لا توجد كويزات</p></div></div>
-      </div>
-
-      <!-- Students sub-panel -->
-      <div id="mc-panel-students" class="hidden">
-        <div class="section-header">
-          <h2 class="section-title">👥 طلاب الكورس</h2>
-          <div style="font-size:12px;color:var(--text2)" id="myCourseSubtitle"></div>
-        </div>
-        <div class="flex gap-2 mb-4">
-          <input type="text" class="form-input" id="myCourseSearch" placeholder="🔍 بحث بالاسم أو الرقم..." oninput="filterMyCourseStudents()" style="flex:1">
-        </div>
-        <div id="myCourseStudentsList"><div class="empty-state"><div class="empty-icon">👥</div><p>جاري تحميل البيانات...</p></div></div>
-      </div>
-
-      <!-- Payments sub-panel -->
-      <div id="mc-panel-payments" class="hidden">
-        <div class="section-header">
-          <h2 class="section-title">💳 طلبات الاشتراك</h2>
-        </div>
-        <div class="tabs mb-4">
-          <button class="tab-btn active" onclick="mcLoadPayments('pending',this)">⏳ قيد المراجعة</button>
-          <button class="tab-btn" onclick="mcLoadPayments('approved',this)">✅ مقبول</button>
-          <button class="tab-btn" onclick="mcLoadPayments('rejected',this)">❌ مرفوض</button>
-        </div>
-        <div id="mcPaymentsList"><div class="empty-state"><div class="empty-icon">💳</div><p>جاري التحميل...</p></div></div>
-      </div>
-
-    </div>
-
-  </main>
-</div>
-
-<!-- ═══ MODALS ═══ -->
-
-<!-- Course Modal -->
-<div class="modal-overlay" id="modalCourse">
-  <div class="modal-box">
-    <div class="modal-header"><h3 class="modal-title" id="courseModalTitle">إضافة كورس</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalCourse')">✕</button></div>
-    <div class="modal-body">
-      <input type="hidden" id="editCourseId">
-      <div class="form-group"><label class="form-label">اسم الكورس</label><input type="text" class="form-input" id="courseTitle"></div>
-      <div class="form-group"><label class="form-label">اسم المدرس</label><input type="text" class="form-input" id="courseTeacher"></div>
-      <div class="grid-2 gap-3">
-        <div class="form-group"><label class="form-label">الصف</label><select class="form-select" id="courseGrade"><option value="3prep">الإعدادي</option><option value="1sec">أول ثانوي</option><option value="2sec">ثاني ثانوي</option><option value="3sec">ثالث ثانوي</option></select></div>
-        <div class="form-group"><label class="form-label">المادة</label><input type="text" class="form-input" id="courseSubject" placeholder="رياضيات، فيزياء..."></div>
-      </div>
-      <div class="grid-2 gap-3">
-        <div class="form-group"><label class="form-label">السعر (جنيه)</label><input type="number" class="form-input" id="coursePrice" value="0" min="0"></div>
-        <div class="form-group"><label class="form-label">الحالة</label><select class="form-select" id="courseActive"><option value="true">نشط</option><option value="false">غير نشط</option></select></div>
-      </div>
-      <div class="form-group"><label class="form-label">معلومات الدفع للمدرس</label><input type="text" class="form-input" id="coursePayInfo" placeholder="رقم محفظة أو بيانات الدفع"></div>
-      <button class="btn btn-primary btn-block" onclick="saveCourse()">💾 حفظ</button>
     </div>
   </div>
-</div>
 
-<!-- Schedule Modal -->
-<div class="modal-overlay" id="modalSchedule">
-  <div class="modal-box">
-    <div class="modal-header"><h3 class="modal-title">إضافة موعد</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalSchedule')">✕</button></div>
-    <div class="modal-body">
-      <input type="hidden" id="editSchedId">
-      <div class="form-group"><label class="form-label">الكورس</label><select class="form-select" id="schedCourseId"></select></div>
-      <div class="form-group"><label class="form-label">اليوم</label><select class="form-select" id="schedDay"><option>السبت</option><option>الأحد</option><option>الاثنين</option><option>الثلاثاء</option><option>الأربعاء</option><option>الخميس</option><option>الجمعة</option></select></div>
-      <div class="grid-2 gap-3">
-        <div class="form-group"><label class="form-label">من</label><input type="time" class="form-input" id="schedStart"></div>
-        <div class="form-group"><label class="form-label">إلى</label><input type="time" class="form-input" id="schedEnd"></div>
-      </div>
-      <div class="form-group"><label class="form-label">ملاحظة</label><input type="text" class="form-input" id="schedNote" placeholder="اختياري"></div>
-      <button class="btn btn-primary btn-block" onclick="saveSchedule()">💾 حفظ</button>
-    </div>
-  </div>
-</div>
-
-<!-- Video Modal -->
-<div class="modal-overlay" id="modalVideo">
-  <div class="modal-box">
-    <div class="modal-header"><h3 class="modal-title" id="modalVideoTitle">إضافة فيديو</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalVideo')">✕</button></div>
-    <div class="modal-body">
-      <input type="hidden" id="editVideoId">
-      <div class="form-group"><label class="form-label">الكورس</label><select class="form-select" id="vidCourseId"></select></div>
-      <div class="form-group"><label class="form-label">عنوان الفيديو</label><input type="text" class="form-input" id="vidTitle" placeholder="اسم الفيديو"></div>
-      <div class="form-group"><label class="form-label">النوع</label>
-        <div class="flex gap-3">
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="vidType" value="youtube" checked onchange="toggleVidType('youtube')"> YouTube</label>
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="vidType" value="upload" onchange="toggleVidType('upload')"> رفع فيديو</label>
+  <!-- COURSES -->
+  <div id="courses" class="tpane">
+    <div class="box">
+      <div class="pill" style="margin-bottom:12px">🔍 فلترة وعرض</div>
+      <div class="row">
+        <div style="flex:1;min-width:140px">
+          <span class="flabel">السنة</span>
+          <select id="fGrade"><option value="">الكل</option><option value="3prep">3 إعدادي</option><option value="1sec">1 ثانوي</option><option value="2sec">2 ثانوي</option><option value="3sec">3 ثانوي</option></select>
         </div>
-      </div>
-      <div id="ytSection" class="form-group"><label class="form-label">رابط YouTube</label><input type="url" class="form-input" id="vidYtUrl" placeholder="https://youtu.be/..."></div>
-      <div id="uploadSection" style="display:none">
-        <div class="form-group">
-          <label class="form-label">📂 اختر ملف الفيديو</label>
-          <input type="file" id="vidFile" accept="video/*" onchange="handleFileSelect(event)"
-            style="width:100%;padding:10px;border:2px solid var(--border);border-radius:10px;background:var(--bg2);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;display:block">
-          <div id="vidFileInfo" style="font-size:12px;color:var(--success);margin-top:6px;font-weight:700"></div>
+        <div style="flex:1;min-width:140px">
+          <span class="flabel">المادة</span>
+          <select id="fSubject"><option value="">الكل</option><option value="Math">Math</option><option value="English">English</option></select>
         </div>
-        <div id="uploadProgressWrap" style="display:none;margin:8px 0 16px;background:var(--bg3);padding:12px;border-radius:12px">
-          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-            <span style="font-size:13px;font-weight:700" id="uploadFileName">—</span>
-            <span style="font-size:13px;font-weight:800;color:var(--primary-light)" id="uploadPct">0%</span>
-          </div>
-          <div style="background:var(--bg4);border-radius:8px;height:12px;overflow:hidden">
-            <div id="uploadProgressBar" style="height:100%;background:linear-gradient(90deg,#7c3aed,#06b6d4);width:0%;transition:width .3s;border-radius:8px"></div>
-          </div>
-          <div style="font-size:11px;color:var(--text2);margin-top:6px" id="uploadSpeed"></div>
-        </div>
+        <button class="btn bsm" onclick="loadCourses()" style="align-self:flex-end">تحديث</button>
       </div>
-      <div class="form-group mt-3"><label class="form-label">وصف (اختياري)</label><textarea class="form-textarea" id="vidDesc" rows="2"></textarea></div>
-      <div class="form-group"><label class="form-label">الترتيب</label><input type="number" class="form-input" id="vidOrder" value="0" min="0"></div>
-      <button class="btn btn-primary btn-block" id="btnSaveVideo" onclick="saveVideo()">💾 حفظ</button>
+      <table id="tCourses">
+        <thead><tr><th>الكورس</th><th>المدرس</th><th>السنة</th><th>السعر</th><th>Active</th><th>إجراء</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="box">
+      <div class="pill" style="margin-bottom:12px">➕ إضافة / تعديل كورس</div>
+      <input type="hidden" id="cId"/>
+      <div class="grid2">
+        <div class="field"><span class="flabel">اسم الكورس</span><input id="cTitle" placeholder="مثال: Algebra 1"/></div>
+        <div class="field"><span class="flabel">المدرس</span><input id="cTeacher" placeholder="مثال: Mr. Karim"/></div>
+        <div class="field"><span class="flabel">السنة</span><select id="cGrade"><option value="3prep">3 إعدادي</option><option value="1sec">1 ثانوي</option><option value="2sec">2 ثانوي</option><option value="3sec">3 ثانوي</option></select></div>
+        <div class="field"><span class="flabel">المادة</span><select id="cSubject"><option value="Math">Math</option><option value="English">English</option></select></div>
+        <div class="field"><span class="flabel">السعر (جنيه)</span><input id="cPrice" type="number" placeholder="0"/></div>
+      </div>
+      <div class="row">
+        <label style="display:flex;gap:6px;align-items:center;font-size:13px;cursor:pointer"><input type="checkbox" id="cActive" checked style="width:auto"/> Active</label>
+        <button class="btn bgrad" onclick="saveCourse()">💾 حفظ الكورس</button>
+        <button class="btn bsm" onclick="clearCourseForm()" id="btnCancelC" style="display:none">إلغاء</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Coupon Modal -->
-<div class="modal-overlay" id="modalCoupon">
-  <div class="modal-box">
-    <div class="modal-header"><h3 class="modal-title">إنشاء كوبون</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalCoupon')">✕</button></div>
-    <div class="modal-body">
-      <div class="form-group"><label class="form-label">الكود</label><input type="text" class="form-input" id="couponCode" placeholder="SUMMER20" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
-      <div class="grid-2 gap-3">
-        <div class="form-group"><label class="form-label">نوع الخصم</label><select class="form-select" id="couponType"><option value="percent">نسبة مئوية %</option><option value="fixed">مبلغ ثابت</option></select></div>
-        <div class="form-group"><label class="form-label">قيمة الخصم</label><input type="number" class="form-input" id="couponVal" min="1" placeholder="20"></div>
+  <!-- SCHEDULES -->
+  <div id="sched" class="tpane">
+    <div class="box">
+      <div class="pill">📌 الكورس المختار</div>
+      <div id="selCourse" class="muted" style="margin-top:8px">اختار كورس من تبويب الكورسات واضغط "مواعيد"</div>
+    </div>
+    <div class="box">
+      <div class="pill" style="margin-bottom:10px">🗓️ المواعيد الحالية</div>
+      <table id="tSch"><thead><tr><th>اليوم</th><th>من</th><th>إلى</th><th>ملاحظات</th><th>إجراء</th></tr></thead><tbody></tbody></table>
+      <div class="hr"></div>
+      <div class="pill" style="margin-bottom:10px">➕ إضافة موعد</div>
+      <div class="grid2">
+        <div class="field"><span class="flabel">اليوم</span><input id="nDay" placeholder="السبت"/></div>
+        <div class="field"><span class="flabel">ملاحظات</span><input id="nNotes" placeholder="اختياري"/></div>
+        <div class="field"><span class="flabel">من</span><input id="nStart" placeholder="5:00 PM"/></div>
+        <div class="field"><span class="flabel">إلى</span><input id="nEnd" placeholder="6:30 PM"/></div>
       </div>
-      <div class="grid-2 gap-3">
-        <div class="form-group"><label class="form-label">أقصى استخدام</label><input type="number" class="form-input" id="couponMax" value="100" min="1"></div>
-        <div class="form-group"><label class="form-label">تاريخ الانتهاء</label><input type="date" class="form-input" id="couponExpiry"></div>
-      </div>
-      <button class="btn btn-primary btn-block" onclick="saveCoupon()">💾 إنشاء</button>
+      <button class="btn bgrad bsm" onclick="addSch()">➕ إضافة</button>
     </div>
   </div>
-</div>
 
-<!-- Reply Modal -->
-<div class="modal-overlay" id="modalReply">
-  <div class="modal-box">
-    <div class="modal-header"><h3 class="modal-title">الرد على التعليق</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalReply')">✕</button></div>
-    <div class="modal-body">
-      <input type="hidden" id="replyCommentId">
-      <div class="glass-sm p-3 mb-3" id="replyOriginal" style="font-size:13px"></div>
-      <div class="form-group"><label class="form-label">ردك</label><textarea class="form-textarea" id="replyText" rows="4"></textarea></div>
-      <button class="btn btn-primary btn-block" onclick="submitReply()">📤 إرسال الرد</button>
+  <!-- VIDEOS -->
+  <div id="videos" class="tpane">
+    <div class="box">
+      <div class="pill">📌 الكورس المختار للفيديوهات</div>
+      <div id="selCourseVid" class="muted" style="margin-top:8px">اختار كورس من تبويب الكورسات واضغط "فيديوهات"</div>
     </div>
-  </div>
-</div>
-
-<!-- User Role Modal -->
-<div class="modal-overlay" id="modalUserRole">
-  <div class="modal-box">
-    <div class="modal-header"><h3 class="modal-title">تعديل صلاحيات المستخدم</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalUserRole')">✕</button></div>
-    <div class="modal-body">
-      <input type="hidden" id="editUserId">
-      <div class="glass-sm p-3 mb-4"><strong id="editUserName"></strong><div class="text-sm text-muted" id="editUserPhone"></div></div>
-      <div class="form-group"><label class="form-label">الدور</label>
-        <select class="form-select" id="editUserRole" onchange="toggleManagedCourses()">
-          <option value="student">طالب</option>
-          <option value="course_admin">مسؤول كورس</option>
-          <option value="admin">أدمن</option>
-          <option value="superadmin">سوبر أدمن</option>
+    <div class="box">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+        <div class="pill">🎬 الفيديوهات الحالية</div>
+        <button class="btn bsm" onclick="loadVideos()">🔄 تحديث</button>
+      </div>
+      <div id="vidList"><div class="muted">اختار كورس الأول</div></div>
+    </div>
+    <div class="box">
+      <div class="pill" style="margin-bottom:12px">➕ إضافة فيديو</div>
+      <input type="hidden" id="vId"/>
+      <div class="field">
+        <span class="flabel">نوع الفيديو</span>
+        <select id="vType" onchange="toggleVidType()">
+          <option value="youtube">▶️ يوتيوب</option>
+          <option value="upload">🎞️ رفع ملف من الجهاز</option>
         </select>
       </div>
-      <div class="form-group hidden" id="managedCoursesGroup">
-        <label class="form-label">الكورسات المُدارة</label>
-        <div id="managedCoursesList" style="max-height:200px;overflow-y:auto;border:1px solid var(--border2);border-radius:10px;padding:8px"></div>
+      <div class="grid2">
+        <div class="field"><span class="flabel">عنوان الفيديو</span><input id="vTitle" placeholder="مثال: الدرس الأول"/></div>
+        <div class="field"><span class="flabel">ترتيب الفيديو</span><input id="vOrder" type="number" placeholder="1" value="1"/></div>
       </div>
-      <button class="btn btn-primary btn-block" onclick="saveUserRole()">💾 حفظ</button>
+      <div id="ytSection" class="field"><span class="flabel">رابط يوتيوب</span><input id="vUrl" placeholder="https://youtube.com/watch?v=..."/></div>
+      <div id="uploadSection" style="display:none">
+        <div class="field">
+          <span class="flabel">ملف الفيديو (MP4, WebM — بحد أقصى 500MB)</span>
+          <input type="file" id="vFile" accept="video/mp4,video/webm,video/ogg" style="padding:8px"/>
+        </div>
+        <div id="uploadProgress" style="display:none;margin-bottom:10px">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:4px">جاري الرفع… <span id="upPct">0%</span></div>
+          <div style="height:6px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden"><div id="upBar" style="height:100%;background:var(--grad);width:0%;transition:width .3s"></div></div>
+        </div>
+      </div>
+      <div class="field"><span class="flabel">وصف الفيديو (اختياري)</span><textarea id="vDesc" placeholder="وصف مختصر…"></textarea></div>
+      <div class="row">
+        <label style="display:flex;gap:6px;align-items:center;font-size:13px;cursor:pointer"><input type="checkbox" id="vActive" checked style="width:auto"/> Active</label>
+        <button class="btn bgrad" id="saveVidBtn" onclick="saveVideo()">💾 حفظ الفيديو</button>
+        <button class="btn bsm" onclick="clearVidForm()" id="btnCancelV" style="display:none">إلغاء</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Quiz Modal -->
-<div class="modal-overlay" id="modalQuiz">
-  <div class="modal-box" style="max-width:600px">
-    <div class="modal-header"><h3 class="modal-title">إنشاء كويز</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalQuiz')">✕</button></div>
-    <div class="modal-body">
-      <input type="hidden" id="editQuizId">
-      <div class="form-group"><label class="form-label">الكورس</label><select class="form-select" id="quizCourseId"></select></div>
-      <div class="form-group"><label class="form-label">عنوان الكويز</label><input type="text" class="form-input" id="quizTitle"></div>
-      <div class="form-group"><label class="form-label">وصف (اختياري)</label><input type="text" class="form-input" id="quizDesc"></div>
-      <div class="form-group"><label class="form-label">درجة النجاح %</label><input type="number" class="form-input" id="quizPassScore" value="60" min="0" max="100"></div>
-      <button class="btn btn-primary btn-block" onclick="saveQuiz()">💾 حفظ الكويز</button>
+  <!-- PAYMENTS -->
+  <div id="pay" class="tpane">
+    <div class="box">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+        <div class="pill">💳 طلبات الدفع</div>
+        <div class="row">
+          <button class="btn bsm" onclick="loadPay('pending')">⏳ Pending</button>
+          <button class="btn bsm bok" onclick="loadPay('approved')">✅ Approved</button>
+          <button class="btn bsm bbad" onclick="loadPay('rejected')">❌ Rejected</button>
+        </div>
+      </div>
+      <table><thead><tr><th>الطالب</th><th>الكورس</th><th>التفاصيل</th><th>إجراء</th></tr></thead><tbody id="tbPay"></tbody></table>
     </div>
   </div>
-</div>
 
-<!-- Question Modal -->
-<div class="modal-overlay" id="modalQuestion">
-  <div class="modal-box" style="max-width:580px">
-    <div class="modal-header"><h3 class="modal-title">إضافة سؤال</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalQuestion')">✕</button></div>
-    <div class="modal-body">
-      <input type="hidden" id="editQId">
-      <input type="hidden" id="qQuizId">
-      <div class="form-group"><label class="form-label">السؤال</label><textarea class="form-textarea" id="qText" rows="2"></textarea></div>
-      <div class="form-group">
-        <label class="form-label">🖼️ صورة السؤال <span style="color:var(--text2);font-weight:400">(اختياري)</span></label>
-        <!-- Upload من التلفون / الجهاز -->
-        <div id="qImgUploadArea" style="position:relative;border:2px dashed var(--border2);border-radius:12px;padding:14px;text-align:center;cursor:pointer;background:var(--bg3);transition:all .2s" ondragover="event.preventDefault();this.style.borderColor='var(--primary)'" ondragleave="this.style.borderColor='var(--border2)'" ondrop="handleQImgDrop(event)">
-          <div id="qImgUploadLabel" style="color:var(--text2);font-size:13px">📷 اضغط لاختيار صورة من الجهاز أو التلفون</div>
-          <div style="font-size:11px;color:#64748b;margin-top:4px">JPG / PNG / WEBP — حتى 5MB</div>
-          <input type="file" id="qImgFile" accept="image/*" onchange="handleQImgSelect(this.files[0])"
-            style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0">
+  <!-- COUPONS -->
+  <div id="coupons" class="tpane">
+    <div class="box">
+      <div class="pill" style="margin-bottom:12px">🎟️ الكوبونات الحالية</div>
+      <button class="btn bsm" onclick="loadCoupons()" style="margin-bottom:10px">🔄 تحديث</button>
+      <div id="couponsList"><div class="spin"></div></div>
+    </div>
+    <div class="box">
+      <div class="pill" style="margin-bottom:12px">➕ كوبون جديد</div>
+      <div class="grid2">
+        <div class="field"><span class="flabel">كود الكوبون</span><input id="cpCode" placeholder="مثال: WELCOME20"/></div>
+        <div class="field">
+          <span class="flabel">نوع الخصم</span>
+          <select id="cpType"><option value="percent">نسبة مئوية %</option><option value="fixed">مبلغ ثابت جنيه</option></select>
         </div>
-        <!-- أو رابط URL -->
-        <div style="display:flex;align-items:center;gap:8px;margin:8px 0">
-          <div style="flex:1;height:1px;background:var(--border2)"></div>
-          <span style="font-size:11px;color:#64748b">أو رابط URL</span>
-          <div style="flex:1;height:1px;background:var(--border2)"></div>
-        </div>
-        <input type="text" class="form-input" id="qImageUrl" placeholder="https://example.com/image.jpg" oninput="onQImgUrlInput(this.value)" style="font-size:12px">
-        <!-- Preview -->
-        <div id="qImagePreview" style="margin-top:8px;display:none;position:relative">
-          <img id="qImgPreviewEl" src="" style="max-width:100%;max-height:180px;border-radius:10px;object-fit:contain;background:var(--bg3);border:1px solid var(--border2)" onerror="this.parentElement.style.display='none'">
-          <button onclick="clearQImg()" style="position:absolute;top:6px;left:6px;background:rgba(0,0,0,.6);border:none;color:#fff;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">✕</button>
-          <div id="qImgUploadStatus" style="font-size:11px;color:#22d3ee;margin-top:4px;text-align:center"></div>
+        <div class="field"><span class="flabel">قيمة الخصم</span><input id="cpValue" type="number" placeholder="20"/></div>
+        <div class="field"><span class="flabel">أقصى عدد استخدامات</span><input id="cpMax" type="number" placeholder="100" value="100"/></div>
+        <div class="field"><span class="flabel">تاريخ انتهاء (اختياري)</span><input id="cpExpiry" type="date"/></div>
+      </div>
+      <button class="btn bgrad" onclick="createCoupon()">💾 إنشاء الكوبون</button>
+    </div>
+  </div>
+
+  <!-- COMMENTS -->
+  <div id="comments" class="tpane">
+    <div class="box">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+        <div class="pill">💬 التعليقات والأسئلة</div>
+        <div class="row">
+          <select id="cmtCourseFilter" style="width:auto"></select>
+          <button class="btn bsm" onclick="loadAdminComments()">🔄 تحديث</button>
         </div>
       </div>
-      <div class="form-group"><label class="form-label">الخيار أ</label><input type="text" class="form-input" id="qOptA"></div>
-      <div class="form-group"><label class="form-label">الخيار ب</label><input type="text" class="form-input" id="qOptB"></div>
-      <div class="form-group"><label class="form-label">الخيار ج</label><input type="text" class="form-input" id="qOptC"></div>
-      <div class="form-group"><label class="form-label">الخيار د</label><input type="text" class="form-input" id="qOptD"></div>
-      <div class="form-group"><label class="form-label">الإجابة الصحيحة</label>
-        <select class="form-select" id="qCorrect"><option value="a">أ</option><option value="b">ب</option><option value="c">ج</option><option value="d">د</option></select>
+      <div id="adminComments"><div class="spin"></div></div>
+    </div>
+  </div>
+
+  <!-- USERS -->
+  <div id="users" class="tpane">
+    <div class="box">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+        <div class="pill">👥 المستخدمين</div>
+        <button class="btn bsm" onclick="loadUsers()">🔄 تحديث</button>
       </div>
-      <button class="btn btn-primary btn-block" onclick="saveQuestion()">💾 حفظ السؤال</button>
+      <table><thead><tr><th>الاسم</th><th>الموبايل</th><th>السنة</th><th>الدور</th><th>إجراءات</th></tr></thead><tbody id="tbUsers"></tbody></table>
     </div>
   </div>
 </div>
 
 <script>
-// ═══════════════════════════════════════
-// Make Future Center V2 — Global Config
-// ═══════════════════════════════════════
+(function(){var t=localStorage.getItem('mf_theme')||'dark';if(t==='light')document.documentElement.setAttribute('data-theme','light');document.getElementById('thb').textContent=t==='light'?'☀️':'🌙';})();
+function toggleTheme(){var c=document.documentElement.getAttribute('data-theme')||'dark',n=c==='light'?'dark':'light';document.documentElement.setAttribute('data-theme',n);localStorage.setItem('mf_theme',n);document.getElementById('thb').textContent=n==='light'?'☀️':'🌙';}
 
-const MF_CONFIG = {
-  SUPABASE_URL: 'https://dfbtibhxmraegjvztuch.supabase.co',
-  ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmYnRpYmh4bXJhZWdqdnp0dWNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyOTQ3NzksImV4cCI6MjA4ODg3MDc3OX0.oAI4vLCujDGZcVg7BwBNNjv_jYA7bwwneU9q2SQYiyI',
-  FN: 'https://pjskzfyjzvibqglhdykc.supabase.co/functions/v1',
-  WA_ADMIN: '201210575530',
-  PAYMENT_PHONE: '01210575530',
-  // BOOTSTRAP_SECRET removed from client-side for security
-};
+const FN="https://anlstahxxpbbfnwrwulu.supabase.co/functions/v1";
+const KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFubHN0YWh4eHBiYmZud3J3dWx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDQzMTIsImV4cCI6MjA4ODEyMDMxMn0.4RQxQ4AZZCVCswTRdJoZ7Jz9qNwQq0fPs7vitnMJ3A4";
+const gradeMap={"3prep":"3 إعدادي","1sec":"1 ثانوي","2sec":"2 ثانوي","3sec":"3 ثانوي"};
+const roleClr={student:'#6ee7b7',admin:'#93c5fd',superadmin:'#f9a8d4'};
 
-// ─── API Helper ───────────────────────
-async function mfFetch(endpoint, options = {}, _retry = false) {
-  const token = localStorage.getItem('mf_access_token');
-  const validToken = token && token !== 'null' && token !== 'undefined' && token.length > 20;
-  const headers = {
-    'Content-Type': 'application/json',
-    'apikey': MF_CONFIG.ANON_KEY,
-    'Authorization': `Bearer ${validToken ? token : MF_CONFIG.ANON_KEY}`,
-    ...(options.headers || {})
-  };
-  try {
-    const res = await fetch(`${MF_CONFIG.FN}/${endpoint}`, { ...options, headers });
-    if (res.status === 401 && !_retry) {
-      // Try refresh token first
-      const refreshed = await refreshToken();
-      if (refreshed) return mfFetch(endpoint, options, true);
-      // Refresh failed — logout
-      localStorage.removeItem('mf_access_token');
-      localStorage.removeItem('mf_refresh_token');
-      localStorage.removeItem('mf_user');
-      window.location.href = 'login.html';
-      return { ok: false, error: 'انتهت الجلسة' };
-    }
-    // Safe JSON parse — handle empty/HTML/invalid responses
-    const ct = res.headers.get('content-type') || '';
-    let data;
-    if (ct.includes('application/json')) {
-      try { data = await res.json(); }
-      catch(e) { return { ok: false, error: 'invalid JSON from server' }; }
-    } else {
-      const txt = await res.text().catch(() => '');
-      // إذا الـ response مش JSON — اعتبره error
-      if (!res.ok) return { ok: false, error: txt.slice(0, 120) || `HTTP ${res.status}` };
-      try { data = JSON.parse(txt); }
-      catch(e) { return { ok: false, error: txt.slice(0, 120) || `HTTP ${res.status}` }; }
-    }
-    return data;
-  } catch (e) {
-    return { ok: false, error: e.message };
-  }
+const me=JSON.parse(localStorage.getItem('mf_user')||'null');
+if(!me){location.href='login.html';throw new Error('redirect');}
+if(!['admin','superadmin'].includes(me.role)){
+  alert('مش عندك صلاحية. دورك: '+me.role);
+  location.href='student.html';
+  throw new Error('redirect');
 }
 
-// ─── Auth Helpers ─────────────────────
-function getUser() {
-  try { return JSON.parse(localStorage.getItem('mf_user') || 'null'); } catch { return null; }
-}
-function getToken() { return localStorage.getItem('mf_access_token'); }
-function logout() {
-  ['mf_user','mf_access_token','mf_refresh_token','mf_selected_course'].forEach(k => localStorage.removeItem(k));
-  window.location.href = 'login.html';
-}
-async function refreshToken() {
-  const refresh = localStorage.getItem('mf_refresh_token');
-  if(!refresh || refresh === 'null') return false;
-  try {
-    const res = await fetch('https://pjskzfyjzvibqglhdykc.supabase.co/auth/v1/token?grant_type=refresh_token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': MF_CONFIG.ANON_KEY },
-      body: JSON.stringify({ refresh_token: refresh })
-    });
-    const data = await res.json();
-    if (data.access_token) {
-      localStorage.setItem('mf_access_token', data.access_token);
-      localStorage.setItem('mf_refresh_token', data.refresh_token);
-      return true;
-    }
-  } catch(e) {}
-  return false;
+function logout(){['mf_user','mf_access_token','mf_refresh_token'].forEach(k=>localStorage.removeItem(k));location.href='login.html';}
+function esc(s){return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');}
+function escA(s){return String(s||'').replaceAll('"','&quot;').replaceAll("'",'&#39;').replaceAll('<','&lt;');}
+
+const msgEl=document.getElementById('msgbar');
+function msg(type,t){msgEl.className='msgbar show '+type;msgEl.textContent=t;setTimeout(()=>msgEl.className='msgbar',3500);}
+
+async function api(fn,method,body,params){
+  const m=method||'GET';
+  const h={apikey:KEY};
+  const opts={method:m,headers:h};
+  if(body){h['Content-Type']='application/json';opts.body=JSON.stringify(body);}
+  try{const r=await fetch(FN+'/'+fn+(params||''),opts);return await r.json();}
+  catch(e){console.error('api error:',fn,e);return {ok:false,error:'فشل الاتصال'};}
 }
 
-function requireAuth(allowedRoles = []) {
-  const user = getUser();
-  if (!user) { window.location.href = 'login.html'; return null; }
-  if (allowedRoles.length && !allowedRoles.includes(user.role)) {
-    if (user.role === 'student') window.location.href = 'student.html';
-    else window.location.href = 'admin.html';
-    return null;
-  }
-  return user;
-}
-function isAdmin(user) { return ['admin','superadmin','course_admin'].includes(user?.role); }
-function isSuperAdmin(user) { return user?.role === 'superadmin'; }
-
-// ─── Toast Notifications ──────────────
-function toast(msg, type = 'info', duration = 3500) {
-  const colors = { success: '#10b981', error: '#ef4444', info: '#7c3aed', warn: '#f59e0b' };
-  const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️' };
-  const el = document.createElement('div');
-  el.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:${colors[type]};color:#fff;padding:12px 24px;border-radius:14px;font-size:14px;font-family:Cairo,sans-serif;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.3);transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);max-width:90vw;text-align:center;direction:rtl;`;
-  el.textContent = icons[type] + ' ' + msg;
-  document.body.appendChild(el);
-  requestAnimationFrame(() => { el.style.transform = 'translateX(-50%) translateY(0)'; });
-  setTimeout(() => { el.style.transform = 'translateX(-50%) translateY(100px)'; setTimeout(() => el.remove(), 300); }, duration);
+function openTab(id,btn){
+  document.querySelectorAll('.tpane').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.tbtn').forEach(x=>x.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  btn.classList.add('on');
+  if(id==='coupons') loadCoupons();
+  if(id==='comments') initComments();
 }
 
-// ─── Loading Overlay ──────────────────
-function showLoading(show = true) {
-  let ov = document.getElementById('mf-loading');
-  if (show && !ov) {
-    ov = document.createElement('div');
-    ov.id = 'mf-loading';
-    ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.7);backdrop-filter:blur(4px);z-index:9998;display:flex;align-items:center;justify-content:center;';
-    ov.innerHTML = '<div style="width:48px;height:48px;border:3px solid rgba(124,58,237,0.3);border-top-color:#7c3aed;border-radius:50%;animation:spin 0.8s linear infinite;"></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
-    document.body.appendChild(ov);
-  } else if (!show && ov) ov.remove();
+// ===== DASHBOARD =====
+async function loadStats(){
+  document.getElementById('statGrid').innerHTML='<div class="spin"></div>';
+  const d=await api('admin-stats');
+  if(!d.ok){document.getElementById('statGrid').innerHTML='<div class="muted">فشل التحميل</div>';return;}
+  const c=d.counts;
+  document.getElementById('statGrid').innerHTML=`
+    <div class="stat-item"><div class="stat-num">${c.users}</div><div class="stat-label">طالب</div></div>
+    <div class="stat-item"><div class="stat-num">${c.courses}</div><div class="stat-label">كورس</div></div>
+    <div class="stat-item"><div class="stat-num" style="color:#fde68a">${c.pending}</div><div class="stat-label">انتظار</div></div>
+    <div class="stat-item"><div class="stat-num" style="color:#6ee7b7">${c.approved}</div><div class="stat-label">مقبول</div></div>
+    <div class="stat-item"><div class="stat-num" style="color:#fca5a5">${c.rejected}</div><div class="stat-label">مرفوض</div></div>`;
+  document.getElementById('latestUsers').innerHTML=(d.latestUsers||[]).map(u=>`• <b>${esc(u.full_name)}</b> — ${esc(u.phone_student||'')} — <span style="color:${roleClr[u.role]||'#fff'}">${esc(u.role)}</span>`).join('<br>')||'—';
+  document.getElementById('latestPay').innerHTML=(d.latestPayments||[]).map(p=>`• <b>${esc(p.full_name||'')}</b> — ${esc(p.course_title||'—')} — <b>${esc(p.status||'')}</b>`).join('<br>')||'—';
 }
 
-// ─── Dark Mode ────────────────────────
-function initTheme() {
-  const saved = localStorage.getItem('mf_theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', saved);
-  return saved;
-}
-function toggleTheme() {
-  const cur = document.documentElement.getAttribute('data-theme');
-  const next = cur === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('mf_theme', next);
-  return next;
-}
-
-// ─── Grade Labels ─────────────────────
-const GRADE_LABELS = { '3prep':'الثالث الإعدادي','1sec':'الأول الثانوي','2sec':'الثاني الثانوي','3sec':'الثالث الثانوي' };
-const GRADE_OPTIONS = Object.entries(GRADE_LABELS).map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
-function gradeLabel(g) { return GRADE_LABELS[g] || g; }
-
-// ─── Date Formatting ──────────────────
-function fmtDate(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' });
-}
-function fmtDateTime(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleString('ar-EG', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
-}
-
-// ─── Number Format ────────────────────
-function fmtNum(n) { return Number(n || 0).toLocaleString('ar-EG'); }
-
-// ─── Safe HTML escape (XSS protection) ──
-function escapeHtml(s){
-  if(s==null) return '';
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-
-// ─── Debounce ─────────────────────────
-function debounce(fn, ms = 300) {
-  let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
-}
-
-</script>
-<script>
-function updateThemeBtn(){ 
-  const btn = document.getElementById('themeBtn');
-  if(btn) btn.textContent = document.documentElement.getAttribute('data-theme')==='dark'?'☀️':'🌙'; 
-}
-function onToggleTheme(){ toggleTheme(); updateThemeBtn(); }
-
-initTheme();
-updateThemeBtn();
-const user = requireAuth(['admin','superadmin','course_admin']);
-if(!user) throw new Error('no user');
-
-document.getElementById('adminRoleBadge').textContent = user.role==='superadmin'?'👑 سوبر أدمن':user.role==='admin'?'⚙️ أدمن':'📋 مسؤول كورس';
-
-// ─── Sidebar ──────────────────────────
-const ALL_TABS = [
-  {id:'dashboard',label:'لوحة التحكم',icon:'📊'},
-  {id:'courses',label:'الكورسات',icon:'📚'},
-  {id:'schedules',label:'المواعيد',icon:'📅'},
-  {id:'videos',label:'الفيديوهات',icon:'🎬'},
-  {id:'payments',label:'المدفوعات',icon:'💳'},
-  {id:'coupons',label:'الكوبونات',icon:'🎫'},
-  {id:'comments',label:'التعليقات',icon:'💬'},
-  {id:'users',label:'المستخدمين',icon:'👥'},
-  {id:'quizzes',label:'الكويزات',icon:'📝'},
-  {id:'mycourse',label:'إدارة كورسي',icon:'🎓',courseAdminOnly:true},
-];
-
-// الـ tabs المتاحة حسب الدور
-const isCourseAdmin = user.role === 'course_admin';
-// course_admin: يشوف mycourse بس — مفيش dashboard ومفيش بيانات الموقع
-const VISIBLE_TABS = isCourseAdmin
-  ? ALL_TABS.filter(t => t.id === 'mycourse')
-  : ALL_TABS.filter(t => !t.courseAdminOnly);
-// course_admin مسموحله بالـ mycourse بس — اللي فيه كل حاجه
-
-function buildSidebar(){
-  const items = document.getElementById('sideItems');
-  items.innerHTML = VISIBLE_TABS.map(t=>`
-    <div class="side-item" id="side-${t.id}" onclick="switchTab('${t.id}')">
-      <span class="side-icon">${t.icon}</span>
-      <span>${t.label}</span>
-    </div>`).join('');
-}
-
-let currentTab = 'dashboard';
-function switchTab(tab){
-  // course_admin: منع الوصول لأي tab غير mycourse
-  const PROTECTED = ['dashboard','courses','schedules','videos','payments','coupons','comments','users','quizzes'];
-  if(isCourseAdmin && PROTECTED.includes(tab)) return;
-
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.side-item').forEach(s=>s.classList.remove('active'));
-  document.getElementById('panel-'+tab)?.classList.add('active');
-  document.getElementById('side-'+tab)?.classList.add('active');
-  currentTab = tab;
-  document.getElementById('adminSidebar').classList.remove('open');
-  const loaders={
-    dashboard: ()=>{ if(!isCourseAdmin) loadDashboard(); },
-    courses:   ()=>{ if(!isCourseAdmin) loadCourses(); },
-    schedules: ()=>{ if(!isCourseAdmin) loadSchedules(); },
-    videos:    ()=>{},
-    payments:  ()=>{ if(!isCourseAdmin) loadPayments('pending',document.querySelector('.tabs .tab-btn')); },
-    coupons:   ()=>{ if(!isCourseAdmin) loadCoupons(); },
-    comments:  ()=>{},
-    users:     ()=>{ if(!isCourseAdmin) loadUsers(); },
-    quizzes:   ()=>{},
-    mycourse:  ()=> loadMyCourseStudents()
-  };
-  loaders[tab]?.();
-}
-
-function toggleSidebar(){ document.getElementById('adminSidebar').classList.toggle('open'); }
-
-// ─── Modals ───────────────────────────
-function openModal(id){ document.getElementById(id).classList.add('open'); }
-function closeModal(id){ document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{ if(e.target===m) closeModal(m.id); }));
-
-// ─── DASHBOARD ────────────────────────
-async function loadDashboard(){
-  if(isCourseAdmin) return; // حماية إضافية
-  const res = await mfFetch('admin-stats');
-  if(!res.ok){ 
-    document.getElementById('dashStats').innerHTML = `<div style="grid-column:1/-1" class="glass p-4 text-center"><div style="font-size:32px">⚠️</div><p class="mt-2 text-sm text-muted">${res.error||'فشل تحميل البيانات'}</p><button class="btn btn-primary btn-sm mt-3" onclick="loadDashboard()">🔄 إعادة المحاولة</button></div>`;
-    return;
-  }
-  const c = res.counts||{};
-  document.getElementById('dashStats').innerHTML = `
-    <div class="stat-card fade-up"><div class="stat-icon">👥</div><div class="stat-value">${fmtNum(c.users)}</div><div class="stat-label">المستخدمين</div></div>
-    <div class="stat-card fade-up fade-up-1"><div class="stat-icon">📚</div><div class="stat-value">${fmtNum(c.courses)}</div><div class="stat-label">الكورسات</div></div>
-    <div class="stat-card fade-up fade-up-2"><div class="stat-icon">⏳</div><div class="stat-value">${fmtNum(c.pending)}</div><div class="stat-label">طلبات معلقة</div></div>
-    <div class="stat-card fade-up fade-up-3"><div class="stat-icon">✅</div><div class="stat-value">${fmtNum(c.approved)}</div><div class="stat-label">طلبات مقبولة</div></div>`;
-  // Latest payments
-  const payments = res.latestPayments||[];
-  document.getElementById('dashPayments').innerHTML = payments.length?`
-    <div class="glass-sm">${payments.map(p=>`
-      <div class="payment-row">
-        <div style="flex:1">
-          <div class="font-bold text-sm">${escapeHtml(p.full_name||'—')}</div>
-          <div class="text-xs text-muted">${escapeHtml(p.course_title||'')} — ${escapeHtml(p.method||'')}</div>
-          <div class="text-xs text-muted">${fmtNum(p.final_amount||p.amount)} جنيه — ${fmtDate(p.created_at)}</div>
-        </div>
-        <span class="badge ${p.status==='approved'?'badge-success':p.status==='rejected'?'badge-danger':'badge-warn'}">${p.status==='approved'?'مقبول':p.status==='rejected'?'مرفوض':'معلق'}</span>
-      </div>`).join('')}</div>`:'<div class="empty-state"><div class="empty-icon">💳</div><p>لا توجد مدفوعات</p></div>';
-  // Latest users
-  const users2 = res.latestUsers||[];
-  document.getElementById('dashUsers').innerHTML = users2.length?`
-    <div class="glass-sm">${users2.map(u=>`
-      <div class="payment-row">
-        <div><div class="font-bold text-sm">${escapeHtml(u.full_name||'—')}</div><div class="text-xs text-muted">${escapeHtml(u.phone_student||'')} — ${gradeLabel(u.grade)}</div></div>
-        <span class="badge badge-primary">${escapeHtml(u.role||'')}</span>
-      </div>`).join('')}</div>`:'<div class="empty-state"><p>لا يوجد</p></div>';
-}
-
-// ─── COURSES ──────────────────────────
-let allCourses = [];
+// ===== COURSES =====
+let selCId=null,selCTitle='';
 async function loadCourses(){
-  if(isCourseAdmin) return;
-  const grade = document.getElementById('filterGrade')?.value||'';
-  const res = await mfFetch('admin-courses?grade='+grade);
-  allCourses = res.courses||[];
-  populateCourseSelects(allCourses);
-  const tbody = document.getElementById('coursesTable');
-  if(!allCourses.length){ tbody.innerHTML='<tr><td colspan="7" class="text-center text-muted p-4">لا توجد كورسات</td></tr>'; return; }
-  tbody.innerHTML = allCourses.map(c=>`
-    <tr>
-      <td><div class="font-bold">${escapeHtml(c.title)}</div><div class="text-xs text-muted">${escapeHtml(c.subject||'')}</div></td>
-      <td>${escapeHtml(c.teacher_name)}</td>
-      <td>${gradeLabel(c.grade)}</td>
-      <td>${fmtNum(c.price)} جنيه</td>
-      <td><span class="badge badge-info">${c.enrolled_count||0}</span></td>
-      <td><span class="badge ${c.is_active?'badge-success':'badge-danger'}">${c.is_active?'نشط':'متوقف'}</span></td>
-      <td>
-        <div class="flex gap-2">
-          <button class="btn btn-sm btn-secondary" onclick="editCourse(${JSON.stringify(c).replace(/"/g,'&quot;')})">✏️</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteCourse(${c.id}, '${(c.title||c.name||'كورس').replace(/'/g,"\\'")}')">🗑️</button>
-        </div>
-      </td>
-    </tr>`).join('');
-}
-
-function populateCourseSelects(courses){
-  const selects = ['schedCourseFilter','schedCourseId','vidCourseFilter','vidCourseId','commentCourseFilter','quizCourseFilter','quizCourseId'];
-  selects.forEach(id=>{
-    const el = document.getElementById(id);
-    if(!el) return;
-    const val = el.value;
-    const first = id.endsWith('Filter')?'<option value="">اختر كورس</option>':'<option value="">اختر كورس</option>';
-    el.innerHTML = first + courses.map(c=>`<option value="${c.id}">${escapeHtml(c.title)}</option>`).join('');
-    if(val) el.value=val;
+  const grade=document.getElementById('fGrade').value,subject=document.getElementById('fSubject').value;
+  const d=await api('admin-courses','GET',null,`?grade=${encodeURIComponent(grade)}&subject=${encodeURIComponent(subject)}`);
+  const tb=document.querySelector('#tCourses tbody');tb.innerHTML='';
+  if(!d.ok||!d.courses?.length){tb.innerHTML='<tr><td colspan="6" class="muted" style="text-align:center">مفيش كورسات</td></tr>';return;}
+  d.courses.forEach(c=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><b>${esc(c.title)}</b></td><td>${esc(c.teacher_name)}</td><td>${esc(gradeMap[c.grade]||c.grade)}</td><td>${c.price||0} ج</td><td>${c.is_active?'✅':'❌'}</td>
+      <td><div class="row">
+        <button class="btn bsm" onclick="editCourse(${c.id},'${escA(c.title)}','${escA(c.teacher_name)}','${c.grade}','${escA(c.subject)}',${c.price||0},${c.is_active})">✏️</button>
+        <button class="btn bsm" onclick="selForSch(${c.id},'${escA(c.title)}')">🗓️</button>
+        <button class="btn bsm" onclick="selForVid(${c.id},'${escA(c.title)}')">🎬</button>
+        <button class="btn bsm bbad" onclick="delCourse(${c.id},'${escA(c.title)}')">🗑️</button>
+      </div></td>`;
+    tb.appendChild(tr);
   });
+  msg('ok','✅ تم تحميل الكورسات');
 }
 
-function editCourse(c){
-  document.getElementById('editCourseId').value=c.id;
-  document.getElementById('courseTitle').value=c.title;
-  document.getElementById('courseTeacher').value=c.teacher_name;
-  document.getElementById('courseGrade').value=c.grade;
-  document.getElementById('courseSubject').value=c.subject||'';
-  document.getElementById('coursePrice').value=c.price||0;
-  document.getElementById('courseActive').value=String(c.is_active);
-  document.getElementById('coursePayInfo').value=c.teacher_payment_info||'';
-  document.getElementById('courseModalTitle').textContent='تعديل الكورس';
-  openModal('modalCourse');
+function editCourse(id,title,teacher,grade,subject,price,active){
+  document.getElementById('cId').value=id;
+  document.getElementById('cTitle').value=title;
+  document.getElementById('cTeacher').value=teacher;
+  document.getElementById('cGrade').value=grade;
+  document.getElementById('cSubject').value=subject;
+  document.getElementById('cPrice').value=price;
+  document.getElementById('cActive').checked=active;
+  document.getElementById('btnCancelC').style.display='';
+  window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+}
+
+function clearCourseForm(){
+  ['cId','cTitle','cTeacher','cPrice'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cActive').checked=true;
+  document.getElementById('btnCancelC').style.display='none';
 }
 
 async function saveCourse(){
-  const id=document.getElementById('editCourseId').value;
-  const body={title:document.getElementById('courseTitle').value.trim(),teacher_name:document.getElementById('courseTeacher').value.trim(),grade:document.getElementById('courseGrade').value,subject:document.getElementById('courseSubject').value.trim(),price:parseInt(document.getElementById('coursePrice').value)||0,is_active:document.getElementById('courseActive').value==='true',teacher_payment_info:document.getElementById('coursePayInfo').value.trim()||null};
-  if(id) body.id=parseInt(id);
-  if(!body.title||!body.teacher_name){ toast('أدخل اسم الكورس والمدرس','warn'); return; }
-  const res=await mfFetch('admin-courses',{method:'POST',body:JSON.stringify(body)});
-  if(!res.ok){ toast(res.error||'فشل الحفظ','error'); return; }
-  toast('تم الحفظ ✅','success'); closeModal('modalCourse'); loadCourses();
-  document.getElementById('editCourseId').value='';
-  document.getElementById('courseModalTitle').textContent='إضافة كورس';
+  const id=document.getElementById('cId').value;
+  const title=document.getElementById('cTitle').value.trim();
+  const teacher=document.getElementById('cTeacher').value.trim();
+  const grade=document.getElementById('cGrade').value;
+  const subject=document.getElementById('cSubject').value;
+  const price=parseInt(document.getElementById('cPrice').value)||0;
+  const active=document.getElementById('cActive').checked;
+  if(!title||!teacher){msg('err','⚠️ اكتب اسم الكورس والمدرس');return;}
+  const body=id?{id:parseInt(id),title,teacher_name:teacher,is_active:active,price}:{grade,subject,title,teacher_name:teacher,is_active:active,price};
+  const d=await api('admin-courses','POST',body);
+  if(!d.ok){msg('err','❌ '+(d.error&&!d.error.includes('TypeError')?d.error:'فشل الاتصال — حاول تاني'));return;}
+  msg('ok',id?'✅ تم التعديل':'✅ تم الإضافة');
+  clearCourseForm();loadCourses();
 }
 
-async function deleteCourse(id,name){
-  if(!confirm('حذف كورس "'+name+'"؟ سيتم حذف كل البيانات المرتبطة به.')) return;
-  const res=await mfFetch('admin-courses',{method:'DELETE',body:JSON.stringify({id})});
-  if(!res.ok){ toast(res.error,'error'); return; }
-  toast('تم الحذف','success'); loadCourses();
+async function delCourse(id,title){
+  if(!confirm(`تمسح الكورس "${title}"؟\nده هيمسح كل الفيديوهات والمواعيد بتاعته!`))return;
+  const d=await api('admin-courses','DELETE',{id});
+  if(!d.ok){msg('err','❌ '+(d.error&&!d.error.includes('TypeError')?d.error:'فشل الاتصال — حاول تاني'));return;}
+  msg('ok','✅ تم الحذف');loadCourses();
 }
 
-// ─── SCHEDULES ────────────────────────
-async function loadSchedules(){
-  const cid=document.getElementById('schedCourseFilter')?.value;
-  if(!cid) return;
-  const res=await mfFetch('admin-schedules?course_id='+cid);
-  const scheds=res.schedules||[];
-  const tbody=document.getElementById('schedulesTable');
-  if(!scheds.length){ tbody.innerHTML='<tr><td colspan="5" class="text-center text-muted p-4">لا توجد مواعيد</td></tr>'; return; }
-  tbody.innerHTML=scheds.map(s=>`<tr>
-    <td>${s.day_of_week}</td><td>${s.start_time}</td><td>${s.end_time}</td><td>${s.notes||'—'}</td>
-    <td><div class="flex gap-2"><button class="btn btn-sm btn-secondary" onclick="editSched(${JSON.stringify(s).replace(/"/g,'&quot;')})">✏️</button><button class="btn btn-sm btn-danger" onclick="deleteSched(${s.id})">🗑️</button></div></td>
-  </tr>`).join('');
+// ===== SCHEDULES =====
+function selForSch(id,title){
+  selCId=id;selCTitle=title;
+  document.getElementById('selCourse').innerHTML=`<b>${esc(title)}</b> (ID: ${id})`;
+  openTab('sched',document.querySelectorAll('.tbtn')[2]);
+  loadSch();
 }
 
-function editSched(s){ document.getElementById('editSchedId').value=s.id; document.getElementById('schedCourseId').value=s.course_id; document.getElementById('schedDay').value=s.day_of_week; document.getElementById('schedStart').value=s.start_time; document.getElementById('schedEnd').value=s.end_time; document.getElementById('schedNote').value=s.notes||''; openModal('modalSchedule'); }
-
-async function saveSchedule(){
-  const id=document.getElementById('editSchedId').value;
-  const body={course_id:parseInt(document.getElementById('schedCourseId').value),day_of_week:document.getElementById('schedDay').value,start_time:document.getElementById('schedStart').value,end_time:document.getElementById('schedEnd').value,notes:document.getElementById('schedNote').value||null};
-  if(id)body.id=parseInt(id);
-  const res=await mfFetch('admin-schedules',{method:'POST',body:JSON.stringify(body)});
-  if(!res.ok){ toast(res.error,'error'); return; }
-  toast('تم الحفظ ✅','success'); closeModal('modalSchedule'); document.getElementById('editSchedId').value=''; loadSchedules();
+async function loadSch(){
+  if(!selCId){msg('err','اختار كورس');return;}
+  const d=await api('admin-schedules','GET',null,`?course_id=${selCId}`);
+  const tb=document.querySelector('#tSch tbody');tb.innerHTML='';
+  if(!d.ok||!d.schedules?.length){tb.innerHTML='<tr><td colspan="5" class="muted">مفيش مواعيد</td></tr>';return;}
+  d.schedules.forEach(s=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><input value="${escA(s.day_of_week)}" data-k="day" data-id="${s.id}"/></td>
+      <td><input value="${escA(s.start_time)}" data-k="start" data-id="${s.id}"/></td>
+      <td><input value="${escA(s.end_time)}" data-k="end" data-id="${s.id}"/></td>
+      <td><input value="${escA(s.notes||'')}" data-k="notes" data-id="${s.id}"/></td>
+      <td><div class="row">
+        <button class="btn bsm bok" onclick="saveSch(${s.id})">💾</button>
+        <button class="btn bsm bbad" onclick="delSch(${s.id})">🗑️</button>
+      </div></td>`;
+    tb.appendChild(tr);
+  });
 }
-async function deleteSched(id){ if(!confirm('حذف الموعد؟')) return; await mfFetch('admin-schedules',{method:'DELETE',body:JSON.stringify({id})}); toast('تم الحذف','success'); loadSchedules(); }
 
-// ─── VIDEOS ───────────────────────────
-function toggleVidType(type){
-  document.getElementById('ytSection').style.display     = type==='youtube' ? '' : 'none';
-  document.getElementById('uploadSection').style.display = type==='upload'  ? '' : 'none';
-  if(type==='youtube') document.getElementById('uploadProgressWrap').style.display='none';
+function gv(id,k){return document.querySelector(`input[data-id="${id}"][data-k="${k}"]`)?.value.trim()||'';}
+async function saveSch(id){
+  const d=await api('admin-schedules','POST',{id,course_id:selCId,day_of_week:gv(id,'day'),start_time:gv(id,'start'),end_time:gv(id,'end'),notes:gv(id,'notes')});
+  if(!d.ok){msg('err','❌ '+(d.error&&!d.error.includes('TypeError')?d.error:'فشل الاتصال — حاول تاني'));return;}
+  msg('ok','✅ تم');loadSch();
+}
+async function delSch(id){
+  if(!confirm('تمسح الموعد ده؟'))return;
+  const d=await api('admin-schedules','DELETE',{id});
+  if(!d.ok){msg('err','❌');return;}
+  msg('ok','✅ اتمسح');loadSch();
+}
+async function addSch(){
+  if(!selCId){msg('err','اختار كورس');return;}
+  const day=document.getElementById('nDay').value.trim(),start=document.getElementById('nStart').value.trim(),end=document.getElementById('nEnd').value.trim(),notes=document.getElementById('nNotes').value.trim();
+  if(!day||!start||!end){msg('err','⚠️ اكتب اليوم + من + إلى');return;}
+  const d=await api('admin-schedules','POST',{course_id:selCId,day_of_week:day,start_time:start,end_time:end,notes:notes||null});
+  if(!d.ok){msg('err','❌ '+(d.error&&!d.error.includes('TypeError')?d.error:'فشل الاتصال — حاول تاني'));return;}
+  ['nDay','nStart','nEnd','nNotes'].forEach(id=>document.getElementById(id).value='');
+  msg('ok','✅ اتضاف');loadSch();
+}
+
+// ===== VIDEOS =====
+let selCIdV=null,selCTitleV='';
+function selForVid(id,title){
+  selCIdV=id;selCTitleV=title;
+  document.getElementById('selCourseVid').innerHTML=`<b>${esc(title)}</b> (ID: ${id})`;
+  openTab('videos',document.querySelectorAll('.tbtn')[3]);
+  loadVideos();
 }
 
 async function loadVideos(){
-  const cid=document.getElementById('vidCourseFilter')?.value;
-  if(!cid){ document.getElementById('videosList').innerHTML='<div class="empty-state"><div class="empty-icon">🎬</div><p>اختر كورس</p></div>'; return; }
-  const res=await mfFetch('course-videos?course_id='+cid);
-  const videos=res.videos||[];
-  if(!videos.length){ document.getElementById('videosList').innerHTML='<div class="empty-state"><div class="empty-icon">🎬</div><p>لا توجد فيديوهات</p></div>'; return; }
-  document.getElementById('videosList').innerHTML=`<div class="table-wrap"><table>
-    <thead><tr><th>#</th><th>العنوان</th><th>النوع</th><th>الحالة</th><th>إجراءات</th></tr></thead>
-    <tbody>${videos.map((v,i)=>`<tr>
-      <td class="text-muted">${v.order_index||i+1}</td>
-      <td><div class="font-bold">${v.title}</div>${v.description?`<div class="text-xs text-muted">${v.description}</div>`:''}</td>
-      <td><span class="badge ${v.video_type==='youtube'?'badge-danger':'badge-primary'}">${v.video_type==='youtube'?'📺 يوتيوب':'🎬 مرفوع'}</span></td>
-      <td><span class="badge ${v.is_active?'badge-success':'badge-danger'}">${v.is_active?'نشط':'متوقف'}</span></td>
-      <td><div class="flex gap-2"><button class="btn btn-sm btn-secondary" onclick="editVideo(${JSON.stringify(v).replace(/"/g,'&quot;')})">✏️</button><button class="btn btn-sm btn-danger" onclick="deleteVideo(${v.id})">🗑️</button></div></td>
-    </tr>`).join('')}</tbody>
-  </table></div>`;
+  if(!selCIdV){document.getElementById('vidList').innerHTML='<div class="muted">اختار كورس الأول</div>';return;}
+  const d=await api('course-videos','GET',null,`?course_id=${selCIdV}`);
+  const el=document.getElementById('vidList');
+  if(!d.ok||!d.videos?.length){el.innerHTML='<div class="muted" style="padding:20px;text-align:center">📭 مفيش فيديوهات لسه — ضيفهم من الأسفل!</div>';return;}
+  el.innerHTML=d.videos.map((v,i)=>`
+    <div class="vid-item">
+      <div class="vid-num">${i+1}</div>
+      <div class="vid-meta">
+        <h4>${esc(v.title)}</h4>
+        <p>${esc(v.youtube_url||'')}</p>
+        ${v.description?`<p style="margin-top:3px">${esc(v.description)}</p>`:''}
+      </div>
+      <div class="row">
+        <button class="btn bsm" onclick="editVid(${v.id},'${escA(v.title)}','${escA(v.youtube_url||'')}','${escA(v.description||'')}',${v.order_index||0},${v.is_active})">✏️</button>
+        <button class="btn bsm bbad" onclick="delVid(${v.id})">🗑️</button>
+      </div>
+    </div>`).join('');
 }
 
-function editVideo(v){
-  // ملء الحقول
-  document.getElementById('editVideoId').value  = v.id;
-  document.getElementById('vidCourseId').value  = v.course_id;
-  document.getElementById('vidTitle').value     = v.title;
-  document.getElementById('vidDesc').value      = v.description||'';
-  document.getElementById('vidOrder').value     = v.order_index||0;
-  document.getElementById('vidYtUrl').value     = v.youtube_url||'';
-  document.querySelector(`input[name="vidType"][value="${v.video_type||'youtube'}"]`).checked = true;
-  toggleVidType(v.video_type||'youtube');
-  
-  uploadFile = null;
-  const vidFileEl = document.getElementById('vidFile'); if(vidFileEl) vidFileEl.value='';
-  const info = document.getElementById('vidFileInfo');
-  if(info) info.textContent = v.video_type==='upload' ? '✅ فيديو محفوظ — اختر ملف جديد لاستبداله' : '';
-  document.getElementById('modalVideoTitle').textContent = '✏️ تعديل فيديو';
-  openModal('modalVideo');
+function toggleVidType(){
+  const t=document.getElementById('vType').value;
+  document.getElementById('ytSection').style.display = t==='youtube'?'':'none';
+  document.getElementById('uploadSection').style.display = t==='upload'?'':'none';
 }
 
-function openAddVideoModal(){
-  document.getElementById('editVideoId').value = '';
-  document.getElementById('vidTitle').value    = '';
-  document.getElementById('vidDesc').value     = '';
-  document.getElementById('vidOrder').value    = '0';
-  document.getElementById('vidYtUrl').value    = '';
-  document.querySelector('input[name="vidType"][value="youtube"]').checked = true;
-  toggleVidType('youtube');
-  uploadFile = null;
-  const f = document.getElementById('vidFile'); if(f) f.value='';
-  const i = document.getElementById('vidFileInfo'); if(i) i.textContent='';
-  document.getElementById('modalVideoTitle').textContent = 'إضافة فيديو';
-  openModal('modalVideo');
+function editVid(id,title,url,desc,order,active){
+  document.getElementById('vId').value=id;
+  document.getElementById('vTitle').value=title;
+  document.getElementById('vUrl').value=url;
+  document.getElementById('vDesc').value=desc;
+  document.getElementById('vOrder').value=order;
+  document.getElementById('vActive').checked=active;
+  document.getElementById('vType').value='youtube';
+  toggleVidType();
+  document.getElementById('btnCancelV').style.display='';
+  window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
 }
 
-let uploadFile=null;
-function handleFileSelect(e){
-  uploadFile = e.target.files[0];
-  if(uploadFile){
-    const info = document.getElementById('vidFileInfo');
-    if(info) info.textContent = '✅ '+uploadFile.name+' ('+(uploadFile.size/1024/1024).toFixed(1)+' MB)';
-  }
+function clearVidForm(){
+  ['vId','vTitle','vUrl','vDesc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('vOrder').value='1';
+  document.getElementById('vActive').checked=true;
+  document.getElementById('btnCancelV').style.display='none';
+  document.getElementById('vType').value='youtube';
+  toggleVidType();
 }
 
-function mcHandleFileSelect(input){
-  const file = input.files[0];
-  const fn   = document.getElementById('mcVidFileName');
-  if(file && fn){
-    fn.textContent  = '✅ ' + file.name + ' (' + (file.size/1024/1024).toFixed(1) + ' MB)';
-    fn.style.color  = 'var(--success)';
-  }
+async function uploadVideoFile(videoId, courseId){
+  const fileInput = document.createElement('input');
+  fileInput.type='file';
+  fileInput.accept='video/mp4,video/webm,video/quicktime';
+  fileInput.onchange = async function(){
+    const file = fileInput.files[0];
+    if(!file) return;
+    const el = document.getElementById('vidUploadStatus');
+    if(el) el.textContent='⏳ جاري رفع الفيديو... ('+Math.round(file.size/1048576)+'MB)';
+    // Get signed upload URL
+    const d=await fetch(FN+'/video-upload-url',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({video_id:videoId,course_id:courseId,filename:file.name,content_type:file.type})
+    }).then(r=>r.json()).catch(()=>({}));
+    if(!d.ok){if(el) el.textContent='❌ '+(d.error&&!d.error.includes('TypeError')?d.error:'فشل الاتصال — حاول تاني');return;}
+    // Upload to storage
+    const upRes=await fetch(d.signed_url,{method:'PUT',headers:{'Content-Type':file.type},body:file});
+    if(!upRes.ok){if(el) el.textContent='❌ فشل الرفع';return;}
+    if(el) el.textContent='✅ تم رفع الفيديو بنجاح!';
+    setTimeout(()=>loadVideos(courseId),1500);
+  };
+  fileInput.click();
 }
-function handleDrop(e){ e.preventDefault(); const files=e.dataTransfer.files; if(files[0]){ const input=document.getElementById('vidFile'); uploadFile=files[0]; const info=document.getElementById('vidFileInfo'); if(info) info.textContent='✅ '+uploadFile.name+' ('+(uploadFile.size/1024/1024).toFixed(1)+' MB)'; } }
 
 async function saveVideo(){
-  const id    = document.getElementById('editVideoId').value;  // موجود = edit، فاضي = add
-  const type  = document.querySelector('input[name="vidType"]:checked').value;
-  const cid   = document.getElementById('vidCourseId').value;
-  if(!cid){ toast('اختر كورس','warn'); return; }
-  const title = document.getElementById('vidTitle').value.trim();
-  if(!title){ toast('أدخل عنوان الفيديو','warn'); return; }
+  if(!selCIdV){msg('err','اختار كورس من الكورسات');return;}
+  const id=document.getElementById('vId').value;
+  const title=document.getElementById('vTitle').value.trim();
+  const vtype=document.getElementById('vType').value;
+  const desc=document.getElementById('vDesc').value.trim();
+  const order=parseInt(document.getElementById('vOrder').value)||1;
+  const active=document.getElementById('vActive').checked;
+  if(!title){msg('err','⚠️ اكتب عنوان الفيديو');return;}
 
-  // تحقق: إضافة جديدة من نوع upload لازم يكون في ملف
-  if(type==='upload' && !id && !uploadFile){ toast('اختر ملف فيديو','warn'); return; }
-
-  const btn = document.getElementById('btnSaveVideo');
-  btn.disabled=true; btn.textContent='⏳ جاري الحفظ...';
-
-  try{
-    if(type === 'youtube'){
-      // ── YouTube: سواء add أو edit ────────────────────────
-      const body={course_id:parseInt(cid),title,
-        description:document.getElementById('vidDesc').value||null,
-        order_index:parseInt(document.getElementById('vidOrder').value)||0,
-        video_type:'youtube',
-        youtube_url:document.getElementById('vidYtUrl').value.trim(),
-        is_active:true};
-      if(id) body.id=parseInt(id);
-      const res=await mfFetch('course-videos',{method:'POST',body:JSON.stringify(body)});
-      if(!res.ok){ toast(res.error||'فشل الحفظ','error'); return; }
-
-    } else if(type === 'upload'){
-      if(uploadFile){
-        // ── Upload جديد (add أو استبدال الفيديو في edit) ───
-        await uploadToR2(uploadFile, cid, title, id ? parseInt(id) : null);
-        uploadFile=null;
-      } else {
-        // ── Edit على فيديو upload بدون ملف جديد (تعديل العنوان/الترتيب فقط) ──
-        const body={id:parseInt(id),course_id:parseInt(cid),title,
-          description:document.getElementById('vidDesc').value||null,
-          order_index:parseInt(document.getElementById('vidOrder').value)||0,
-          video_type:'upload',is_active:true};
-        const res=await mfFetch('course-videos',{method:'POST',body:JSON.stringify(body)});
-        if(!res.ok){ toast(res.error||'فشل الحفظ','error'); return; }
-      }
+  if(vtype==='upload'){
+    const file=document.getElementById('vFile').files[0];
+    if(!file&&!id){msg('err','⚠️ اختار ملف الفيديو');return;}
+    if(file){
+      // file upload via fetch with progress via XHR
+      const btn=document.getElementById('saveVidBtn');
+      btn.disabled=true;btn.textContent='جاري الرفع…';
+      document.getElementById('uploadProgress').style.display='block';
+      const xhr=new XMLHttpRequest();
+      xhr.upload.onprogress=function(e){
+        if(e.lengthComputable){
+          const pct=Math.round(e.loaded/e.total*100);
+          document.getElementById('upPct').textContent=pct+'%';
+          document.getElementById('upBar').style.width=pct+'%';
+        }
+      };
+      xhr.onload=async function(){
+        btn.disabled=false;btn.textContent='💾 حفظ الفيديو';
+        document.getElementById('uploadProgress').style.display='none';
+        let r={};try{r=JSON.parse(xhr.responseText);}catch(e){}
+        if(!r.ok){msg('err','❌ '+(r.error||'فشل الرفع'));return;}
+        msg('ok','✅ تم رفع الفيديو بنجاح!');clearVidForm();loadVideos();
+      };
+      xhr.onerror=function(){btn.disabled=false;btn.textContent='💾 حفظ الفيديو';msg('err','❌ فشل الاتصال');};
+      xhr.open('POST',FN+'/video-upload');
+      xhr.setRequestHeader('apikey',KEY);
+      xhr.setRequestHeader('Content-Type',file.type||'video/mp4');
+      xhr.setRequestHeader('x-course-id',selCIdV);
+      xhr.setRequestHeader('x-title',encodeURIComponent(title));
+      xhr.setRequestHeader('x-order',order);
+      xhr.setRequestHeader('x-description',encodeURIComponent(desc||''));
+      xhr.send(file);
+      return;
     }
-
-    toast('تم الحفظ ✅','success');
-    closeModal('modalVideo');
-    document.getElementById('editVideoId').value='';
-  }catch(e){
-    toast('حدث خطأ: '+(e.message||e),'error');
-  }finally{
-    btn.disabled=false; btn.textContent='💾 حفظ';
-    loadVideos();
-  }
-}
-
-async function uploadToR2(file, courseId, title, videoId=null, progressEl=null, extraData=null){
-  // ════════════════════════════════════════════════════════
-  //  r2-upload v3 — Presigned URL: Browser → R2 مباشرة
-  //  مفيش proxy، مفيش multipart، مفيش chunks
-  //  الـ browser يرفع الفيديو كاملاً لـ R2 بـ PUT واحد
-  // ════════════════════════════════════════════════════════
-  const pw  = progressEl?.wrap || document.getElementById('uploadProgressWrap');
-  const pb  = progressEl?.bar  || document.getElementById('uploadProgressBar');
-  const pp  = progressEl?.pct  || document.getElementById('uploadPct');
-  const spd = progressEl?.spd  || document.getElementById('uploadSpeed');
-  const nm  = progressEl?.name || document.getElementById('uploadFileName');
-
-  const show = (el, v) => { if(el) el.style.display = v; };
-  const set  = (el, t) => { if(el) el.textContent = t; };
-  const pct  = (el, p) => { if(el) el.style.width = p + '%'; };
-
-  show(pw, 'block');
-  set(nm, file.name);
-  set(pp, '0%');
-  pct(pb, 0);
-  set(spd, '⏳ جاري التحضير…');
-
-  const FN   = MF_CONFIG.FN + '/r2-upload';
-  const tok  = localStorage.getItem('mf_access_token') || '';
-  const auth = tok && tok.length > 20 ? tok : MF_CONFIG.ANON_KEY;
-  const ct   = file.type || 'video/mp4';
-
-  const desc  = extraData?.description ?? document.getElementById('vidDesc')?.value ?? null;
-  const order = extraData?.order_index  ?? parseInt(document.getElementById('vidOrder')?.value || '0') ?? 0;
-
-  // ─── 1. INIT — احصل على presigned URL ───────────────────
-  let initR;
-  try {
-    const res = await fetch(
-      `${FN}?action=init&course_id=${courseId}&title=${encodeURIComponent(title)}&ct=${encodeURIComponent(ct)}&order=${order}${videoId?'&video_id='+videoId:''}${desc?'&desc='+encodeURIComponent(desc):''}`,
-      { method: 'POST', headers: { 'apikey': MF_CONFIG.ANON_KEY, 'Authorization': 'Bearer '+auth } }
-    );
-    initR = await res.json();
-  } catch(e) {
-    show(pw, 'none');
-    toast('فشل الاتصال بالسيرفر: ' + e.message, 'error');
-    throw e;
-  }
-
-  if (!initR.ok) {
-    show(pw, 'none');
-    toast('فشل بدء الرفع: ' + (initR.error || ''), 'error');
-    throw new Error(initR.error);
-  }
-
-  const { upload_url, key, video_id: newVidId } = initR;
-  const finalVidId = newVidId || videoId;
-
-  // ─── 2. PUT الفيديو مباشرة لـ R2 بـ presigned URL ───────
-  set(spd, `⬆️ جاري الرفع… (${(file.size/1048576).toFixed(1)} MB)`);
-  pct(pb, 10);
-
-  // XHR بدل fetch — بيدعم progress events حقيقية
-  await new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    const t0  = Date.now();
-
-    xhr.upload.addEventListener('progress', (e) => {
-      if (!e.lengthComputable) return;
-      const p   = Math.min(95, Math.round(e.loaded / e.total * 100));
-      const sec = (Date.now() - t0) / 1000 || 0.1;
-      const mbs = (e.loaded / 1048576 / sec).toFixed(1);
-      pct(pb, p);
-      set(pp, p + '%');
-      set(spd, `${(e.loaded/1048576).toFixed(1)} / ${(e.total/1048576).toFixed(1)} MB — ${mbs} MB/s`);
-    });
-
-    xhr.addEventListener('load', () => {
-      if (xhr.status === 200 || xhr.status === 204) {
-        resolve(null);
-      } else {
-        reject(new Error(`R2 رفض الرفع: HTTP ${xhr.status} — ${xhr.responseText?.slice(0,200)}`));
-      }
-    });
-
-    xhr.addEventListener('error', () => reject(new Error('خطأ في الشبكة أثناء الرفع')));
-    xhr.addEventListener('abort', () => reject(new Error('تم إلغاء الرفع')));
-    xhr.addEventListener('timeout', () => reject(new Error('انتهى وقت الرفع')));
-
-    xhr.open('PUT', upload_url);
-    // لا نبعت Content-Type — الـ presigned URL موقّع بـ host فقط
-    // لو بعتنا Content-Type هيرجع 403 SignatureDoesNotMatch
-    xhr.timeout = 30 * 60 * 1000; // 30 دقيقة كحد أقصى
-    xhr.send(file);
-  }).catch(async (e) => {
-    fetch(`${FN}?action=abort`, {
-      method: 'POST',
-      headers: { 'apikey': MF_CONFIG.ANON_KEY, 'Authorization': 'Bearer '+auth, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ video_id: finalVidId })
-    }).catch(() => {});
-    show(pw, 'none');
-    toast('فشل الرفع: ' + e.message, 'error');
-    throw e;
-  });
-
-  // ─── 3. DONE — فعّل الفيديو في DB ───────────────────────
-  set(spd, '✅ جاري الحفظ…');
-  pct(pb, 99);
-
-  let doneR;
-  try {
-    const res = await fetch(`${FN}?action=done`, {
-      method: 'POST',
-      headers: { 'apikey': MF_CONFIG.ANON_KEY, 'Authorization': 'Bearer '+auth, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key, video_id: finalVidId })
-    });
-    doneR = await res.json();
-  } catch(e) {
-    doneR = { ok: false, error: e.message };
-  }
-
-  if (!doneR.ok) {
-    show(pw, 'none');
-    toast('الرفع نجح لكن فشل الحفظ: ' + (doneR.error || ''), 'error');
-    throw new Error('done failed');
-  }
-
-  pct(pb, 100);
-  set(pp, '100%');
-  set(spd, '🎉 اكتمل الرفع!');
-  setTimeout(() => { show(pw, 'none'); set(spd, ''); }, 2500);
-}
-
-async function deleteVideo(id){ if(!confirm('حذف الفيديو؟')) return; try{ const res=await mfFetch('course-videos',{method:'DELETE',body:JSON.stringify({id})}); if(!res.ok){ toast(res.error||'فشل الحذف','error'); return; } toast('تم الحذف','success'); loadVideos(); }catch(e){ toast('فشل الحذف','error'); } }
-
-// ─── PAYMENTS ─────────────────────────
-let selectedPayments=new Set();
-async function loadPayments(status, btn){
-  document.querySelectorAll('.tabs .tab-btn').forEach(b=>b.classList.remove('active'));
-  btn?.classList.add('active');
-  selectedPayments.clear();
-  // course_admin: يفلتر على كورساته بس
-  let url='admin-payments?status='+status;
-  if(isCourseAdmin && mcActiveCourseId) url+='&course_id='+mcActiveCourseId;
-  const res=await mfFetch(url);
-  const payments=res.payments||[];
-  const list=document.getElementById('paymentsList');
-  if(!payments.length){ list.innerHTML='<div class="empty-state"><div class="empty-icon">💳</div><p>لا توجد طلبات</p></div>'; return; }
-  list.innerHTML=`<div class="glass-sm">${payments.map(p=>`
-    <div class="payment-row" id="prow-${p.id}">
-      ${status==='pending'?`<input type="checkbox" onchange="toggleSelect(${p.id},this)" style="margin-top:4px">`:''}
-      <div style="flex:1">
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="font-bold">${escapeHtml(p.full_name||'—')}</span>
-          ${p.phone_student?`<a href="https://wa.me/2${escapeHtml(p.phone_student)}" target="_blank" style="color:#25d366;text-decoration:none;font-size:11px">💬 ${escapeHtml(p.phone_student)}</a>`:''}
-          <span class="badge badge-primary">${gradeLabel(p.grade||'')}</span>
-        </div>
-        <div class="text-sm mt-1">📚 ${escapeHtml(p.course_title||'')} — 👨‍🏫 ${escapeHtml(p.teacher_name||'')}</div>
-        <div class="text-sm mt-1">💰 ${fmtNum(p.final_amount||p.amount)} جنيه — 📱 ${escapeHtml(p.method||'')}</div>
-        ${p.transaction_id?`<div class="text-xs text-muted mt-1">🔢 رقم العملية: ${escapeHtml(p.transaction_id)}</div>`:''}
-        ${p.receipt_note?`<div class="text-xs text-muted">📝 ${escapeHtml(p.receipt_note)}</div>`:''}
-        ${p.receipt_image_url?`
-        <div style="margin-top:8px">
-          <img src="${escapeHtml(p.receipt_image_url)}" alt="إيصال الدفع"
-            style="max-width:180px;max-height:120px;border-radius:10px;cursor:pointer;border:1px solid var(--border2);object-fit:cover"
-            onclick="window.open('${escapeHtml(p.receipt_image_url)}','_blank')"
-            title="اضغط لعرض الصورة كاملة">
-          <div class="text-xs text-muted" style="margin-top:3px">📸 صورة الإيصال — اضغط للتكبير</div>
-        </div>`:'<div class="text-xs" style="color:#f59e0b;margin-top:4px">⚠️ لا توجد صورة إيصال</div>'}
-        ${p.teacher_payment_info?`<div class="text-xs" style="color:var(--accent);margin-top:4px">🏦 دفع المدرس: ${escapeHtml(p.teacher_payment_info)}</div>`:''}
-        <div class="text-xs text-muted mt-1">${fmtDateTime(p.created_at)}</div>
-        ${status==='pending'?`<div class="payment-actions">
-          <button class="btn btn-sm btn-success" onclick="approvePayment(${p.id},this)">✅ قبول</button>
-          <button class="btn btn-sm btn-danger" onclick="rejectPayment(${p.id},this)">❌ رفض</button>
-        </div>`:''}
-      </div>
-    </div>`).join('')}</div>`;
-}
-
-function toggleSelect(id,cb){ if(cb.checked)selectedPayments.add(id); else selectedPayments.delete(id); }
-
-async function approvePayment(id,btn){
-  btn.disabled=true; btn.textContent='⏳';
-  const res=await mfFetch('admin-payments',{method:'POST',body:JSON.stringify({id,action:'approve',admin_id:user.id})});
-  if(!res.ok){ toast(res.error,'error'); btn.disabled=false; btn.textContent='✅ قبول'; return; }
-  toast('تم القبول ✅ — تم تفعيل اشتراك الطالب','success');
-  if(res.wa_url){ if(confirm('فتح WhatsApp لإبلاغ الطالب؟')) window.open(res.wa_url,'_blank'); }
-  document.getElementById('prow-'+id)?.remove();
-}
-
-async function rejectPayment(id,btn){
-  if(!confirm('رفض هذا الطلب؟')) return;
-  btn.disabled=true; btn.textContent='⏳';
-  const res=await mfFetch('admin-payments',{method:'POST',body:JSON.stringify({id,action:'reject',admin_id:user.id})});
-  if(!res.ok){ toast(res.error,'error'); btn.disabled=false; return; }
-  toast('تم الرفض','success');
-  if(res.wa_url){ if(confirm('فتح WhatsApp لإبلاغ الطالب بالرفض؟')) window.open(res.wa_url,'_blank'); }
-  document.getElementById('prow-'+id)?.remove();
-}
-
-async function bulkApprove(){
-  if(!selectedPayments.size){ toast('لم يتم تحديد طلبات','warn'); return; }
-  if(!confirm(`قبول ${selectedPayments.size} طلبات؟`)) return;
-  showLoading(true);
-  let approvedCount = 0;
-  for(const id of selectedPayments){
-    try{
-      const res=await mfFetch('admin-payments',{method:'POST',body:JSON.stringify({id,action:'approve'})});
-      if(res.ok){ document.getElementById('prow-'+id)?.remove(); approvedCount++; }
-    }catch(e){}
-  }
-  showLoading(false); selectedPayments.clear();
-  toast('تم قبول '+approvedCount+' طلبات ✅','success');
-}
-
-// ─── COUPONS ──────────────────────────
-async function loadCoupons(){
-  if(isCourseAdmin) return;
-  const res=await mfFetch('coupons');
-  const coupons=res.coupons||[];
-  const tbody=document.getElementById('couponsTable');
-  if(!coupons.length){ tbody.innerHTML='<tr><td colspan="6" class="text-center text-muted p-4">لا توجد كوبونات</td></tr>'; return; }
-  tbody.innerHTML=coupons.map(c=>`<tr>
-    <td><strong style="font-family:monospace;font-size:15px;color:var(--primary-light)">${escapeHtml(c.code)}</strong></td>
-    <td>${c.discount_value}${c.discount_type==='percent'?'%':' جنيه'}</td>
-    <td>${c.used_count}/${c.max_uses}</td>
-    <td>${c.expires_at?fmtDate(c.expires_at):'بلا حد'}</td>
-    <td><span class="badge ${c.is_active?'badge-success':'badge-danger'}">${c.is_active?'نشط':'متوقف'}</span></td>
-    <td><div class="flex gap-2">
-      <button class="btn btn-sm btn-secondary" onclick="toggleCoupon(${c.id},${!c.is_active})">${c.is_active?'إيقاف':'تفعيل'}</button>
-      <button class="btn btn-sm btn-danger" onclick="deleteCoupon(${c.id})">🗑️</button>
-    </div></td>
-  </tr>`).join('');
-}
-
-async function saveCoupon(){
-  const code=document.getElementById('couponCode').value.trim();
-  const val=parseInt(document.getElementById('couponVal').value)||0;
-  if(!code||!val){ toast('أدخل الكود والقيمة','warn'); return; }
-  const body={code,discount_type:document.getElementById('couponType').value,discount_value:val,max_uses:parseInt(document.getElementById('couponMax').value)||100,expires_at:document.getElementById('couponExpiry').value||null};
-  const res=await mfFetch('coupons',{method:'POST',body:JSON.stringify(body)});
-  if(!res.ok){ toast(res.error,'error'); return; }
-  toast('تم الإنشاء ✅','success'); closeModal('modalCoupon'); loadCoupons();
-}
-async function toggleCoupon(id,active){ try{ const res=await mfFetch('coupons',{method:'POST',body:JSON.stringify({action:'toggle',id,is_active:active})}); if(!res.ok){ toast(res.error||'فشل التحديث','error'); return; } loadCoupons(); }catch(e){ toast('فشل التحديث','error'); } }
-async function deleteCoupon(id){ if(!confirm('حذف الكوبون؟')) return; try{ const res=await mfFetch('coupons',{method:'POST',body:JSON.stringify({action:'delete',id})}); if(!res.ok){ toast(res.error||'فشل الحذف','error'); return; } toast('تم الحذف','success'); loadCoupons(); }catch(e){ toast('فشل الحذف','error'); } }
-
-// ─── COMMENTS ─────────────────────────
-async function loadAdminComments(){
-  const cid=document.getElementById('commentCourseFilter').value;
-  if(!cid) return;
-  const vids=(await mfFetch('course-videos?course_id='+cid)).videos||[];
-  const list=document.getElementById('adminCommentsList');
-  if(!vids.length){ list.innerHTML='<div class="empty-state"><p>لا توجد فيديوهات</p></div>'; return; }
-  let allComments=[];
-  for(const v of vids){
-    const r=await mfFetch('video-comments?video_id='+v.id);
-    (r.comments||[]).forEach(c=>allComments.push({...c,video_title:v.title}));
-  }
-  if(!allComments.length){ list.innerHTML='<div class="empty-state"><div class="empty-icon">💬</div><p>لا توجد تعليقات</p></div>'; return; }
-  list.innerHTML=allComments.map(c=>`
-    <div class="glass-sm p-4 mb-3">
-      <div class="flex items-center justify-between mb-2">
-        <div><span class="font-bold">${escapeHtml(c.user_name||'—')}</span> <span class="text-xs text-muted">في "${escapeHtml(c.video_title)}"</span></div>
-        <div class="flex gap-2">
-          <button class="btn btn-sm btn-secondary" onclick="pinComment(${c.id},${!c.is_pinned})">${c.is_pinned?'📌 إلغاء التثبيت':'📌 تثبيت'}</button>
-          <button class="btn btn-sm btn-primary" data-cid="${c.id}" data-msg="${escapeHtml(c.message||'')}" onclick="openReply(this.dataset.cid, this.dataset.msg)">↩️ رد</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteComment(${c.id})">🗑️</button>
-        </div>
-      </div>
-      <div class="text-sm">${escapeHtml(c.message)}</div>
-      ${c.reply?`<div class="comment-reply mt-2"><strong>ردك:</strong> ${escapeHtml(c.reply)}</div>`:''}
-      <div class="text-xs text-muted mt-2">${fmtDateTime(c.created_at)}</div>
-    </div>`).join('');
-}
-
-function openReply(id,msg){ document.getElementById('replyCommentId').value=id; document.getElementById('replyOriginal').textContent=msg; document.getElementById('replyText').value=''; openModal('modalReply'); }
-async function submitReply(){ const id=document.getElementById('replyCommentId').value; const reply=document.getElementById('replyText').value.trim(); if(!reply){ toast('اكتب الرد','warn'); return; } const res=await mfFetch('video-comments',{method:'POST',body:JSON.stringify({action:'reply',id:parseInt(id),reply})}); if(!res.ok){ toast(res.error,'error'); return; } toast('تم إرسال الرد ✅','success'); closeModal('modalReply'); loadAdminComments(); }
-async function pinComment(id,pinned){ try{ const res=await mfFetch('video-comments',{method:'POST',body:JSON.stringify({action:'pin',id,pinned})}); if(!res.ok){ toast(res.error||'فشل التثبيت','error'); return; } loadAdminComments(); }catch(e){ toast('فشل التثبيت','error'); } }
-async function deleteComment(id){ if(!confirm('حذف التعليق؟')) return; try{ const res=await mfFetch('video-comments',{method:'POST',body:JSON.stringify({action:'delete',id})}); if(!res.ok){ toast(res.error||'فشل الحذف','error'); return; } toast('تم الحذف','success'); loadAdminComments(); }catch(e){ toast('فشل الحذف','error'); } }
-
-// ─── USERS ────────────────────────────
-let allUsers=[];
-async function loadUsers(){
-  if(isCourseAdmin) return;
-  const res=await mfFetch('admin-users');
-  allUsers=res.users||[];
-  renderUsers(allUsers);
-}
-function filterUsers(){ const q=document.getElementById('userSearch').value.toLowerCase(); renderUsers(allUsers.filter(u=>(u.full_name||'').toLowerCase().includes(q)||(u.phone_student||'').includes(q))); }
-function renderUsers(users){
-  const tbody=document.getElementById('usersTable');
-  if(!users.length){ tbody.innerHTML='<tr><td colspan="5" class="text-center text-muted p-4">لا يوجد مستخدمين</td></tr>'; return; }
-  tbody.innerHTML=users.map(u=>`<tr>
-    <td><div class="font-bold">${u.full_name}</div></td>
-    <td class="text-sm" style="direction:ltr;text-align:right">
-      ${u.phone_student ? `<a href="https://wa.me/2${u.phone_student}" target="_blank" style="color:var(--primary-light);text-decoration:none" title="فتح واتساب">💬 ${u.phone_student}</a>` : '—'}
-    </td>
-    <td>${gradeLabel(u.grade)}</td>
-    <td><span class="badge ${u.role==='superadmin'?'badge-danger':u.role==='admin'?'badge-warn':u.role==='course_admin'?'badge-info':'badge-primary'}">${u.role}</span></td>
-    <td><div class="flex gap-2">
-      ${user.role==='superadmin'||user.role==='admin'?`<button class="btn btn-sm btn-secondary" onclick="openUserRole(${JSON.stringify(u).replace(/"/g,'&quot;')})">🔐 صلاحيات</button>`:''}
-      <button class="btn btn-sm btn-secondary" data-uid="${u.id}" data-name="${u.full_name||''}" data-phone="${u.phone_student||''}" onclick="resetPassBtn(this)">🔑 باسورد</button>
-    </div></td>
-  </tr>`).join('');
-}
-
-function openUserRole(u){ document.getElementById('editUserId').value=u.id; document.getElementById('editUserName').textContent=u.full_name; document.getElementById('editUserPhone').textContent=u.phone_student||''; document.getElementById('editUserRole').value=u.role; toggleManagedCourses(); renderManagedCoursesList(u.managed_courses||[]); openModal('modalUserRole'); }
-
-function toggleManagedCourses(){ const role=document.getElementById('editUserRole').value; document.getElementById('managedCoursesGroup').classList.toggle('hidden',role!=='course_admin'); }
-
-function renderManagedCoursesList(selected=[]){
-  const wrap=document.getElementById('managedCoursesList');
-  wrap.innerHTML=allCourses.map(c=>`<label style="display:flex;align-items:center;gap:8px;padding:6px;cursor:pointer;border-radius:6px" class="pointer">
-    <input type="checkbox" value="${c.id}" ${selected.includes(c.id)?'checked':''}>
-    <span class="text-sm">${c.title}</span>
-  </label>`).join('');
-}
-
-async function saveUserRole(){
-  if(isCourseAdmin){ toast('ليس لديك صلاحية','error'); return; }
-  const id=document.getElementById('editUserId').value;
-  const role=document.getElementById('editUserRole').value;
-  const managed_courses=role==='course_admin'?[...document.querySelectorAll('#managedCoursesList input:checked')].map(i=>parseInt(i.value)):[];
-  try{
-    const res=await mfFetch('admin-users',{method:'POST',body:JSON.stringify({user_id:id,role,managed_courses})});
-    if(!res.ok){ toast(res.error||'فشل التحديث','error'); return; }
-    toast('تم التحديث ✅','success'); closeModal('modalUserRole'); loadUsers();
-  }catch(e){ toast('فشل التحديث','error'); }
-}
-
-function resetPass(userId, name, phone){ openResetPass(userId, name, phone||''); }
-function resetPassBtn(el){ resetPass(el.dataset.uid, el.dataset.name, el.dataset.phone||""); }
-
-// ─── QUIZZES ──────────────────────────
-async function loadQuizzes(){
-  const cid=document.getElementById('quizCourseFilter').value;
-  if(!cid){ document.getElementById('quizzesList').innerHTML='<div class="empty-state"><p>اختر كورس</p></div>'; return; }
-  const res=await mfFetch('quizzes?course_id='+cid);
-  const quizzes=res.quizzes||[];
-  if(!quizzes.length){ document.getElementById('quizzesList').innerHTML='<div class="empty-state"><div class="empty-icon">📝</div><p>لا توجد كويزات</p></div>'; return; }
-  document.getElementById('quizzesList').innerHTML=quizzes.map(q=>`
-    <div class="glass-sm p-4 mb-3">
-      <div class="flex items-center justify-between">
-        <div><div class="font-bold">${q.title}</div><div class="text-sm text-muted mt-1">${q.description||''} | نجاح: ${q.pass_score}%</div></div>
-        <div class="flex gap-2">
-          <button class="btn btn-sm btn-primary" onclick="openAddQuestion(${q.id})">+ سؤال</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteQuiz(${q.id})">🗑️</button>
-        </div>
-      </div>
-      <div class="mt-3" id="qlist-${q.id}"><button class="btn btn-sm btn-secondary" onclick="loadQuizQuestions(${q.id})">📋 عرض الأسئلة</button></div>
-    </div>`).join('');
-}
-
-async function loadQuizQuestions(quizId){
-  const res=await mfFetch('quizzes?quiz_id='+quizId+'&admin=1');
-  const qs=res.questions||[];
-  const wrap=document.getElementById('qlist-'+quizId);
-  if(!qs.length){ wrap.innerHTML='<p class="text-sm text-muted">لا توجد أسئلة بعد</p>'; return; }
-  const LETTERS={a:'أ',b:'ب',c:'ج',d:'د'};
-  wrap.innerHTML=qs.map((q,i)=>`
-    <div class="question-builder" style="position:relative">
-      ${q.image_url?`<img src="${q.image_url}" style="width:100%;max-height:100px;object-fit:contain;border-radius:8px;margin-bottom:6px;background:var(--bg4)">`:'' }
-      <div class="text-sm font-bold mb-1">${i+1}. ${q.question}</div>
-      <div class="text-xs text-muted">أ: ${q.option_a} | ب: ${q.option_b} | ج: ${q.option_c} | د: ${q.option_d}</div>
-      <div class="text-xs mt-1" style="color:var(--success)">✅ الصح: ${LETTERS[q.correct_answer]||'?'} — ${q['option_'+q.correct_answer]||'—'}</div>
-      <div style="display:flex;gap:6px;margin-top:8px">
-        <button class="btn btn-xs btn-secondary" onclick="editQuestion(${JSON.stringify(q).replace(/"/g,'&quot;')},${quizId})" style="font-size:11px;padding:2px 8px">✏️ تعديل</button>
-        <button class="btn btn-xs btn-danger" onclick="deleteQuestion(${q.id},${quizId})" style="font-size:11px;padding:2px 8px;background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.3)">🗑️ حذف</button>
-      </div>
-    </div>`).join('');
-}
-
-function editQuestion(q, quizId){
-  document.getElementById('qQuizId').value = quizId;
-  document.getElementById('editQId').value = q.id;
-  document.getElementById('qText').value = q.question || '';
-  document.getElementById('qOptA').value = q.option_a || '';
-  document.getElementById('qOptB').value = q.option_b || '';
-  document.getElementById('qOptC').value = q.option_c || '';
-  document.getElementById('qOptD').value = q.option_d || '';
-  document.getElementById('qCorrect').value = q.correct_answer || 'a';
-  document.getElementById('qImageUrl').value = q.image_url || '';
-  const prev = document.getElementById('qImagePreview');
-  const img  = document.getElementById('qImgPreviewEl');
-  if(q.image_url){ img.src=q.image_url; prev.style.display='block'; }
-  else { prev.style.display='none'; }
-  document.querySelector('#modalQuestion .modal-title').textContent = 'تعديل السؤال';
-  openModal('modalQuestion');
-}
-
-async function saveQuiz(){
-  const id=document.getElementById('editQuizId').value;
-  const body={course_id:parseInt(document.getElementById('quizCourseId').value),title:document.getElementById('quizTitle').value.trim(),description:document.getElementById('quizDesc').value||null,pass_score:parseInt(document.getElementById('quizPassScore').value)||60,is_active:true};
-  if(id)body.id=parseInt(id);
-  const res=await mfFetch('quizzes',{method:'POST',body:JSON.stringify(body)});
-  if(!res.ok){ toast(res.error,'error'); return; }
-  toast('تم إنشاء الكويز ✅','success'); closeModal('modalQuiz'); document.getElementById('editQuizId').value=''; loadQuizzes();
-}
-
-// ─── Quiz Image Upload ────────────────────────────────
-async function handleQImgSelect(file){
-  if(!file) return;
-  if(!file.type.startsWith('image/')){ toast('اختر ملف صورة فقط','warn'); return; }
-  if(file.size > 5*1024*1024){ toast('الصورة أكبر من 5MB','warn'); return; }
-  await uploadQImg(file);
-}
-
-function handleQImgDrop(e){
-  e.preventDefault();
-  document.getElementById('qImgUploadArea').style.borderColor = 'var(--border2)';
-  const file = e.dataTransfer.files[0];
-  if(file) handleQImgSelect(file);
-}
-
-function onQImgUrlInput(val){
-  const preview = document.getElementById('qImagePreview');
-  const img = document.getElementById('qImgPreviewEl');
-  if(val.trim()){ img.src=val.trim(); preview.style.display='block'; document.getElementById('qImgUploadStatus').textContent=''; }
-  else { preview.style.display='none'; }
-}
-
-function clearQImg(){
-  document.getElementById('qImageUrl').value = '';
-  document.getElementById('qImagePreview').style.display = 'none';
-  document.getElementById('qImgUploadLabel').textContent = '📷 اضغط لاختيار صورة من الجهاز أو التلفون';
-  document.getElementById('qImgFile').value = '';
-}
-
-
-// ═══ Supabase Storage Upload Helper ═══════════════════════════
-async function uploadToStorage(file, bucket, statusEl){
-  if(statusEl) statusEl.textContent = '⏳ جاري رفع الصورة...';
-  try{
-    const token = localStorage.getItem('mf_access_token') || MF_CONFIG.ANON_KEY;
-    
-    // تحديد نوع الملف بشكل صحيح
-    let ct = file.type;
-    if(!ct || ct === 'application/octet-stream'){
-      const ext = file.name.split('.').pop().toLowerCase();
-      const types = {jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp',gif:'image/gif'};
-      ct = types[ext] || 'image/jpeg';
-    }
-    
-    // التحقق من النوع
-    const allowed = ['image/jpeg','image/jpg','image/png','image/webp'];
-    if(!allowed.includes(ct)){
-      if(statusEl) statusEl.textContent = '❌ نوع الملف غير مدعوم';
-      return null;
-    }
-    
-    // بناء اسم الملف والـ path
-    const ext = ct.split('/')[1].replace('jpeg','jpg');
-    const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-    // الصح: /storage/v1/object/{bucket}/{filename}
-    // bucket = اسم الـ bucket, filename = اسم الملف بس بدون bucket
-    
-    const res = await fetch(
-      `${MF_CONFIG.SUPABASE_URL}/storage/v1/object/${bucket}/${filename}`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'apikey': MF_CONFIG.ANON_KEY,
-          'Content-Type': ct,
-          'x-upsert': 'true'
-        },
-        body: file
-      }
-    );
-    
-    if(!res.ok){
-      const errText = await res.text().catch(()=>'');
-      let errMsg = `فشل الرفع (${res.status})`;
-      try{ const j = JSON.parse(errText); errMsg = j.message || errMsg; }catch{}
-      if(statusEl) statusEl.textContent = '❌ ' + errMsg;
-      console.error('Storage upload error:', res.status, errText);
-      return null;
-    }
-    
-    const publicUrl = `${MF_CONFIG.SUPABASE_URL}/storage/v1/object/public/${bucket}/${filename}`;
-    if(statusEl) statusEl.textContent = '✅ تم الرفع';
-    return publicUrl;
-    
-  }catch(e){
-    if(statusEl) statusEl.textContent = '❌ خطأ في الرفع';
-    console.error('Upload exception:', e);
-    return null;
-  }
-}
-// ════════════════════════════════════════════════════════════════
-
-async function uploadQImg(file){
-  const statusEl  = document.getElementById('qImgUploadStatus');
-  const labelEl   = document.getElementById('qImgUploadLabel');
-  const previewEl = document.getElementById('qImagePreview');
-  const imgEl     = document.getElementById('qImgPreviewEl');
-
-  labelEl.textContent = '⏳ جاري الرفع...';
-  
-  const publicUrl = await uploadToStorage(file, 'quiz-images', statusEl);
-  
-  if(publicUrl){
-    document.getElementById('qImageUrl').value = publicUrl;
-    imgEl.src = publicUrl;
-    previewEl.style.display = 'block';
-    labelEl.textContent = '✅ ' + file.name;
-    if(statusEl) statusEl.textContent = '✅ تم الرفع';
-    toast('تم رفع الصورة ✅','success');
   } else {
-    labelEl.textContent = '❌ فشل الرفع — حاول مرة أخرى';
-    toast('فشل رفع الصورة','error');
+    const url=document.getElementById('vUrl').value.trim();
+    if(!url){msg('err','⚠️ اكتب رابط اليوتيوب');return;}
+    if(!url.includes('youtube')&&!url.includes('youtu.be')){msg('err','⚠️ الرابط لازم يكون YouTube');return;}
+    const body=id?{id:parseInt(id),title,youtube_url:url,description:desc||null,order_index:order,is_active:active,video_type:'youtube'}:{course_id:selCIdV,title,youtube_url:url,description:desc||null,order_index:order,is_active:active,video_type:'youtube'};
+    const d=await api('course-videos','POST',body);
+    if(!d.ok){msg('err','❌ '+(d.error&&!d.error.includes('TypeError')?d.error:'فشل الاتصال — حاول تاني'));return;}
+    msg('ok','✅ تم حفظ الفيديو');clearVidForm();loadVideos();
   }
 }
 
-function openAddQuestion(quizId){
-  document.getElementById('qQuizId').value=quizId;
-  document.getElementById('editQId').value='';
-  ['qText','qOptA','qOptB','qOptC','qOptD','qImageUrl'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  document.getElementById('qCorrect').value='a';
-  const prev=document.getElementById('qImagePreview'); if(prev) prev.style.display='none';
-  openModal('modalQuestion');
+async function delVid(id){
+  if(!confirm('تمسح الفيديو ده؟ هيتمسح من كل حتة!'))return;
+  msg('ok','⏳ جاري المسح...');
+  const d=await api('course-videos','DELETE',{id});
+  if(!d.ok){msg('err','❌ '+(d.error&&!d.error.includes('TypeError')?d.error:'فشل الحذف — حاول تاني'));return;}
+  msg('ok','✅ اتمسح الفيديو');loadVideos();
 }
 
-// Preview image when URL typed
-setTimeout(()=>{
-  const imgInput=document.getElementById('qImageUrl');
-  if(imgInput) imgInput.addEventListener('input',function(){
-    const v=this.value.trim();
-    const preview=document.getElementById('qImagePreview');
-    const img=document.getElementById('qImgPreviewEl');
-    if(v&&preview&&img){ img.src=v; preview.style.display='block'; }
-    else if(preview){ preview.style.display='none'; }
+// ===== PAYMENTS =====
+async function loadPay(status){
+  const tb=document.getElementById('tbPay');
+  tb.innerHTML='<tr><td colspan="4" style="text-align:center">Loading…</td></tr>';
+  const d=await api('admin-payments','GET',null,`?status=${encodeURIComponent(status)}`);
+  tb.innerHTML='';
+  if(!d.ok||!d.payments?.length){tb.innerHTML=`<tr><td colspan="4" class="muted" style="text-align:center">مفيش طلبات ${status}</td></tr>`;return;}
+  d.payments.forEach(p=>{
+    const tr=document.createElement('tr');
+    const hasCoupon=p.coupon_id?'🎟️ كوبون':'';
+    const finalAmt = p.final_amount||p.amount||0;
+    tr.innerHTML=`
+      <td><b>${esc(p.full_name||'')}</b><br>${esc(p.phone_student||'')}<br><span class="muted">${esc(gradeMap[p.grade]||p.grade||'')}</span></td>
+      <td><b>${esc(p.course_title||'—')}</b><br><span class="muted">${esc(p.subject||'')} · ${esc(p.teacher_name||'')}</span></td>
+      <td>طريقة: <b>${esc(p.method||'')}</b><br>مبلغ: <b>${finalAmt} ج</b> ${hasCoupon}<br>رقم: <b>${esc(p.transaction_id||'—')}</b><br><span class="muted">${esc(p.receipt_note||'')}</span></td>
+      <td><div class="row">
+        ${status==='pending'?`<button class="btn bsm bok" onclick="payAct(${p.id},'approve','${esc(p.phone_student||'')}')">✅ قبول</button>
+        <button class="btn bsm bbad" onclick="payAct(${p.id},'reject','')">❌ رفض</button>`:''}
+        ${p.phone_student?`<a href="https://wa.me/2${p.phone_student}" target="_blank" class="btn bsm" style="background:#22c55e;border:none;color:#fff;text-decoration:none">💬 واتساب</a>`:''}
+      </div></td>`;
+    tb.appendChild(tr);
   });
-},500);
-
-async function saveQuestion(){
-  const quizId=parseInt(document.getElementById('qQuizId').value);
-  const id=document.getElementById('editQId').value;
-  const imageUrl=(document.getElementById('qImageUrl')?.value||'').trim()||null;
-  const body={quiz_id:quizId,type:'question',question:document.getElementById('qText').value.trim(),option_a:document.getElementById('qOptA').value.trim(),option_b:document.getElementById('qOptB').value.trim(),option_c:document.getElementById('qOptC').value.trim(),option_d:document.getElementById('qOptD').value.trim(),correct_answer:document.getElementById('qCorrect').value,order_index:0,image_url:imageUrl};
-  if(id)body.id=parseInt(id);
-  if(!body.question||!body.option_a){ toast('أدخل السؤال والخيارات','warn'); return; }
-  const res=await mfFetch('quizzes',{method:'POST',body:JSON.stringify(body)});
-  if(!res.ok){ toast(res.error,'error'); return; }
-  toast('تم إضافة السؤال ✅','success'); closeModal('modalQuestion'); loadQuizQuestions(quizId);
 }
 
-async function deleteQuestion(id,quizId){ if(!confirm('حذف السؤال؟')) return; try{ const res=await mfFetch('quizzes',{method:'DELETE',body:JSON.stringify({id,type:'question'})}); if(!res.ok){ toast(res.error||'فشل الحذف','error'); return; } toast('تم الحذف','success'); loadQuizQuestions(quizId); }catch(e){ toast('فشل الحذف','error'); } }
-async function deleteQuiz(id){ if(!confirm('حذف الكويز وكل أسئلته؟')) return; try{ const res=await mfFetch('quizzes',{method:'DELETE',body:JSON.stringify({id})}); if(!res.ok){ toast(res.error||'فشل الحذف','error'); return; } toast('تم الحذف','success'); loadQuizzes(); }catch(e){ toast('فشل الحذف','error'); } }
-
-// ─── INIT ─────────────────────────────
-console.log('🟢 Admin init started');
-console.log('🔑 Token:', localStorage.getItem('mf_access_token')?.substring(0,30));
-console.log('👤 User:', localStorage.getItem('mf_user'));
-
-buildSidebar();
-
-// إعادة التوجيه حسب الدور
-if(isCourseAdmin){
-  switchTab('mycourse');
-  loadMyCourseStudents(); // يلود بيانات الكورس فوراً
-} else {
-  document.getElementById('side-dashboard')?.classList.add('active');
-}
-
-// Load dashboard with explicit error display
-(async function init() {
-  if(isCourseAdmin) return; // course_admin مش محتاج dashboard
-  console.log('📊 Loading dashboard...');
-  try {
-    const res = await mfFetch('admin-stats');
-    console.log('📊 admin-stats response:', res);
-    if (res.ok) {
-      const c = res.counts || {};
-      document.getElementById('dashStats').innerHTML = `
-        <div class="stat-card fade-up"><div class="stat-icon">👥</div><div class="stat-value">${fmtNum(c.users)}</div><div class="stat-label">المستخدمين</div></div>
-        <div class="stat-card fade-up"><div class="stat-icon">📚</div><div class="stat-value">${fmtNum(c.courses)}</div><div class="stat-label">الكورسات</div></div>
-        <div class="stat-card fade-up"><div class="stat-icon">⏳</div><div class="stat-value">${fmtNum(c.pending)}</div><div class="stat-label">طلبات معلقة</div></div>
-        <div class="stat-card fade-up"><div class="stat-icon">✅</div><div class="stat-value">${fmtNum(c.approved)}</div><div class="stat-label">طلبات مقبولة</div></div>`;
-      document.getElementById('dashPayments').innerHTML = (res.latestPayments||[]).length
-        ? `<div class="glass-sm">${(res.latestPayments||[]).map(p=>`<div class="payment-row"><div style="flex:1"><div class="font-bold text-sm">${p.full_name||'—'}</div><div class="text-xs text-muted">${p.course_title||''} — ${p.method||''}</div></div><span class="badge ${p.status==='approved'?'badge-success':p.status==='rejected'?'badge-danger':'badge-warn'}">${p.status==='approved'?'مقبول':p.status==='rejected'?'مرفوض':'معلق'}</span></div>`).join('')}</div>`
-        : '<div class="empty-state"><div class="empty-icon">💳</div><p>لا توجد مدفوعات بعد</p></div>';
-      document.getElementById('dashUsers').innerHTML = (res.latestUsers||[]).length
-        ? `<div class="glass-sm">${(res.latestUsers||[]).map(u=>`<div class="payment-row"><div><div class="font-bold text-sm">${u.full_name}</div><div class="text-xs text-muted">${u.phone_student||''} — ${gradeLabel(u.grade)}</div></div><span class="badge badge-primary">${u.role}</span></div>`).join('')}</div>`
-        : '<div class="empty-state"><p>لا يوجد مستخدمين</p></div>';
-    } else {
-      document.getElementById('dashStats').innerHTML = `<div style="grid-column:1/-1" class="glass p-4 text-center"><div style="font-size:32px">⚠️</div><p class="mt-2 text-sm text-muted">${res.error||'فشل تحميل البيانات'}</p><button class="btn btn-primary btn-sm mt-3" onclick="init()">🔄 إعادة المحاولة</button></div>`;
-    }
-  } catch(e) {
-    console.error('❌ init error:', e);
-    document.getElementById('dashStats').innerHTML = `<div style="grid-column:1/-1" class="glass p-4 text-center"><p class="text-sm text-muted">خطأ: ${e.message}</p></div>`;
+async function payAct(id,action,phone){
+  const d=await api('admin-payments','POST',{id,action});
+  if(!d.ok){msg('err','❌ '+(d.error&&!d.error.includes('TypeError')?d.error:'فشل الاتصال — حاول تاني'));return;}
+  if(action==='approve'){
+    msg('ok','✅ تم القبول — الطالب اتضاف للكورس تلقائياً!');
+    // open whatsapp auto
+    if(d.wa_url) window.open(d.wa_url,'_blank');
+  } else {
+    msg('ok','❌ تم الرفض');
   }
-  loadCourses();
-})();
-
-// ═══ MYCOURSE (course_admin dashboard) ═════════════════════════════
-let myCourseAllStudents = [];
-
-// ═══ COURSE_ADMIN MANAGEMENT ═══════════════════════════
-let mcActiveCourseId = null;
-let mcAllCourses = [];
-let mcActiveSubTab = 'videos';
-
-async function loadMyCourseStudents(){
-  // الـ loader الرئيسي لـ panel-mycourse
-  const managed = user.managed_courses || [];
-  if(!managed.length){
-    document.getElementById('myCourseStudentsList').innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>لا توجد كورسات معينة لك — تواصل مع السوبر أدمن</p></div>';
-    return;
-  }
-
-  // جيب بيانات الكورسات
-  const coursesRes = await mfFetch('admin-courses');
-  const allCourses = coursesRes.courses || [];
-  mcAllCourses = allCourses.filter(c => managed.includes(c.id));
-
-  // ابني chip لكل كورس
-  const chips = document.getElementById('mcCourseChips');
-  if(chips){
-    chips.innerHTML = mcAllCourses.map((c,i) =>
-      `<button class="mc-course-chip ${i===0?'active':''}" onclick="mcSelectCourse(${c.id},this)" style="padding:6px 14px;border-radius:20px;border:2px solid ${i===0?'var(--primary)':'var(--border2)'};background:${i===0?'rgba(124,58,237,.15)':'var(--bg3)'};color:${i===0?'var(--primary)':'var(--text2)'};font-size:12px;font-weight:700;cursor:pointer;font-family:Cairo,sans-serif;transition:all .2s">${c.title}</button>`
-    ).join('');
-  }
-
-  // افتح أول كورس
-  if(mcAllCourses.length){
-    mcActiveCourseId = mcAllCourses[0].id;
-    mcLoadActiveSubTab();
-  }
+  loadPay('pending');
 }
 
-function mcSelectCourse(id, btn){
-  mcActiveCourseId = id;
-  document.querySelectorAll('.mc-course-chip').forEach(b => {
-    b.style.borderColor = 'var(--border2)';
-    b.style.background = 'var(--bg3)';
-    b.style.color = 'var(--text2)';
-  });
-  btn.style.borderColor = 'var(--primary)';
-  btn.style.background = 'rgba(124,58,237,.15)';
-  btn.style.color = 'var(--primary)';
-  mcLoadActiveSubTab();
+// ===== COUPONS =====
+async function loadCoupons(){
+  const el=document.getElementById('couponsList');
+  el.innerHTML='<div class="spin"></div>';
+  const d=await api('coupons');
+  if(!d.ok||!d.coupons?.length){el.innerHTML='<div class="muted">مفيش كوبونات لسه</div>';return;}
+  el.innerHTML='<table><thead><tr><th>الكود</th><th>الخصم</th><th>الاستخدام</th><th>انتهاء</th><th>حالة</th><th>إجراء</th></tr></thead><tbody>'
+    +d.coupons.map(c=>`<tr>
+      <td><b>${esc(c.code)}</b></td>
+      <td>${c.discount_value}${c.discount_type==='percent'?'%':' ج'}</td>
+      <td>${c.used_count}/${c.max_uses}</td>
+      <td>${c.expires_at?new Date(c.expires_at).toLocaleDateString('ar-EG'):'∞'}</td>
+      <td><span style="color:${c.is_active?'#22c55e':'#ef4444'}">${c.is_active?'✅ فعال':'❌ موقوف'}</span></td>
+      <td><div class="row">
+        <button class="btn bsm ${c.is_active?'bbad':'bok'}" onclick="toggleCoupon(${c.id},${!c.is_active})">${c.is_active?'إيقاف':'تفعيل'}</button>
+        <button class="btn bsm bbad" onclick="delCoupon(${c.id})">🗑️</button>
+      </div></td>
+    </tr>`).join('')
+    +'</tbody></table>';
 }
 
-function mcSwitch(tab, btn){
-  mcActiveSubTab = tab;
-  document.querySelectorAll('.mc-stab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  ['videos','schedules','quizzes','students','payments'].forEach(t => {
-    document.getElementById('mc-panel-'+t)?.classList.toggle('hidden', t !== tab);
-  });
-  mcLoadActiveSubTab();
+async function createCoupon(){
+  const code=document.getElementById('cpCode').value.trim().toUpperCase();
+  const dtype=document.getElementById('cpType').value;
+  const dval=parseInt(document.getElementById('cpValue').value)||0;
+  const max=parseInt(document.getElementById('cpMax').value)||100;
+  const exp=document.getElementById('cpExpiry').value;
+  if(!code||!dval){msg('err','⚠️ اكتب الكود والقيمة');return;}
+  const d=await api('coupons','POST',{code,discount_type:dtype,discount_value:dval,max_uses:max,expires_at:exp||null});
+  if(!d.ok){msg('err','❌ '+(d.error&&!d.error.includes('TypeError')?d.error:'فشل الاتصال — حاول تاني'));return;}
+  msg('ok','✅ تم إنشاء الكوبون: '+code);
+  ['cpCode','cpValue','cpExpiry'].forEach(id=>document.getElementById(id).value='');
+  loadCoupons();
 }
 
-function mcLoadActiveSubTab(){
-  if(!mcActiveCourseId) return;
-  if(mcActiveSubTab === 'videos')    mcLoadVideos();
-  if(mcActiveSubTab === 'schedules') mcLoadSchedules();
-  if(mcActiveSubTab === 'quizzes')   mcLoadQuizzes();
-  if(mcActiveSubTab === 'students')  mcLoadStudents();
-  if(mcActiveSubTab === 'payments')  mcLoadPayments('pending');
+async function toggleCoupon(id,active){
+  await api('coupons','POST',{action:'toggle',id,is_active:active});
+  loadCoupons();
 }
 
-async function mcLoadPayments(status, btn){
-  if(btn){ document.querySelectorAll('#mc-panel-payments .tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
-  const list = document.getElementById('mcPaymentsList');
-  list.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>جاري التحميل...</p></div>';
-  const res = await mfFetch(`admin-payments?status=${status}&course_id=${mcActiveCourseId}`);
-  const payments = res.payments || [];
-  if(!payments.length){ list.innerHTML='<div class="empty-state"><div class="empty-icon">💳</div><p>لا توجد طلبات</p></div>'; return; }
-  list.innerHTML = `<div class="glass-sm">${payments.map(p=>`
-    <div class="payment-row" id="mcprow-${p.id}">
-      <div style="flex:1">
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="font-bold">${p.full_name||'—'}</span>
-          ${p.phone_student?`<a href="https://wa.me/2${p.phone_student}" target="_blank" style="color:#25d366;font-size:11px">💬 ${p.phone_student}</a>`:''}
-          <span class="badge badge-primary">${gradeLabel(p.grade||'')}</span>
-        </div>
-        <div class="text-sm mt-1">💰 ${fmtNum(p.final_amount||p.amount)} جنيه — 📱 ${p.method||''}</div>
-        ${p.transaction_id?`<div class="text-xs text-muted mt-1">🔢 رقم العملية: ${p.transaction_id}</div>`:''}
-        ${p.receipt_image_url?`
-        <div style="margin-top:8px">
-          <img src="${p.receipt_image_url}" alt="إيصال"
-            style="max-width:160px;max-height:100px;border-radius:10px;cursor:pointer;border:1px solid var(--border2);object-fit:cover"
-            onclick="window.open('${p.receipt_image_url}','_blank')"
-            title="اضغط للتكبير">
-          <div class="text-xs text-muted" style="margin-top:2px">📸 صورة الإيصال</div>
-        </div>`:`<div class="text-xs" style="color:#f59e0b;margin-top:4px">⚠️ لا توجد صورة إيصال</div>`}
-        ${p.receipt_note?`<div class="text-xs text-muted mt-1">📝 ${p.receipt_note}</div>`:''}
-        <div class="text-xs text-muted mt-1">${fmtDateTime(p.created_at)}</div>
-        ${status==='pending'?`<div class="payment-actions">
-          <button class="btn btn-sm btn-success" onclick="mcApprovePayment(${p.id},this)">✅ قبول</button>
-          <button class="btn btn-sm btn-danger" onclick="mcRejectPayment(${p.id},this)">❌ رفض</button>
-        </div>`:''}
-      </div>
-    </div>`).join('')}</div>`;
+async function delCoupon(id){
+  if(!confirm('تمسح الكوبون ده؟'))return;
+  await api('coupons','POST',{action:'delete',id});
+  msg('ok','✅ تم الحذف');loadCoupons();
 }
 
-async function mcApprovePayment(id, btn){
-  btn.disabled=true; btn.textContent='⏳';
-  const res=await mfFetch('admin-payments',{method:'POST',body:JSON.stringify({id,action:'approve',admin_id:user.id})});
-  if(!res.ok){ toast(res.error||'فشل','error'); btn.disabled=false; btn.textContent='✅ قبول'; return; }
-  toast('تم القبول ✅ — تم تفعيل اشتراك الطالب','success');
-  if(res.wa_url){ if(confirm('فتح WhatsApp لإبلاغ الطالب؟')) window.open(res.wa_url,'_blank'); }
-  document.getElementById('mcprow-'+id)?.remove();
+// ===== COMMENTS =====
+let allCoursesForComments=[];
+
+async function initComments(){
+  const d=await api('admin-courses','GET',null,'?grade=&subject=');
+  allCoursesForComments=d.courses||[];
+  const sel=document.getElementById('cmtCourseFilter');
+  sel.innerHTML='<option value="">كل الكورسات</option>'
+    +allCoursesForComments.map(c=>`<option value="${c.id}">${esc(c.title)}</option>`).join('');
+  loadAdminComments();
 }
 
-async function mcRejectPayment(id, btn){
-  if(!confirm('رفض هذا الطلب؟')) return;
-  btn.disabled=true; btn.textContent='⏳';
-  const res=await mfFetch('admin-payments',{method:'POST',body:JSON.stringify({id,action:'reject',admin_id:user.id})});
-  if(!res.ok){ toast(res.error||'فشل','error'); btn.disabled=false; return; }
-  toast('تم الرفض','success');
-  if(res.wa_url){ if(confirm('إبلاغ الطالب بالرفض على واتساب؟')) window.open(res.wa_url,'_blank'); }
-  document.getElementById('mcprow-'+id)?.remove();
-}
-
-// ── VIDEOS ─────────────────────────────────
-async function mcLoadVideos(){
-  const el = document.getElementById('mcVideosList');
-  el.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>جاري التحميل...</p></div>';
-  const res = await mfFetch(`course-videos?course_id=${mcActiveCourseId}`);
-  const videos = res.videos || [];
-  if(!videos.length){ el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎬</div><p>لا توجد فيديوهات — أضف أول فيديو!</p></div>'; return; }
-  el.innerHTML = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
-    <thead><tr style="background:var(--bg3)">
-      <th style="padding:8px 10px;text-align:right">الترتيب</th>
-      <th style="padding:8px 10px;text-align:right">العنوان</th>
-      <th style="padding:8px 10px;text-align:center">النوع</th>
-      <th style="padding:8px 10px;text-align:center">إجراء</th>
-    </tr></thead><tbody>
-    ${videos.map(v => `<tr style="border-bottom:1px solid var(--border2)">
-      <td style="padding:8px 10px;text-align:center;color:var(--text2)">${v.order_index}</td>
-      <td style="padding:8px 10px;font-weight:600">${v.title}</td>
-      <td style="padding:8px 10px;text-align:center"><span class="badge ${v.video_type==='youtube'?'badge-warn':'badge-info'}">${v.video_type==='youtube'?'يوتيوب':'رفع'}</span></td>
-      <td style="padding:8px 10px;text-align:center;display:flex;gap:6px;justify-content:center">
-        <button class="btn btn-sm btn-secondary" onclick="openMcVideoModal(${JSON.stringify(v).replace(/"/g,'&quot;')})">✏️</button>
-        <button class="btn btn-sm btn-danger" onclick="mcDeleteVideo(${v.id})" style="background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.3)">🗑️</button>
-      </td>
-    </tr>`).join('')}
-    </tbody></table></div>`;
-}
-
-let _mcEditVideo = null;
-function openMcVideoModal(video=null){
-  _mcEditVideo = video;
-  document.getElementById('mcVidTitle').value = video?.title || '';
-  document.getElementById('mcVidOrder').value = video?.order_index ?? 0;
-  document.getElementById('mcVidDesc').value  = video?.description || '';
-  const isYt = !video || video.video_type === 'youtube';
-  document.getElementById('mcVidTypeYt').checked = isYt;
-  document.getElementById('mcVidTypeUp').checked = !isYt;
-  document.getElementById('mcVidYtWrap').classList.toggle('hidden', !isYt);
-  document.getElementById('mcVidUpWrap').classList.toggle('hidden', isYt);
-  document.getElementById('mcVidYtUrl').value  = video?.youtube_url || '';
-  document.getElementById('mcVidEditId').value = video?.id || '';
-
-  // reset file input دايماً
-  const fi = document.getElementById('mcVidFile');
-  if(fi) fi.value = '';
-  const fn = document.getElementById('mcVidFileName');
-  if(fn){
-    if(video?.video_type==='upload' && video?.title){
-      fn.textContent = '✅ محفوظ: ' + video.title + ' — اضغط لاستبداله';
-      fn.style.color = 'var(--success)';
-    } else {
-      fn.textContent = 'اضغط لاختيار فيديو';
-      fn.style.color = '';
+async function loadAdminComments(){
+  const el=document.getElementById('adminComments');
+  el.innerHTML='<div class="spin"></div>';
+  const courseId=document.getElementById('cmtCourseFilter').value;
+  // load comments per video — get all videos first
+  let vids=[];
+  if(courseId){
+    const v=await api('course-videos','GET',null,'?course_id='+courseId);
+    vids=v.videos||[];
+  } else {
+    for(const c of allCoursesForComments.slice(0,5)){
+      const v=await api('course-videos','GET',null,'?course_id='+c.id);
+      vids=[...vids,...(v.videos||[])];
     }
   }
-  openModal('modalMcVideo');
-}
-
-function mcToggleVidType(type){
-  document.getElementById('mcVidYtWrap').classList.toggle('hidden', type!=='youtube');
-  document.getElementById('mcVidUpWrap').classList.toggle('hidden', type!=='upload');
-}
-
-async function mcSaveVideo(){
-  const title  = document.getElementById('mcVidTitle').value.trim();
-  const order  = parseInt(document.getElementById('mcVidOrder').value)||0;
-  const desc   = document.getElementById('mcVidDesc').value.trim();
-  const type   = document.getElementById('mcVidTypeYt').checked ? 'youtube' : 'upload';
-  const ytUrl  = document.getElementById('mcVidYtUrl').value.trim();
-  const editId = document.getElementById('mcVidEditId').value;
-  const mcFile = document.getElementById('mcVidFile').files[0];
-
-  if(!title){ toast('أدخل عنوان الفيديو','warn'); return; }
-  if(type==='youtube' && !ytUrl){ toast('أدخل رابط يوتيوب','warn'); return; }
-  if(type==='upload' && !editId && !mcFile){ toast('اختر ملف فيديو','warn'); return; }
-
-  const btn = document.querySelector('#modalMcVideo .btn-primary');
-  if(btn){ btn.disabled=true; btn.textContent='⏳ جاري الحفظ...'; }
-
-  try{
-    if(type === 'youtube'){
-      const body = {course_id:mcActiveCourseId, title, description:desc, order_index:order,
-                    video_type:'youtube', youtube_url:ytUrl};
-      if(editId) body.id = parseInt(editId);
-      const res = await mfFetch('course-videos',{method:'POST',body:JSON.stringify(body)});
-      if(!res.ok){ toast(res.error||'فشل الحفظ','error'); return; }
-
-    } else if(type === 'upload'){
-      if(mcFile){
-        // ── رفع ملف جديد (أو استبدال) ──────────────────
-        // progress bar خاص بـ modalMcVideo
-        const mcProgress = {
-          wrap: document.getElementById('mcUploadProgressWrap'),
-          bar:  document.getElementById('mcUploadProgressBar'),
-          pct:  document.getElementById('mcUploadPct'),
-          spd:  document.getElementById('mcUploadSpeed'),
-          name: document.getElementById('mcUploadFileName')
-        };
-        const mcExtra = {
-          description: document.getElementById('mcVidDesc')?.value || null,
-          order_index: parseInt(document.getElementById('mcVidOrder')?.value) || 0
-        };
-        await uploadToR2(mcFile, mcActiveCourseId, title, editId ? parseInt(editId) : null, mcProgress, mcExtra);
-      } else {
-        // ── تعديل بيانات فقط بدون ملف جديد ────────────
-        const body = {id:parseInt(editId), course_id:mcActiveCourseId, title,
-                      description:desc, order_index:order, video_type:'upload'};
-        const res = await mfFetch('course-videos',{method:'POST',body:JSON.stringify(body)});
-        if(!res.ok){ toast(res.error||'فشل الحفظ','error'); return; }
-      }
-    }
-    toast('تم حفظ الفيديو ✅','success');
-    closeModal('modalMcVideo');
-  }catch(e){
-    toast('حدث خطأ: '+(e.message||e),'error');
-  }finally{
-    if(btn){ btn.disabled=false; btn.textContent='💾 حفظ'; }
-    mcLoadVideos();
-  }
-}
-
-async function mcDeleteVideo(id){
-  if(!confirm('حذف الفيديو؟')) return;
-  await mfFetch('course-videos',{method:'DELETE',body:JSON.stringify({id})});
-  toast('تم الحذف','success'); mcLoadVideos();
-}
-
-// ── SCHEDULES ───────────────────────────────
-async function mcLoadSchedules(){
-  if(!mcActiveCourseId){ return; }
-  const el = document.getElementById('mcSchedulesList');
-  el.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>جاري التحميل...</p></div>';
-  const res = await mfFetch(`admin-schedules?course_id=${mcActiveCourseId}`);
-  const scheds = res.schedules?.filter(s => s.course_id === mcActiveCourseId) || [];
-  if(!scheds.length){ el.innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><p>لا توجد مواعيد</p></div>'; return; }
-  el.innerHTML = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
-    <thead><tr style="background:var(--bg3)">
-      <th style="padding:8px 10px;text-align:right">اليوم</th>
-      <th style="padding:8px 10px;text-align:center">من</th>
-      <th style="padding:8px 10px;text-align:center">إلى</th>
-      <th style="padding:8px 10px;text-align:right">ملاحظة</th>
-      <th style="padding:8px 10px;text-align:center">إجراء</th>
-    </tr></thead><tbody>
-    ${scheds.map(s => `<tr style="border-bottom:1px solid var(--border2)">
-      <td style="padding:8px 10px;font-weight:700">${s.day_of_week||''}</td>
-      <td style="padding:8px 10px;text-align:center;direction:ltr">${s.start_time||''}</td>
-      <td style="padding:8px 10px;text-align:center;direction:ltr">${s.end_time||''}</td>
-      <td style="padding:8px 10px;color:var(--text2)">${s.notes||'—'}</td>
-      <td style="padding:8px 10px;text-align:center">
-        <button class="btn btn-sm btn-danger" onclick="mcDeleteSchedule(${s.id})" style="background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.3)">🗑️</button>
-      </td>
-    </tr>`).join('')}
-    </tbody></table></div>`;
-}
-
-function openMcScheduleModal(){
-  document.getElementById('mcSchedDay').value = 'السبت';
-  document.getElementById('mcSchedStart').value = '';
-  document.getElementById('mcSchedEnd').value = '';
-  document.getElementById('mcSchedNote').value = '';
-  openModal('modalMcSchedule');
-}
-
-async function mcSaveSchedule(){
-  const day   = document.getElementById('mcSchedDay').value;
-  const start = document.getElementById('mcSchedStart').value;
-  const end   = document.getElementById('mcSchedEnd').value;
-  const note  = document.getElementById('mcSchedNote').value.trim();
-  if(!start||!end){ toast('أدخل وقت البداية والنهاية','warn'); return; }
-  const res = await mfFetch('admin-schedules',{method:'POST',body:JSON.stringify({course_id:mcActiveCourseId,day_of_week:day,start_time:start,end_time:end,note})});
-  if(!res.ok){ toast(res.error||'فشل الحفظ','error'); return; }
-  toast('تم إضافة الموعد ✅','success'); closeModal('modalMcSchedule'); mcLoadSchedules();
-}
-
-async function mcDeleteSchedule(id){
-  if(!confirm('حذف الموعد؟')) return;
-  await mfFetch('admin-schedules',{method:'DELETE',body:JSON.stringify({id})});
-  toast('تم الحذف','success'); mcLoadSchedules();
-}
-
-// ── QUIZZES ─────────────────────────────────
-let mcActiveQuizId = null;
-async function mcLoadQuizzes(){
-  const el = document.getElementById('mcQuizzesList');
-  el.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>جاري التحميل...</p></div>';
-  const res = await mfFetch(`quizzes?course_id=${mcActiveCourseId}`);
-  const quizzes = res.quizzes || [];
-  if(!quizzes.length){ el.innerHTML = '<div class="empty-state"><div class="empty-icon">📝</div><p>لا توجد كويزات</p></div>'; return; }
-  el.innerHTML = quizzes.map(q => `
-    <div style="background:var(--bg3);border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid var(--border2)">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div><div style="font-weight:700">${q.title}</div><div style="font-size:12px;color:var(--text2)">نجاح: ${q.pass_score}%</div></div>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-sm btn-primary" onclick="mcOpenQuizQuestions(${q.id},'${q.title.replace(/'/g,'')}')">📝 الأسئلة</button>
-          <button class="btn btn-sm btn-danger" onclick="mcDeleteQuiz(${q.id})" style="background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.3)">🗑️</button>
-        </div>
+  if(!vids.length){el.innerHTML='<div class="muted">مفيش فيديوهات</div>';return;}
+  let allComments=[];
+  await Promise.all(vids.map(async v=>{
+    const c=await api('video-comments','GET',null,'?video_id='+v.id);
+    (c.comments||[]).forEach(cm=>{ allComments.push({...cm,vid_title:v.title}); });
+  }));
+  if(!allComments.length){el.innerHTML='<div class="muted">مفيش تعليقات لسه</div>';return;}
+  allComments.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  el.innerHTML=allComments.map(c=>`
+    <div class="box" style="margin-bottom:10px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px">🎬 ${esc(c.vid_title)} — ${esc(c.user_name)} — ${new Date(c.created_at).toLocaleString('ar-EG')}</div>
+      <div style="font-size:13px;margin-bottom:8px">${esc(c.message)}</div>
+      ${c.reply?`<div style="background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.2);border-radius:10px;padding:8px;font-size:12px;margin-bottom:8px"><b style="color:#06b6d4">ردك:</b> ${esc(c.reply)}</div>`:''}
+      <div class="row">
+        <input id="rep_${c.id}" placeholder="اكتب رد…" style="flex:1" value="${c.reply?escA(c.reply):''}"/>
+        <button class="btn bsm bok" onclick="replyComment(${c.id})">💬 رد</button>
+        <button class="btn bsm ${c.is_pinned?'bwarn':''}bsm" onclick="pinComment(${c.id},${!c.is_pinned})">${c.is_pinned?'📍 إلغاء تثبيت':'📌 تثبيت'}</button>
+        <button class="btn bsm bbad" onclick="delComment(${c.id})">🗑️</button>
       </div>
     </div>`).join('');
 }
 
-function openMcQuizModal(){
-  document.getElementById('mcQuizTitle').value = '';
-  document.getElementById('mcQuizPass').value = '60';
-  document.getElementById('mcQuizDesc').value = '';
-  openModal('modalMcQuiz');
+async function replyComment(id){
+  const txt=document.getElementById('rep_'+id).value.trim();
+  if(!txt) return;
+  await api('video-comments','POST',{action:'reply',id,reply:txt});
+  msg('ok','✅ تم الرد');loadAdminComments();
+}
+async function pinComment(id,pinned){
+  await api('video-comments','POST',{action:'pin',id,pinned});
+  loadAdminComments();
+}
+async function delComment(id){
+  if(!confirm('تمسح التعليق؟'))return;
+  await api('video-comments','POST',{action:'delete',id});
+  msg('ok','✅ تم الحذف');loadAdminComments();
 }
 
-async function mcSaveQuiz(){
-  const title = document.getElementById('mcQuizTitle').value.trim();
-  const pass  = parseInt(document.getElementById('mcQuizPass').value)||60;
-  const desc  = document.getElementById('mcQuizDesc').value.trim();
-  if(!title){ toast('أدخل عنوان الكويز','warn'); return; }
-  const res = await mfFetch('quizzes',{method:'POST',body:JSON.stringify({course_id:mcActiveCourseId,title,description:desc,pass_score:pass})});
-  if(!res.ok){ toast(res.error||'فشل','error'); return; }
-  toast('تم إنشاء الكويز ✅','success'); closeModal('modalMcQuiz'); mcLoadQuizzes();
-}
-
-async function mcDeleteQuiz(id){
-  if(!confirm('حذف الكويز وكل أسئلته؟')) return;
-  await mfFetch('quizzes',{method:'DELETE',body:JSON.stringify({id})});
-  toast('تم الحذف','success'); mcLoadQuizzes();
-}
-
-function mcOpenQuizQuestions(quizId, quizTitle){
-  mcActiveQuizId = quizId;
-  // reuse existing quiz question modal
-  document.getElementById('qQuizId').value = quizId;
-  document.getElementById('modalQuestion').querySelector('.modal-title').textContent = 'أسئلة: ' + quizTitle;
-  loadQuizQuestions(quizId);
-  openModal('modalQuestion');
-}
-
-// ── STUDENTS ────────────────────────────────
-async function mcLoadStudents(){
-  const el = document.getElementById('myCourseStudentsList');
-  el.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>جاري التحميل...</p></div>';
-  const res = await mfFetch(`course-admin-students?course_id=${mcActiveCourseId}&admin_id=${user.id}`);
-  const students = res.students || [];
-  document.getElementById('myCourseSubtitle').textContent = (res.course?.title||'') + ' — إجمالي: ' + students.length + ' طالب';
-  myCourseAllStudents = students;
-  renderMyCourseStudents(students);
-}
-
-function filterMyCourseStudents(){
-  const q = document.getElementById('myCourseSearch').value.toLowerCase();
-  renderMyCourseStudents(myCourseAllStudents.filter(u =>
-    (u.full_name||'').toLowerCase().includes(q) || (u.phone_student||'').includes(q)
-  ));
-}
-
-function renderMyCourseStudents(students){
-  const wrap = document.getElementById('myCourseStudentsList');
-  if(!students.length){
-    wrap.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><p>لا يوجد طلاب مشتركون في كورساتك</p></div>';
-    return;
-  }
-  wrap.innerHTML = `
-    <div style="overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead>
-          <tr style="background:var(--bg3);border-bottom:2px solid var(--border2)">
-            <th style="padding:10px 12px;text-align:right">الاسم</th>
-            <th style="padding:10px 12px;text-align:right">الرقم</th>
-            <th style="padding:10px 12px;text-align:right">الصف</th>
-            <th style="padding:10px 12px;text-align:center">واتساب</th>
-            <th style="padding:10px 12px;text-align:center">إعادة باسورد</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${students.map(u => `
-            <tr style="border-bottom:1px solid var(--border2)">
-              <td style="padding:10px 12px;font-weight:600">${u.full_name}</td>
-              <td style="padding:10px 12px;direction:ltr;text-align:right;color:var(--text2)">${u.phone_student||'—'}</td>
-              <td style="padding:10px 12px"><span class="badge badge-primary">${gradeLabel(u.grade)}</span></td>
-              <td style="padding:10px 12px;text-align:center">
-                ${u.phone_student ? `<a href="https://wa.me/2${u.phone_student}" target="_blank" class="btn btn-sm" style="background:#25d366;color:#fff;text-decoration:none;padding:4px 10px;border-radius:8px;font-size:11px">💬 واتساب</a>` : '—'}
-              </td>
-              <td style="padding:10px 12px;text-align:center">
-                <button class="btn btn-sm btn-secondary" onclick="myCourseResetPass('${u.id}','${u.full_name}','${u.phone_student}')">🔑 إعادة تعيين</button>
-              </td>
-            </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>
-    <div style="padding:12px;color:var(--text2);font-size:12px">إجمالي: ${students.length} طالب</div>`;
-}
-
-function myCourseResetPass(userId, name, phone){ openResetPass(userId, name, phone||""); }
-
-// ── Reset Password Modal ──────────────────
-let _resetUserId = null, _resetUserName = null, _resetUserPhone = null;
-
-function openResetPass(userId, name, phone){
-  _resetUserId = userId; _resetUserName = name; _resetUserPhone = phone;
-  document.getElementById('resetPassName').textContent = name + ' (' + phone + ')';
-  document.getElementById('resetNewPass').value = '';
-  document.getElementById('resetNewPassConfirm').value = '';
-  document.getElementById('resetPassErr').textContent = '';
-  openModal('modalResetPass');
-  setTimeout(() => document.getElementById('resetNewPass')?.focus(), 200);
-}
-
-function genRandomPass(){
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let p = '';
-  for(let i=0; i<10; i++) p += chars[Math.floor(Math.random()*chars.length)];
-  document.getElementById('resetNewPass').value = p;
-  document.getElementById('resetNewPassConfirm').value = p;
-  // Show it
-  ['resetNewPass','resetNewPassConfirm'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.type = 'text';
+// ===== USERS =====
+async function loadUsers(){
+  const tb=document.getElementById('tbUsers');
+  tb.innerHTML='<tr><td colspan="5" style="text-align:center">Loading…</td></tr>';
+  const d=await api('admin-users');
+  tb.innerHTML='';
+  if(!d.ok||!d.users?.length){tb.innerHTML='<tr><td colspan="5" class="muted">مفيش مستخدمين</td></tr>';return;}
+  d.users.forEach(u=>{
+    const isSelf=u.id===me.id;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><b>${esc(u.full_name||'')}</b></td>
+      <td>${esc(u.phone_student||'')}</td>
+      <td>${esc(gradeMap[u.grade]||u.grade||'')}</td>
+      <td><span style="color:${roleClr[u.role]||'#fff'};font-weight:800">${esc(u.role||'')}</span></td>
+      <td>${isSelf?'<span class="muted">أنت 👑</span>':`<div class="row">
+        ${u.role!=='superadmin'?`<button class="btn bsm" onclick="setRole('${u.id}','superadmin')">Super</button>`:''}
+        ${u.role!=='admin'?`<button class="btn bsm bok" onclick="setRole('${u.id}','admin')">Admin</button>`:''}
+        ${u.role!=='student'?`<button class="btn bsm bbad" onclick="setRole('${u.id}','student')">Student</button>`:''}
+        <button class="btn bsm bwarn" onclick="resetPw('${u.id}','${escA(u.full_name||'')}')">🔑</button>
+      </div>`}</td>`;
+    tb.appendChild(tr);
   });
-  document.getElementById('resetPassErr').textContent = '';
+}
+async function setRole(uid,role){
+  const d=await api('admin-users','POST',{user_id:uid,role});
+  if(!d.ok){msg('err','❌ '+(d.error&&!d.error.includes('TypeError')?d.error:'فشل الاتصال — حاول تاني'));return;}
+  msg('ok','✅ تم تغيير الدور');loadUsers();
+}
+async function resetPw(uid,name){
+  const pw=prompt(`باسورد جديد لـ "${name}":\n(6 أحرف على الأقل)`);
+  if(!pw)return;
+  if(pw.length<6){msg('err','⚠️ الباسورد أقل من 6 أحرف');return;}
+  const d=await api('admin-reset-password','POST',{user_id:uid,new_password:pw});
+  if(!d.ok){msg('err','❌ '+(d.error&&!d.error.includes('TypeError')?d.error:'فشل الاتصال — حاول تاني'));return;}
+  msg('ok','✅ تم تغيير الباسورد');
 }
 
-async function doResetPass(){
-  const np = document.getElementById('resetNewPass').value;
-  const nc = document.getElementById('resetNewPassConfirm').value;
-  const errEl = document.getElementById('resetPassErr');
-  errEl.textContent = '';
-  if(!np || np.length < 8){ errEl.textContent = '❌ كلمة المرور أقل من 8 أحرف'; return; }
-  if(np !== nc){ errEl.textContent = '❌ كلمتا المرور غير متطابقتين'; return; }
+// Init
+loadStats();
+try{loadCourses();}catch(e){}
+try{loadPay('pending');}catch(e){}
+try{loadCoupons();}catch(e){}
+// Comments loaded lazily on tab open
 
-  const btn = document.getElementById('btnDoReset');
-  btn.disabled = true; btn.textContent = '⏳ جاري التغيير...';
-  let res;
-  try{
-    res = await mfFetch('admin-reset-password',{method:'POST',body:JSON.stringify({user_id:_resetUserId,new_password:np,admin_id:user.id})});
-  }catch(e){
-    btn.disabled = false; btn.textContent = '✅ حفظ كلمة المرور';
-    errEl.textContent = '❌ فشل الاتصال'; return;
-  }
-  btn.disabled = false; btn.textContent = '✅ حفظ كلمة المرور';
 
-  if(!res.ok){ errEl.textContent = '❌ ' + (res.error||'فشل التغيير'); return; }
-
-  closeModal('modalResetPass');
-  toast(`✅ تم تغيير باسورد ${_resetUserName}`,'success');
-
-  // Offer WhatsApp notification
-  const waMsg = `مرحباً ${_resetUserName}،
-تم تغيير كلمة مرورك على منصة Make Future Center
-
-كلمة المرور الجديدة: ${np}
-رقمك: ${_resetUserPhone}
-
-يمكنك تغييرها من داخل المنصة بعد الدخول.`;
-  if(_resetUserPhone && confirm('إرسال كلمة المرور الجديدة للطالب عبر واتساب؟')){
-    window.open(`https://wa.me/2${_resetUserPhone}?text=${encodeURIComponent(waMsg)}`,'_blank');
-  }
-}
 </script>
-
-<!-- MC Video Modal -->
-<div class="modal-overlay" id="modalMcVideo">
-  <div class="modal-box" style="max-width:500px">
-    <div class="modal-header"><h3 class="modal-title">إضافة / تعديل فيديو</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalMcVideo')">✕</button></div>
-    <div class="modal-body">
-      <input type="hidden" id="mcVidEditId">
-      <div class="form-group"><label class="form-label">عنوان الفيديو *</label><input type="text" class="form-input" id="mcVidTitle"></div>
-      <div class="form-group"><label class="form-label">الترتيب</label><input type="number" class="form-input" id="mcVidOrder" value="0" min="0"></div>
-      <div class="form-group"><label class="form-label">نوع الفيديو</label>
-        <div style="display:flex;gap:16px;margin-top:6px">
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="mcVidType" id="mcVidTypeYt" value="youtube" checked onchange="mcToggleVidType('youtube')"> يوتيوب</label>
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="mcVidType" id="mcVidTypeUp" value="upload" onchange="mcToggleVidType('upload')"> رفع فيديو</label>
-        </div>
-      </div>
-      <div id="mcVidYtWrap" class="form-group"><label class="form-label">رابط يوتيوب</label><input type="text" class="form-input" id="mcVidYtUrl" placeholder="https://youtube.com/watch?v=..."></div>
-      <div id="mcVidUpWrap" class="form-group hidden"><label class="form-label">ملف الفيديو</label>
-        <div style="text-align:center;padding:16px;border:2px dashed var(--border2);border-radius:12px;background:var(--bg3)">
-          <div style="font-size:32px;margin-bottom:8px">🎬</div>
-          <div id="mcVidFileName" style="color:var(--text2);font-size:13px;margin-bottom:12px">اختر ملف فيديو من جهازك</div>
-          <input type="file" id="mcVidFile" accept="video/*" onchange="mcHandleFileSelect(this)"
-            style="font-size:14px;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);cursor:pointer;width:100%">
-        </div>
-      </div>
-      <div class="form-group"><label class="form-label">وصف (اختياري)</label><textarea class="form-textarea" id="mcVidDesc" rows="2"></textarea></div>
-      <div id="mcUploadProgressWrap" style="display:none;margin-bottom:12px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-          <span class="text-sm" id="mcUploadFileName">—</span>
-          <span class="text-sm" id="mcUploadPct">0%</span>
-        </div>
-        <div style="background:var(--bg3);border-radius:8px;height:8px;overflow:hidden">
-          <div id="mcUploadProgressBar" style="height:100%;background:linear-gradient(90deg,#7c3aed,#06b6d4);width:0%;transition:width .3s"></div>
-        </div>
-        <div class="text-xs text-muted mt-1" id="mcUploadSpeed"></div>
-      </div>
-      <button class="btn btn-primary btn-block" onclick="mcSaveVideo()">💾 حفظ الفيديو</button>
-    </div>
-  </div>
-</div>
-
-<!-- MC Schedule Modal -->
-<div class="modal-overlay" id="modalMcSchedule">
-  <div class="modal-box" style="max-width:420px">
-    <div class="modal-header"><h3 class="modal-title">إضافة موعد</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalMcSchedule')">✕</button></div>
-    <div class="modal-body">
-      <div class="form-group"><label class="form-label">اليوم</label>
-        <select class="form-select" id="mcSchedDay">
-          <option>السبت</option><option>الأحد</option><option>الاثنين</option><option>الثلاثاء</option><option>الأربعاء</option><option>الخميس</option><option>الجمعة</option>
-        </select>
-      </div>
-      <div class="grid-2 gap-3">
-        <div class="form-group"><label class="form-label">من</label><input type="time" class="form-input" id="mcSchedStart"></div>
-        <div class="form-group"><label class="form-label">إلى</label><input type="time" class="form-input" id="mcSchedEnd"></div>
-      </div>
-      <div class="form-group"><label class="form-label">ملاحظة (اختياري)</label><input type="text" class="form-input" id="mcSchedNote" placeholder="مثلاً: أونلاين / أوفلاين"></div>
-      <button class="btn btn-primary btn-block" onclick="mcSaveSchedule()">💾 حفظ الموعد</button>
-    </div>
-  </div>
-</div>
-
-<!-- MC Quiz Modal -->
-<div class="modal-overlay" id="modalMcQuiz">
-  <div class="modal-box" style="max-width:420px">
-    <div class="modal-header"><h3 class="modal-title">إنشاء كويز</h3><button class="btn btn-icon btn-secondary" onclick="closeModal('modalMcQuiz')">✕</button></div>
-    <div class="modal-body">
-      <div class="form-group"><label class="form-label">عنوان الكويز *</label><input type="text" class="form-input" id="mcQuizTitle"></div>
-      <div class="form-group"><label class="form-label">درجة النجاح %</label><input type="number" class="form-input" id="mcQuizPass" value="60" min="1" max="100"></div>
-      <div class="form-group"><label class="form-label">وصف (اختياري)</label><textarea class="form-textarea" id="mcQuizDesc" rows="2"></textarea></div>
-      <button class="btn btn-primary btn-block" onclick="mcSaveQuiz()">💾 إنشاء الكويز</button>
-    </div>
-  </div>
-</div>
-
-<!-- Reset Password Modal -->
-<div class="modal-overlay" id="modalResetPass">
-  <div class="modal-box" style="max-width:420px">
-    <div class="modal-header">
-      <h3 class="modal-title">🔑 إعادة تعيين كلمة المرور</h3>
-      <button class="btn btn-icon btn-secondary" onclick="closeModal('modalResetPass')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div style="background:var(--bg3);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--text2)">
-        👤 <span id="resetPassName" style="font-weight:700;color:var(--text)"></span>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">كلمة المرور الجديدة</label>
-        <div style="position:relative">
-          <input type="password" class="form-input" id="resetNewPass" placeholder="٨ أحرف على الأقل" style="padding-left:44px">
-          <button onclick="document.getElementById('resetNewPass').type=document.getElementById('resetNewPass').type==='password'?'text':'password'" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text2);font-size:16px">👁️</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">تأكيد كلمة المرور</label>
-        <div style="position:relative">
-          <input type="password" class="form-input" id="resetNewPassConfirm" placeholder="أعد الكتابة">
-        </div>
-      </div>
-
-      <button onclick="genRandomPass()" class="btn btn-secondary btn-block" style="margin-bottom:10px;font-size:12px">
-        🎲 توليد كلمة مرور تلقائية
-      </button>
-
-      <div id="resetPassErr" style="color:#f87171;font-size:12px;font-weight:700;min-height:18px;margin-bottom:8px"></div>
-
-      <button class="btn btn-primary btn-block" id="btnDoReset" onclick="doResetPass()">
-        ✅ حفظ كلمة المرور
-      </button>
-    </div>
-  </div>
-</div>
-
-  <!-- File input خارج الـ modals عشان iOS يشتغل معاه -->
 </body>
 </html>
