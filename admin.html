@@ -293,36 +293,94 @@ th{text-align:right;color:var(--muted);font-weight:600}
 </div>
 
 <script>
-(function(){var t=localStorage.getItem('mf_theme')||'dark';if(t==='light')document.documentElement.setAttribute('data-theme','light');document.getElementById('thb').textContent=t==='light'?'☀️':'🌙';})();
-function toggleTheme(){var c=document.documentElement.getAttribute('data-theme')||'dark',n=c==='light'?'dark':'light';document.documentElement.setAttribute('data-theme',n);localStorage.setItem('mf_theme',n);document.getElementById('thb').textContent=n==='light'?'☀️':'🌙';}
+// ══════════════════════════════════════════
+// ✅ CORRECT Supabase Config — dfbtibhxmraegjvztuch
+// ══════════════════════════════════════════
+const MF_CONFIG = {
+  SUPABASE_URL: 'https://dfbtibhxmraegjvztuch.supabase.co',
+  ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmYnRpYmh4bXJhZWdqdnp0dWNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyOTQ3NzksImV4cCI6MjA4ODg3MDc3OX0.oAI4vLCujDGZcVg7BwBNNjv_jYA7bwwneU9q2SQYiyI',
+  FN: 'https://dfbtibhxmraegjvztuch.supabase.co/functions/v1'
+};
 
-const FN="https://dfbtibhxmraegjvztuch.supabase.co/functions/v1";
-const KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmYnRpYmh4bXJhZWdqdnp0dWNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyOTQ3NzksImV4cCI6MjA4ODg3MDc3OX0.oAI4vLCujDGZcVg7BwBNNjv_jYA7bwwneU9q2SQYiyI";
+// ══════════════════════════════════════════
+// ✅ FIXED: Get token like login.html does
+// ══════════════════════════════════════════
+function getToken(){return localStorage.getItem('mf_access_token')}
+function getUser(){try{return JSON.parse(localStorage.getItem('mf_user')||'null')}catch{return null}}
+
+(function(){
+  var t=localStorage.getItem('mf_theme')||'dark';
+  if(t==='light')document.documentElement.setAttribute('data-theme','light');
+  document.getElementById('thb').textContent=t==='light'?'☀️':'🌙';
+})();
+
+function toggleTheme(){
+  var c=document.documentElement.getAttribute('data-theme')||'dark',n=c==='light'?'dark':'light';
+  document.documentElement.setAttribute('data-theme',n);
+  localStorage.setItem('mf_theme',n);
+  document.getElementById('thb').textContent=n==='light'?'☀️':'🌙';
+}
+
 const gradeMap={"3prep":"3 إعدادي","1sec":"1 ثانوي","2sec":"2 ثانوي","3sec":"3 ثانوي"};
 const roleClr={student:'#6ee7b7',admin:'#93c5fd',superadmin:'#f9a8d4'};
 
-const me=JSON.parse(localStorage.getItem('mf_user')||'null');
+const me=getUser();
 if(!me){location.href='login.html';throw new Error('redirect');}
-if(!['admin','superadmin'].includes(me.role)){
+if(!['admin','superadmin','course_admin'].includes(me.role)){
   alert('مش عندك صلاحية. دورك: '+me.role);
   location.href='student.html';
   throw new Error('redirect');
 }
 
-function logout(){['mf_user','mf_access_token','mf_refresh_token'].forEach(k=>localStorage.removeItem(k));location.href='login.html';}
+function logout(){
+  ['mf_user','mf_access_token','mf_refresh_token'].forEach(k=>localStorage.removeItem(k));
+  location.href='login.html';
+}
+
 function esc(s){return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');}
 function escA(s){return String(s||'').replaceAll('"','&quot;').replaceAll("'",'&#39;').replaceAll('<','&lt;');}
 
 const msgEl=document.getElementById('msgbar');
 function msg(type,t){msgEl.className='msgbar show '+type;msgEl.textContent=t;setTimeout(()=>msgEl.className='msgbar',3500);}
 
+// ══════════════════════════════════════════
+// ✅ FIXED: Add Authorization header with JWT token
+// ══════════════════════════════════════════
 async function api(fn,method,body,params){
   const m=method||'GET';
-  const h={apikey:KEY};
+  const token = getToken();
+  const h = {
+    'apikey': MF_CONFIG.ANON_KEY,
+    'Content-Type': 'application/json'
+  };
+  // ✅ IMPORTANT: Add Bearer token for authenticated requests
+  if(token && token !== 'null' && token.length > 20){
+    h['Authorization'] = `Bearer ${token}`;
+  }
   const opts={method:m,headers:h};
-  if(body){h['Content-Type']='application/json';opts.body=JSON.stringify(body);}
-  try{const r=await fetch(FN+'/'+fn+(params||''),opts);return await r.json();}
-  catch(e){console.error('api error:',fn,e);return {ok:false,error:'فشل الاتصال'};}
+  if(body){opts.body=JSON.stringify(body);}
+  try{
+    const r=await fetch(MF_CONFIG.FN+'/'+fn+(params||''),opts);
+    const data = await r.json();
+    return data;
+  }
+  catch(e){
+    console.error('api error:',fn,e);
+    return {ok:false,error:'فشل الاتصال - تحقق من الإنترنت'};
+  }
+}
+
+// ══════════════════════════════════════════
+// ✅ FIXED: Toast notifications like login.html
+// ══════════════════════════════════════════
+function toast(msg,type='info',duration=3500){
+  const colors={success:'#10b981',error:'#ef4444',info:'#7c3aed',warn:'#f59e0b'};
+  const icons={success:'✅',error:'❌',info:'ℹ️',warn:'⚠️'};
+  const el=document.createElement('div');
+  el.style.cssText=`position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:${colors[type]};color:#fff;padding:12px 24px;border-radius:14px;font-size:14px;font-family:Cairo,sans-serif;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.3);transition:transform 0.3s cubic-bezier(.34,1.56,.64,1);max-width:90vw;text-align:center;direction:rtl;font-weight:700`;
+  el.textContent=icons[type]+' '+msg;document.body.appendChild(el);
+  requestAnimationFrame(()=>{el.style.transform='translateX(-50%) translateY(0)'});
+  setTimeout(()=>{el.style.transform='translateX(-50%) translateY(100px)';setTimeout(()=>el.remove(),300)},duration);
 }
 
 function openTab(id,btn){
@@ -332,21 +390,28 @@ function openTab(id,btn){
   btn.classList.add('on');
   if(id==='coupons') loadCoupons();
   if(id==='comments') initComments();
+  if(id==='pay') loadPay('pending');
+  if(id==='users') loadUsers();
+  if(id==='dash') loadStats();
 }
 
 // ===== DASHBOARD =====
 async function loadStats(){
   document.getElementById('statGrid').innerHTML='<div class="spin"></div>';
   const d=await api('admin-stats');
-  if(!d.ok){document.getElementById('statGrid').innerHTML='<div class="muted">فشل التحميل</div>';return;}
-  const c=d.counts;
+  if(!d.ok){
+    document.getElementById('statGrid').innerHTML='<div class="muted">فشل التحميل - '+esc(d.error||'')+'</div>';
+    toast('فشل تحميل الإحصائيات','error');
+    return;
+  }
+  const c=d.counts || {};
   document.getElementById('statGrid').innerHTML=`
-    <div class="stat-item"><div class="stat-num">${c.users}</div><div class="stat-label">طالب</div></div>
-    <div class="stat-item"><div class="stat-num">${c.courses}</div><div class="stat-label">كورس</div></div>
-    <div class="stat-item"><div class="stat-num" style="color:#fde68a">${c.pending}</div><div class="stat-label">انتظار</div></div>
-    <div class="stat-item"><div class="stat-num" style="color:#6ee7b7">${c.approved}</div><div class="stat-label">مقبول</div></div>
-    <div class="stat-item"><div class="stat-num" style="color:#fca5a5">${c.rejected}</div><div class="stat-label">مرفوض</div></div>`;
-  document.getElementById('latestUsers').innerHTML=(d.latestUsers||[]).map(u=>`• <b>${esc(u.full_name)}</b> — ${esc(u.phone_student||'')} — <span style="color:${roleClr[u.role]||'#fff'}">${esc(u.role)}</span>`).join('<br>')||'—';
+    <div class="stat-item"><div class="stat-num">${c.users||0}</div><div class="stat-label">طالب</div></div>
+    <div class="stat-item"><div class="stat-num">${c.courses||0}</div><div class="stat-label">كورس</div></div>
+    <div class="stat-item"><div class="stat-num" style="color:#fde68a">${c.pending||0}</div><div class="stat-label">انتظار</div></div>
+    <div class="stat-item"><div class="stat-num" style="color:#6ee7b7">${c.approved||0}</div><div class="stat-label">مقبول</div></div>
+    <div class="stat-item"><div class="stat-num" style="color:#fca5a5">${c.rejected||0}</div><div class="stat-label">مرفوض</div></div>`;
+  document.getElementById('latestUsers').innerHTML=(d.latestUsers||[]).map(u=>`• <b>${esc(u.full_name||'')}</b> — ${esc(u.phone_student||'')} — <span style="color:${roleClr[u.role]||'#fff'}">${esc(u.role||'')}</span>`).join('<br>')||'—';
   document.getElementById('latestPay').innerHTML=(d.latestPayments||[]).map(p=>`• <b>${esc(p.full_name||'')}</b> — ${esc(p.course_title||'—')} — <b>${esc(p.status||'')}</b>`).join('<br>')||'—';
 }
 
@@ -356,12 +421,16 @@ async function loadCourses(){
   const grade=document.getElementById('fGrade').value,subject=document.getElementById('fSubject').value;
   const d=await api('admin-courses','GET',null,`?grade=${encodeURIComponent(grade)}&subject=${encodeURIComponent(subject)}`);
   const tb=document.querySelector('#tCourses tbody');tb.innerHTML='';
-  if(!d.ok||!d.courses?.length){tb.innerHTML='<tr><td colspan="6" class="muted" style="text-align:center">مفيش كورسات</td></tr>';return;}
+  if(!d.ok||!d.courses?.length){
+    tb.innerHTML='<tr><td colspan="6" class="muted" style="text-align:center">مفيش كورسات</td></tr>';
+    toast(d.error||'فشل تحميل الكورسات','error');
+    return;
+  }
   d.courses.forEach(c=>{
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><b>${esc(c.title)}</b></td><td>${esc(c.teacher_name)}</td><td>${esc(gradeMap[c.grade]||c.grade)}</td><td>${c.price||0} ج</td><td>${c.is_active?'✅':'❌'}</td>
+    tr.innerHTML=`<td><b>${esc(c.title)}</b></td><td>${esc(c.teacher_name||'')}</td><td>${esc(gradeMap[c.grade]||c.grade)}</td><td>${c.price||0} ج</td><td>${c.is_active?'✅':'❌'}</td>
       <td><div class="row">
-        <button class="btn bsm" onclick="editCourse(${c.id},'${escA(c.title)}','${escA(c.teacher_name)}','${c.grade}','${escA(c.subject)}',${c.price||0},${c.is_active})">✏️</button>
+        <button class="btn bsm" onclick="editCourse(${c.id},'${escA(c.title)}','${escA(c.teacher_name||'')}','${c.grade}','${escA(c.subject||'')}',${c.price||0},${c.is_active})">✏️</button>
         <button class="btn bsm" onclick="selForSch(${c.id},'${escA(c.title)}')">🗓️</button>
         <button class="btn bsm" onclick="selForVid(${c.id},'${escA(c.title)}')">🎬</button>
         <button class="btn bsm bbad" onclick="delCourse(${c.id},'${escA(c.title)}')">🗑️</button>
@@ -424,7 +493,10 @@ async function loadSch(){
   if(!selCId){msg('err','اختار كورس');return;}
   const d=await api('admin-schedules','GET',null,`?course_id=${selCId}`);
   const tb=document.querySelector('#tSch tbody');tb.innerHTML='';
-  if(!d.ok||!d.schedules?.length){tb.innerHTML='<tr><td colspan="5" class="muted">مفيش مواعيد</td></tr>';return;}
+  if(!d.ok||!d.schedules?.length){
+    tb.innerHTML='<tr><td colspan="5" class="muted">مفيش مواعيد</td></tr>';
+    return;
+  }
   d.schedules.forEach(s=>{
     const tr=document.createElement('tr');
     tr.innerHTML=`
@@ -480,12 +552,12 @@ async function loadVideos(){
     <div class="vid-item">
       <div class="vid-num">${i+1}</div>
       <div class="vid-meta">
-        <h4>${esc(v.title)}</h4>
+        <h4>${esc(v.title||'')}</h4>
         <p>${esc(v.youtube_url||'')}</p>
         ${v.description?`<p style="margin-top:3px">${esc(v.description)}</p>`:''}
       </div>
       <div class="row">
-        <button class="btn bsm" onclick="editVid(${v.id},'${escA(v.title)}','${escA(v.youtube_url||'')}','${escA(v.description||'')}',${v.order_index||0},${v.is_active})">✏️</button>
+        <button class="btn bsm" onclick="editVid(${v.id},'${escA(v.title||'')}','${escA(v.youtube_url||'')}','${escA(v.description||'')}',${v.order_index||0},${v.is_active})">✏️</button>
         <button class="btn bsm bbad" onclick="delVid(${v.id})">🗑️</button>
       </div>
     </div>`).join('');
@@ -519,29 +591,6 @@ function clearVidForm(){
   toggleVidType();
 }
 
-async function uploadVideoFile(videoId, courseId){
-  const fileInput = document.createElement('input');
-  fileInput.type='file';
-  fileInput.accept='video/mp4,video/webm,video/quicktime';
-  fileInput.onchange = async function(){
-    const file = fileInput.files[0];
-    if(!file) return;
-    const el = document.getElementById('vidUploadStatus');
-    if(el) el.textContent='⏳ جاري رفع الفيديو... ('+Math.round(file.size/1048576)+'MB)';
-    // Get signed upload URL
-    const d=await fetch(FN+'/video-upload-url',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},
-      body:JSON.stringify({video_id:videoId,course_id:courseId,filename:file.name,content_type:file.type})
-    }).then(r=>r.json()).catch(()=>({}));
-    if(!d.ok){if(el) el.textContent='❌ '+(d.error&&!d.error.includes('TypeError')?d.error:'فشل الاتصال — حاول تاني');return;}
-    // Upload to storage
-    const upRes=await fetch(d.signed_url,{method:'PUT',headers:{'Content-Type':file.type},body:file});
-    if(!upRes.ok){if(el) el.textContent='❌ فشل الرفع';return;}
-    if(el) el.textContent='✅ تم رفع الفيديو بنجاح!';
-    setTimeout(()=>loadVideos(courseId),1500);
-  };
-  fileInput.click();
-}
-
 async function saveVideo(){
   if(!selCIdV){msg('err','اختار كورس من الكورسات');return;}
   const id=document.getElementById('vId').value;
@@ -556,7 +605,6 @@ async function saveVideo(){
     const file=document.getElementById('vFile').files[0];
     if(!file&&!id){msg('err','⚠️ اختار ملف الفيديو');return;}
     if(file){
-      // file upload via fetch with progress via XHR
       const btn=document.getElementById('saveVidBtn');
       btn.disabled=true;btn.textContent='جاري الرفع…';
       document.getElementById('uploadProgress').style.display='block';
@@ -576,9 +624,11 @@ async function saveVideo(){
         msg('ok','✅ تم رفع الفيديو بنجاح!');clearVidForm();loadVideos();
       };
       xhr.onerror=function(){btn.disabled=false;btn.textContent='💾 حفظ الفيديو';msg('err','❌ فشل الاتصال');};
-      xhr.open('POST',FN+'/video-upload');
-      xhr.setRequestHeader('apikey',KEY);
+      const token = getToken();
+      xhr.open('POST',MF_CONFIG.FN+'/video-upload');
+      xhr.setRequestHeader('apikey',MF_CONFIG.ANON_KEY);
       xhr.setRequestHeader('Content-Type',file.type||'video/mp4');
+      if(token && token !== 'null') xhr.setRequestHeader('Authorization',`Bearer ${token}`);
       xhr.setRequestHeader('x-course-id',selCIdV);
       xhr.setRequestHeader('x-title',encodeURIComponent(title));
       xhr.setRequestHeader('x-order',order);
@@ -608,10 +658,14 @@ async function delVid(id){
 // ===== PAYMENTS =====
 async function loadPay(status){
   const tb=document.getElementById('tbPay');
-  tb.innerHTML='<tr><td colspan="4" style="text-align:center">Loading…</td></tr>';
+  tb.innerHTML='<tr><td colspan="4" style="text-align:center"><div class="spin"></div></td></tr>';
   const d=await api('admin-payments','GET',null,`?status=${encodeURIComponent(status)}`);
   tb.innerHTML='';
-  if(!d.ok||!d.payments?.length){tb.innerHTML=`<tr><td colspan="4" class="muted" style="text-align:center">مفيش طلبات ${status}</td></tr>`;return;}
+  if(!d.ok||!d.payments?.length){
+    tb.innerHTML=`<tr><td colspan="4" class="muted" style="text-align:center">مفيش طلبات ${status}</td></tr>`;
+    if(!d.ok) toast('فشل تحميل المدفوعات: '+(d.error||''),'error');
+    return;
+  }
   d.payments.forEach(p=>{
     const tr=document.createElement('tr');
     const hasCoupon=p.coupon_id?'🎟️ كوبون':'';
@@ -621,7 +675,7 @@ async function loadPay(status){
       <td><b>${esc(p.course_title||'—')}</b><br><span class="muted">${esc(p.subject||'')} · ${esc(p.teacher_name||'')}</span></td>
       <td>طريقة: <b>${esc(p.method||'')}</b><br>مبلغ: <b>${finalAmt} ج</b> ${hasCoupon}<br>رقم: <b>${esc(p.transaction_id||'—')}</b><br><span class="muted">${esc(p.receipt_note||'')}</span></td>
       <td><div class="row">
-        ${status==='pending'?`<button class="btn bsm bok" onclick="payAct(${p.id},'approve','${esc(p.phone_student||'')}')">✅ قبول</button>
+        ${status==='pending'?`<button class="btn bsm bok" onclick="payAct(${p.id},'approve','${escA(p.phone_student||'')}')">✅ قبول</button>
         <button class="btn bsm bbad" onclick="payAct(${p.id},'reject','')">❌ رفض</button>`:''}
         ${p.phone_student?`<a href="https://wa.me/2${p.phone_student}" target="_blank" class="btn bsm" style="background:#22c55e;border:none;color:#fff;text-decoration:none">💬 واتساب</a>`:''}
       </div></td>`;
@@ -634,7 +688,6 @@ async function payAct(id,action,phone){
   if(!d.ok){msg('err','❌ '+(d.error&&!d.error.includes('TypeError')?d.error:'فشل الاتصال — حاول تاني'));return;}
   if(action==='approve'){
     msg('ok','✅ تم القبول — الطالب اتضاف للكورس تلقائياً!');
-    // open whatsapp auto
     if(d.wa_url) window.open(d.wa_url,'_blank');
   } else {
     msg('ok','❌ تم الرفض');
@@ -647,12 +700,16 @@ async function loadCoupons(){
   const el=document.getElementById('couponsList');
   el.innerHTML='<div class="spin"></div>';
   const d=await api('coupons');
-  if(!d.ok||!d.coupons?.length){el.innerHTML='<div class="muted">مفيش كوبونات لسه</div>';return;}
+  if(!d.ok||!d.coupons?.length){
+    el.innerHTML='<div class="muted">مفيش كوبونات لسه</div>';
+    if(!d.ok) toast('فشل تحميل الكوبونات: '+(d.error||''),'error');
+    return;
+  }
   el.innerHTML='<table><thead><tr><th>الكود</th><th>الخصم</th><th>الاستخدام</th><th>انتهاء</th><th>حالة</th><th>إجراء</th></tr></thead><tbody>'
     +d.coupons.map(c=>`<tr>
       <td><b>${esc(c.code)}</b></td>
       <td>${c.discount_value}${c.discount_type==='percent'?'%':' ج'}</td>
-      <td>${c.used_count}/${c.max_uses}</td>
+      <td>${c.used_count||0}/${c.max_uses}</td>
       <td>${c.expires_at?new Date(c.expires_at).toLocaleDateString('ar-EG'):'∞'}</td>
       <td><span style="color:${c.is_active?'#22c55e':'#ef4444'}">${c.is_active?'✅ فعال':'❌ موقوف'}</span></td>
       <td><div class="row">
@@ -696,7 +753,7 @@ async function initComments(){
   allCoursesForComments=d.courses||[];
   const sel=document.getElementById('cmtCourseFilter');
   sel.innerHTML='<option value="">كل الكورسات</option>'
-    +allCoursesForComments.map(c=>`<option value="${c.id}">${esc(c.title)}</option>`).join('');
+    +allCoursesForComments.map(c=>`<option value="${c.id}">${esc(c.title||'')}</option>`).join('');
   loadAdminComments();
 }
 
@@ -704,7 +761,6 @@ async function loadAdminComments(){
   const el=document.getElementById('adminComments');
   el.innerHTML='<div class="spin"></div>';
   const courseId=document.getElementById('cmtCourseFilter').value;
-  // load comments per video — get all videos first
   let vids=[];
   if(courseId){
     const v=await api('course-videos','GET',null,'?course_id='+courseId);
@@ -725,13 +781,13 @@ async function loadAdminComments(){
   allComments.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
   el.innerHTML=allComments.map(c=>`
     <div class="box" style="margin-bottom:10px">
-      <div style="font-size:11px;color:var(--muted);margin-bottom:4px">🎬 ${esc(c.vid_title)} — ${esc(c.user_name)} — ${new Date(c.created_at).toLocaleString('ar-EG')}</div>
-      <div style="font-size:13px;margin-bottom:8px">${esc(c.message)}</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px">🎬 ${esc(c.vid_title||'')} — ${esc(c.user_name||'')} — ${new Date(c.created_at).toLocaleString('ar-EG')}</div>
+      <div style="font-size:13px;margin-bottom:8px">${esc(c.message||'')}</div>
       ${c.reply?`<div style="background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.2);border-radius:10px;padding:8px;font-size:12px;margin-bottom:8px"><b style="color:#06b6d4">ردك:</b> ${esc(c.reply)}</div>`:''}
       <div class="row">
         <input id="rep_${c.id}" placeholder="اكتب رد…" style="flex:1" value="${c.reply?escA(c.reply):''}"/>
         <button class="btn bsm bok" onclick="replyComment(${c.id})">💬 رد</button>
-        <button class="btn bsm ${c.is_pinned?'bwarn':''}bsm" onclick="pinComment(${c.id},${!c.is_pinned})">${c.is_pinned?'📍 إلغاء تثبيت':'📌 تثبيت'}</button>
+        <button class="btn bsm ${c.is_pinned?'bwarn':''}" onclick="pinComment(${c.id},${!c.is_pinned})">${c.is_pinned?'📍 إلغاء تثبيت':'📌 تثبيت'}</button>
         <button class="btn bsm bbad" onclick="delComment(${c.id})">🗑️</button>
       </div>
     </div>`).join('');
@@ -756,10 +812,14 @@ async function delComment(id){
 // ===== USERS =====
 async function loadUsers(){
   const tb=document.getElementById('tbUsers');
-  tb.innerHTML='<tr><td colspan="5" style="text-align:center">Loading…</td></tr>';
+  tb.innerHTML='<tr><td colspan="5" style="text-align:center"><div class="spin"></div></td></tr>';
   const d=await api('admin-users');
   tb.innerHTML='';
-  if(!d.ok||!d.users?.length){tb.innerHTML='<tr><td colspan="5" class="muted">مفيش مستخدمين</td></tr>';return;}
+  if(!d.ok||!d.users?.length){
+    tb.innerHTML='<tr><td colspan="5" class="muted">مفيش مستخدمين</td></tr>';
+    if(!d.ok) toast('فشل تحميل المستخدمين: '+(d.error||''),'error');
+    return;
+  }
   d.users.forEach(u=>{
     const isSelf=u.id===me.id;
     const tr=document.createElement('tr');
@@ -793,12 +853,6 @@ async function resetPw(uid,name){
 
 // Init
 loadStats();
-try{loadCourses();}catch(e){}
-try{loadPay('pending');}catch(e){}
-try{loadCoupons();}catch(e){}
-// Comments loaded lazily on tab open
-
-
 </script>
 </body>
 </html>
